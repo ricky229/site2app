@@ -1410,7 +1410,10 @@ ${this.features.offlineMode ? `
         const binDir = path.join(this.buildDir, 'bin')
         const compiledDir = path.join(this.buildDir, 'compiled_res')
 
-        for (const d of [genDir, objDir, binDir, compiledDir]) mkdirSync(d, { recursive: true })
+        for (const d of [genDir, objDir, binDir, compiledDir]) {
+            if (existsSync(d)) { try { fs.rmSync(d, { recursive: true }); } catch(_) {} }
+            mkdirSync(d, { recursive: true })
+        }
 
         // ── STEP 1: Generate all source files ──
         console.log(`[BUILD ${this.buildId}] 📝 Step 1: Source files + icons + splash`)
@@ -1437,12 +1440,27 @@ ${this.features.offlineMode ? `
         console.log(`[BUILD ${this.buildId}] ☕ Step 4: javac`)
         const srcDir = path.join(this.buildDir, 'src', this.packageName.replace(/\./g, '/'))
         const allJava = [...this._findFiles(srcDir, '.java'), ...this._findFiles(genDir, '.java')]
-        const javaStr = allJava.map(f => `"${f}"`).join(' ')
+        // Deduplicate by basename to prevent "defined multiple times"
+        const seen = new Set()
+        const uniqueJava = allJava.filter(f => {
+            const base = path.basename(f)
+            if (seen.has(base)) return false
+            seen.add(base)
+            return true
+        })
+        const javaStr = uniqueJava.map(f => `"${f}"`).join(' ')
         this._run(`"${javac}" -source 1.8 -target 1.8 -bootclasspath "${this.androidJar}" -classpath "${this.androidJar}" -d "${objDir}" ${javaStr}`)
 
         // ── STEP 5: d8 ──
         console.log(`[BUILD ${this.buildId}] 🔄 Step 5: d8`)
-        const classStr = this._findFiles(objDir, '.class').map(f => `"${f}"`).join(' ')
+        const allClasses = this._findFiles(objDir, '.class')
+        // Deduplicate class files by relative path
+        const classMap = new Map()
+        for (const f of allClasses) {
+            const rel = path.relative(objDir, f)
+            if (!classMap.has(rel)) classMap.set(rel, f)
+        }
+        const classStr = [...classMap.values()].map(f => `"${f}"`).join(' ')
         this._run(`"${d8}" --release --min-api 21 --output "${binDir}" ${classStr}`)
 
         if (!existsSync(path.join(binDir, 'classes.dex'))) throw new Error('classes.dex not generated')
