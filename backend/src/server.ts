@@ -11,8 +11,11 @@ import { existsSync } from 'fs' // For sync exists check
 import fsSync from 'fs' // For sync operations like readFileSync, writeFileSync, mkdirSync
 import { fileURLToPath } from 'url'
 import { v4 as uuidv4 } from 'uuid'
+import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 // @ts-ignore
 import Builder from './services/Builder.js'
+import { bubble } from './services/BubbleService.js'
 
 dotenv.config()
 
@@ -175,16 +178,22 @@ app.get('/api/health', (req, res) => {
 })
 
 // ─── Auth Middleware ─────────────────────────────────
-const authMiddleware = (req: any, res: any, next: any) => {
+const authMiddleware = async (req: any, res: any, next: any) => {
     const authHeader = req.headers.authorization
     if (!authHeader) return res.status(401).json({ error: 'Auth header missing' })
     const token = authHeader.split(' ')[1]
-    if (!token || !sessions.has(token)) return res.status(401).json({ error: 'Invalid or expired token' })
-    const userId = sessions.get(token)
-    const user = users.get(userId as string)
-    if (!user) return res.status(401).json({ error: 'User not found' })
-    req.user = user
-    next()
+    if (!token) return res.status(401).json({ error: 'Invalid or expired token' })
+    try {
+        const secret = process.env.JWT_SECRET || 'site2app_super_secret';
+        const decoded = jwt.verify(token, secret) as any;
+        const user = await bubble.getUserById(decoded.userId);
+        if (!user) throw new Error('User not found in Bubble');
+        req.user = { id: user._id, ...user };
+        next()
+    } catch (err: any) {
+        console.error('[Auth] Token invalid:', err.message);
+        res.status(401).json({ error: 'Invalid or expired token' })
+    }
 }
 
 // ─── Site Analysis (server-side to avoid CORS) ───────
@@ -1025,67 +1034,73 @@ app.get('/api/stats', authMiddleware, (req: any, res) => {
 })
 
 // ─── Auth routes ─────────────────────────
-app.post('/api/auth/login', (req, res) => {
-    const { email, password } = req.body
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body
+        const user = await bubble.getUserByEmail(email);
+        
+        if (!user || !(await bcrypt.compare(password, user.passwordHash || ''))) {
+            return res.status(401).json({ error: 'Email ou mot de passe incorrect' })
+        }
 
-    // Check credentials natively
-    const allUsers = Array.from(users.values())
-    const user = allUsers.find(u => u.email === email && u.password === password) // NOTE: Plain text pass for MVP demo purposes only
+        const secret = process.env.JWT_SECRET || 'site2app_super_secret';
+        const token = jwt.sign({ userId: user._id }, secret, { expiresIn: '30d' });
 
-    if (!user) {
-        return res.status(401).json({ error: 'Email ou mot de passe incorrect' })
+        const { passwordHash: _, ...userSafe } = user
+        userSafe.id = user._id;
+
+        res.json({
+            user: userSafe,
+            token: token
+        })
+    } catch (err: any) {
+        console.error('[Auth] Login error:', err.message);
+        res.status(500).json({ error: 'Erreur système lors de la connexion' })
     }
-
-    const token = uuidv4()
-    sessions.set(token, user.id)
-
-    // Exclude password from response
-    const { password: _, ...userSafe } = user
-
-    res.json({
-        user: userSafe,
-        token: token
-    })
 })
 
-app.post('/api/auth/register', (req, res) => {
-    const { name, email, password } = req.body
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { name, email, password } = req.body
 
-    if (Array.from(users.values()).some(u => u.email === email)) {
-        return res.status(400).json({ error: 'Cet email est déjà utilisé' })
+        const existing = await bubble.getUserByEmail(email)
+        if (existing) {
+            return res.status(400).json({ error: 'Cet email est déjà utilisé' })
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(password, salt);
+
+        const newUser = await bubble.createUser({
+            emailAddress: email,
+            passwordHash: hash,
+            name: name,
+            plan: 'free',
+            role: 'user',
+            appsCount: 0,
+            downloadsCount: 0,
+        })
+
+        const secret = process.env.JWT_SECRET || 'site2app_super_secret';
+        const id = newUser._id || newUser.id;
+        const token = jwt.sign({ userId: id }, secret, { expiresIn: '30d' });
+
+        const { passwordHash: _, ...userSafe } = newUser
+        userSafe.id = id;
+
+        res.json({
+            user: userSafe,
+            token: token
+        })
+    } catch (err: any) {
+        console.error('[Auth] Register error:', err.message);
+        res.status(500).json({ error: 'Impossible de créer le profile sur Bubble.io. Vérifiez les champs du Type User.' })
     }
-
-    const newUser = {
-        id: `user_${uuidv4()}`,
-        email: email,
-        password: password, // For live demo/MVP
-        name: name,
-        plan: 'free',
-        role: 'user',
-        emailVerified: false,
-        createdAt: new Date().toISOString(),
-        appsCount: 0,
-        downloadsCount: 0,
-    }
-
-    users.set(newUser.id, newUser)
-    saveUsers()
-
-    // Login immediately
-    const token = uuidv4()
-    sessions.set(token, newUser.id)
-
-    const { password: _, ...userSafe } = newUser
-
-    res.json({
-        user: userSafe,
-        token: token
-    })
 })
 
 app.get('/api/auth/me', authMiddleware, (req: any, res) => {
     const user = { ...req.user }
-    delete user.password // safety
+    delete user.passwordHash // safety
     res.json(user)
 })
 

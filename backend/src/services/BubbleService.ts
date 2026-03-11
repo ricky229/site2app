@@ -1,0 +1,93 @@
+
+
+export class BubbleService {
+    private baseUrl: string;
+    private token: string;
+
+    constructor() {
+        this.baseUrl = process.env.BUBBLE_API_URL || 'https://site2app-34905.bubbleapps.io/api/1.1/obj';
+        this.token = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+    }
+
+    private get headers() {
+        return {
+            'Authorization': `Bearer ${this.token}`,
+            'Content-Type': 'application/json'
+        };
+    }
+
+    async getUserByEmail(email: string) {
+        const constraints = JSON.stringify([{ key: 'emailAddress', constraint_type: 'equals', value: email }]);
+        const res = await fetch(`${this.baseUrl}/user?constraints=${encodeURIComponent(constraints)}`, { headers: this.headers });
+        const data = await res.json() as any;
+        if (!res.ok) throw new Error(data?.message || 'Error fetching user');
+        return data?.response?.results?.[0] || null;
+    }
+
+    async getUserById(id: string) {
+        const res = await fetch(`${this.baseUrl}/user/${id}`, { headers: this.headers });
+        const data = await res.json() as any;
+        if (!res.ok) throw new Error(data?.message || 'Error fetching user');
+        return data?.response || null;
+    }
+
+    async createUser(userData: any) {
+        const res = await fetch(`${this.baseUrl}/user`, {
+            method: 'POST',
+            headers: this.headers,
+            body: JSON.stringify(userData)
+        });
+        const data = await res.json() as any;
+        if (!res.ok) throw new Error(data?.message || 'Error creating user');
+        return this.getUserById(data.id);
+    }
+
+    async getAppsByUser(userId: string) {
+        const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: userId }]);
+        const res = await fetch(`${this.baseUrl}/app?constraints=${encodeURIComponent(constraints)}&limit=100`, { headers: this.headers });
+        const data = await res.json() as any;
+        if (!res.ok) throw new Error(data?.message || 'Error fetching apps');
+        return data?.response?.results || [];
+    }
+
+    async getAppById(appId: string) {
+        const res = await fetch(`${this.baseUrl}/app/${appId}`, { headers: this.headers });
+        const data = await res.json() as any;
+        if (res.status === 404) return null;
+        if (!res.ok) throw new Error(data?.message || 'Error fetching app');
+        return data?.response || null;
+    }
+
+    async createApp(appData: any) {
+        const res = await fetch(`${this.baseUrl}/app`, {
+            method: 'POST',
+            headers: this.headers,
+            body: JSON.stringify(appData)
+        });
+        const data = await res.json() as any;
+        if (!res.ok) throw new Error(data?.message || 'Error creating app');
+        return this.getAppById(data.id);
+    }
+
+    async updateApp(appId: string, appData: any) {
+        const res = await fetch(`${this.baseUrl}/app/${appId}`, {
+            method: 'PATCH',
+            headers: this.headers,
+            body: JSON.stringify(appData)
+        });
+        const data = await res.json() as any;
+        if (!res.ok) throw new Error(data?.message || 'Error updating app');
+        return true;
+    }
+
+    async deleteApp(appId: string) {
+        const res = await fetch(`${this.baseUrl}/app/${appId}`, {
+            method: 'DELETE',
+            headers: this.headers
+        });
+        if (!res.ok) throw new Error('Error deleting app');
+        return true;
+    }
+}
+
+export const bubble = new BubbleService();
