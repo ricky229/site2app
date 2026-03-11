@@ -1,0 +1,198 @@
+﻿Starting test build...
+[BUILD test_build_123] ­ƒöì ANALYSE DU MODE DE BUILD :
+[BUILD test_build_123]   - Feature Push: Activ├®e
+[BUILD test_build_123]   - Config Google: Pr├®sente
+[BUILD test_build_123] ­ƒö¿ D├ëMARRAGE MODE GRADLE (Puissant, long)
+[BUILD test_build_123] ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+[BUILD test_build_123] ­ƒöÑ BUILD APK (FCM Gradle Mode)
+[BUILD test_build_123] ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+[BUILD test_build_123] ­ƒÄ¿ Using generated fallback icon
+[BUILD test_build_123] ­ƒö¿ Compiling via Gradle... (can take several minutes)
+[BUILD test_build_123] $ "C:\Users\User\Documents\App\backend\storage\gradle\gradle-8.5\bin\gradle.bat" assembleRelease -Dorg.gradle.daemon=false --no-daemon --stacktrace
+node.exe : Note: Some input files use or override a 
+deprecated API.
+Au caractère Ligne:1 : 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Note: Some inpu 
+   ...deprecated API.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Note: Recompile with -Xlint:deprecation for details.
+[BUILD test_build_123] To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:javaPreCompileRelease UP-TO-DATE
+> Task :app:checkReleaseAarMetadata UP-TO-DATE
+> Task :app:generateReleaseResValues UP-TO-DATE
+> Task :app:processReleaseGoogleServices UP-TO-DATE
+> Task :app:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :app:generateReleaseResources UP-TO-DATE
+> Task :app:mergeReleaseResources UP-TO-DATE
+> Task :app:packageReleaseResources UP-TO-DATE
+> Task :app:parseReleaseLocalResources UP-TO-DATE
+> Task :app:createReleaseCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksRelease UP-TO-DATE
+
+> Task :app:processReleaseMainManifest
+package="com.site2app.testapp" found in source AndroidManifest.xml: C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app\src\main\AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.site2app.testapp" from the source AndroidManifest.xml: C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app\src\main\AndroidManifest.xml.
+
+> Task :app:processReleaseManifest
+> Task :app:extractProguardFiles
+> Task :app:mergeReleaseJniLibFolders
+> Task :app:mergeReleaseNativeLibs NO-SOURCE
+> Task :app:stripReleaseDebugSymbols NO-SOURCE
+> Task :app:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:desugarReleaseFileDependencies
+> Task :app:mergeReleaseArtProfile
+> Task :app:checkReleaseDuplicateClasses
+> Task :app:mergeReleaseShaders
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets
+> Task :app:processReleaseJavaRes NO-SOURCE
+> Task :app:compressReleaseAssets
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+> Task :app:processReleaseManifestForPackage
+> Task :app:mergeReleaseJavaResource
+> Task :app:processReleaseResources
+> Task :app:mergeExtDexRelease
+
+> Task :app:compileReleaseJavaWithJavac
+
+> Task :app:dexBuilderRelease
+> Task :app:mergeReleaseGlobalSynthetics
+> Task :app:optimizeReleaseResources
+> Task :app:mergeDexRelease
+> Task :app:compileReleaseArtProfile
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:assembleRelease
+
+BUILD SUCCESSFUL in 1m 41s
+39 actionable tasks: 29 executed, 10 up-to-date
+[BUILD test_build_123] $ "C:\Users\User\AppData\Local\Android\Sdk\build-tools\34.0.0\zipalign" - f - v - p 4 "C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app\build\outputs\apk\release\app-release-unsigned.apk" "C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app-aligned.apk"
+Zip alignment utility
+Copyright (C) 2009 The Android Open Source Project
+
+Usage: zipalign [-f] [-p] [-v] [-z] <align> infile.zip 
+outfile.zip
+       zipalign -c [-p] [-v] <align> infile.zip
+
+  <align>: alignment in bytes, e.g. '4' provides 32-bit 
+alignment
+  -c: check alignment only (does not modify file)
+  -f: overwrite existing outfile.zip
+  -p: page-align uncompressed .so files
+  -v: verbose output
+  -z: recompress using Zopfli
+[BUILD test_build_123] ÔØî BUILD FAILED:  Error: Command 
+failed: "C:\Users\User\AppData\Local\Android\Sdk\build-tools\
+34.0.0\zipalign" - f - v - p 4 "C:\Users\User\Documents\App\b
+ackend\storage\builds\test_build_123\app\build\outputs\apk\re
+lease\app-release-unsigned.apk" "C:\Users\User\Documents\App\
+backend\storage\builds\test_build_123\app-aligned.apk"
+Zip alignment utility
+Copyright (C) 2009 The Android Open Source Project
+
+Usage: zipalign [-f] [-p] [-v] [-z] <align> infile.zip 
+outfile.zip
+       zipalign -c [-p] [-v] <align> infile.zip
+
+  <align>: alignment in bytes, e.g. '4' provides 32-bit 
+alignment
+  -c: check alignment only (does not modify file)
+  -f: overwrite existing outfile.zip
+  -p: page-align uncompressed .so files
+  -v: verbose output
+  -z: recompress using Zopfli
+
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at Builder._run (file:///C:/Users/User/Documents/App/back
+end/src/services/Builder.js:82:24)
+    at Builder._buildApkWithGradle (file:///C:/Users/User/Doc
+uments/App/backend/src/services/Builder.js:1607:18)
+    at async Builder.buildApk (file:///C:/Users/User/Document
+s/App/backend/src/services/Builder.js:1144:20)
+    at async test 
+(C:\Users\User\Documents\App\backend\test-build.ts:40:24) {
+  status: 2,
+  signal: null,
+  output: [
+    null,
+    <Buffer >,
+    <Buffer 5a 69 70 20 61 6c 69 67 6e 6d 65 6e 74 20 75 74 
+69 6c 69 74 79 0d 0a 43 6f 70 79 72 69 67 68 74 20 28 43 29 
+20 32 30 30 39 20 54 68 65 20 41 6e 64 72 ... 396 more bytes>
+  ],
+  pid: 48660,
+  stdout: <Buffer >,
+  stderr: <Buffer 5a 69 70 20 61 6c 69 67 6e 6d 65 6e 74 20 
+75 74 69 6c 69 74 79 0d 0a 43 6f 70 79 72 69 67 68 74 20 28 
+43 29 20 32 30 30 39 20 54 68 65 20 41 6e 64 72 ... 396 more 
+bytes>
+}
+Build Crashed! Error: Command failed: "C:\Users\User\AppData\
+Local\Android\Sdk\build-tools\34.0.0\zipalign" - f - v - p 4 
+"C:\Users\User\Documents\App\backend\storage\builds\test_buil
+d_123\app\build\outputs\apk\release\app-release-unsigned.apk"
+ "C:\Users\User\Documents\App\backend\storage\builds\test_bui
+ld_123\app-aligned.apk"
+Zip alignment utility
+Copyright (C) 2009 The Android Open Source Project
+
+Usage: zipalign [-f] [-p] [-v] [-z] <align> infile.zip 
+outfile.zip
+       zipalign -c [-p] [-v] <align> infile.zip
+
+  <align>: alignment in bytes, e.g. '4' provides 32-bit 
+alignment
+  -c: check alignment only (does not modify file)
+  -f: overwrite existing outfile.zip
+  -p: page-align uncompressed .so files
+  -v: verbose output
+  -z: recompress using Zopfli
+
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at Builder._run (file:///C:/Users/User/Documents/App/back
+end/src/services/Builder.js:82:24)
+    at Builder._buildApkWithGradle (file:///C:/Users/User/Doc
+uments/App/backend/src/services/Builder.js:1607:18)
+    at async Builder.buildApk (file:///C:/Users/User/Document
+s/App/backend/src/services/Builder.js:1144:20)
+    at async test 
+(C:\Users\User\Documents\App\backend\test-build.ts:40:24) {
+  status: 2,
+  signal: null,
+  output: [
+    null,
+    <Buffer >,
+    <Buffer 5a 69 70 20 61 6c 69 67 6e 6d 65 6e 74 20 75 74 
+69 6c 69 74 79 0d 0a 43 6f 70 79 72 69 67 68 74 20 28 43 29 
+20 32 30 30 39 20 54 68 65 20 41 6e 64 72 ... 396 more bytes>
+  ],
+  pid: 48660,
+  stdout: <Buffer >,
+  stderr: <Buffer 5a 69 70 20 61 6c 69 67 6e 6d 65 6e 74 20 
+75 74 69 6c 69 74 79 0d 0a 43 6f 70 79 72 69 67 68 74 20 28 
+43 29 20 32 30 30 39 20 54 68 65 20 41 6e 64 72 ... 396 more 
+bytes>
+}

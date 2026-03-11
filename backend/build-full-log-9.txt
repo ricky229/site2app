@@ -1,0 +1,140 @@
+﻿Starting test build...
+[BUILD test_build_123] ­ƒöì ANALYSE DU MODE DE BUILD :
+[BUILD test_build_123]   - Feature Push: Activ├®e
+[BUILD test_build_123]   - Config Google: Pr├®sente
+[BUILD test_build_123] ­ƒö¿ D├ëMARRAGE MODE GRADLE (Puissant, long)
+[BUILD test_build_123] ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+[BUILD test_build_123] ­ƒöÑ BUILD APK (FCM Gradle Mode)
+[BUILD test_build_123] ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+[BUILD test_build_123] ­ƒÄ¿ Using generated fallback icon
+[BUILD test_build_123] ­ƒö¿ Compiling via Gradle... (can take several minutes)
+[BUILD test_build_123] $ "C:\Users\User\Documents\App\backend\storage\gradle\gradle-8.5\bin\gradle.bat" assembleRelease - Dorg.gradle.daemon=false --no - daemon--stacktrace
+node.exe : 
+Au caractère Ligne:1 : 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], Re 
+   moteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Task '-' not found in root project 'test_build_123' and its 
+subprojects.
+
+* Try:
+> Run gradle tasks to get a list of available tasks.
+> For more on name expansion, please refer to https://docs.gr
+adle.org/8.5/userguide/command_line_interface.html#sec:name_a
+bbreviation in the Gradle documentation.
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2s
+[BUILD test_build_123] ÔØî BUILD FAILED:  Error: Command 
+failed: "C:\Users\User\Documents\App\backend\storage\gradle\g
+radle-8.5\bin\gradle.bat" assembleRelease - 
+Dorg.gradle.daemon=false --no - daemon--stacktrace
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Task '-' not found in root project 'test_build_123' and its 
+subprojects.
+
+* Try:
+> Run gradle tasks to get a list of available tasks.
+> For more on name expansion, please refer to https://docs.gr
+adle.org/8.5/userguide/command_line_interface.html#sec:name_a
+bbreviation in the Gradle documentation.
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2s
+
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at Builder._run (file:///C:/Users/User/Documents/App/back
+end/src/services/Builder.js:82:24)
+    at Builder._buildApkWithGradle (file:///C:/Users/User/Doc
+uments/App/backend/src/services/Builder.js:1598:18)
+    at async Builder.buildApk (file:///C:/Users/User/Document
+s/App/backend/src/services/Builder.js:1144:20)
+    at async test 
+(C:\Users\User\Documents\App\backend\test-build.ts:40:24) {
+  status: 1,
+  signal: null,
+  output: [
+    null,
+    <Buffer >,
+    <Buffer 0d 0a 46 41 49 4c 55 52 45 3a 20 42 75 69 6c 64 
+20 66 61 69 6c 65 64 20 77 69 74 68 20 61 6e 20 65 78 63 65 
+70 74 69 6f 6e 2e 0d 0a 0d 0a 2a 20 57 68 ... 543 more bytes>
+  ],
+  pid: 44996,
+  stdout: <Buffer >,
+  stderr: <Buffer 0d 0a 46 41 49 4c 55 52 45 3a 20 42 75 69 
+6c 64 20 66 61 69 6c 65 64 20 77 69 74 68 20 61 6e 20 65 78 
+63 65 70 74 69 6f 6e 2e 0d 0a 0d 0a 2a 20 57 68 ... 543 more 
+bytes>
+}
+Build Crashed! Error: Command failed: "C:\Users\User\Document
+s\App\backend\storage\gradle\gradle-8.5\bin\gradle.bat" 
+assembleRelease - Dorg.gradle.daemon=false --no - 
+daemon--stacktrace
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Task '-' not found in root project 'test_build_123' and its 
+subprojects.
+
+* Try:
+> Run gradle tasks to get a list of available tasks.
+> For more on name expansion, please refer to https://docs.gr
+adle.org/8.5/userguide/command_line_interface.html#sec:name_a
+bbreviation in the Gradle documentation.
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 2s
+
+    at genericNodeError (node:internal/errors:985:15)
+    at wrappedFn (node:internal/errors:539:14)
+    at checkExecSyncError (node:child_process:925:11)
+    at execSync (node:child_process:997:15)
+    at Builder._run (file:///C:/Users/User/Documents/App/back
+end/src/services/Builder.js:82:24)
+    at Builder._buildApkWithGradle (file:///C:/Users/User/Doc
+uments/App/backend/src/services/Builder.js:1598:18)
+    at async Builder.buildApk (file:///C:/Users/User/Document
+s/App/backend/src/services/Builder.js:1144:20)
+    at async test 
+(C:\Users\User\Documents\App\backend\test-build.ts:40:24) {
+  status: 1,
+  signal: null,
+  output: [
+    null,
+    <Buffer >,
+    <Buffer 0d 0a 46 41 49 4c 55 52 45 3a 20 42 75 69 6c 64 
+20 66 61 69 6c 65 64 20 77 69 74 68 20 61 6e 20 65 78 63 65 
+70 74 69 6f 6e 2e 0d 0a 0d 0a 2a 20 57 68 ... 543 more bytes>
+  ],
+  pid: 44996,
+  stdout: <Buffer >,
+  stderr: <Buffer 0d 0a 46 41 49 4c 55 52 45 3a 20 42 75 69 
+6c 64 20 66 61 69 6c 65 64 20 77 69 74 68 20 61 6e 20 65 78 
+63 65 70 74 69 6f 6e 2e 0d 0a 0d 0a 2a 20 57 68 ... 543 more 
+bytes>
+}

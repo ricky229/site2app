@@ -1,0 +1,10 @@
+﻿=== Test A: DATA-ONLY (ancien mode qui marchait en premier plan) ===
+R├®sultat A: Succ├¿s=1, ├ëchecs=0
+
+=== Test B: NOTIFICATION seul (mode classique Android) ===
+R├®sultat B: projects/notification-native-push/messages/0:1772956739363436%2fbc58e12fbc58e1
+
+=== Test C: NOTIFICATION + DATA combin├®s ===
+R├®sultat C: projects/notification-native-push/messages/0:1772956741586578%2fbc58e12fbc58e1
+
+FINI. 3 notifications envoy├®es. Dites lesquelles vous avez re├ºues (A, B, C) !

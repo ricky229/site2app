@@ -1,0 +1,281 @@
+﻿Starting test build...
+[BUILD test_build_123] ­ƒöì ANALYSE DU MODE DE BUILD :
+[BUILD test_build_123]   - Feature Push: Activ├®e
+[BUILD test_build_123]   - Config Google: Pr├®sente
+[BUILD test_build_123] ­ƒö¿ D├ëMARRAGE MODE GRADLE (Puissant, long)
+[BUILD test_build_123] ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+[BUILD test_build_123] ­ƒöÑ BUILD APK (FCM Gradle Mode)
+[BUILD test_build_123] ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+[BUILD test_build_123] ­ƒÄ¿ Using generated fallback icon
+[BUILD test_build_123] ­ƒö¿ Compiling via Gradle... (can take several minutes)
+[BUILD test_build_123] $ "C:\Users\User\Documents\App\backend\storage\gradle\gradle-8.5\bin\gradle.bat" assembleRelease -Dorg.gradle.daemon=false --no-daemon --stacktrace
+[BUILD test_build_123] To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:javaPreCompileRelease
+> Task :app:generateReleaseResValues
+> Task :app:checkReleaseAarMetadata
+> Task :app:processReleaseGoogleServices
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:generateReleaseResources
+> Task :app:packageReleaseResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+> Task :app:parseReleaseLocalResources
+> Task :app:mergeReleaseResources
+
+> Task :app:processReleaseMainManifest
+package="com.site2app.testapp" found in source AndroidManifest.xml: C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app\src\main\AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.site2app.testapp" from the source AndroidManifest.xml: C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app\src\main\AndroidManifest.xml.
+
+> Task :app:processReleaseManifest
+> Task :app:extractProguardFiles
+> Task :app:mergeReleaseJniLibFolders
+> Task :app:mergeReleaseNativeLibs NO-SOURCE
+> Task :app:stripReleaseDebugSymbols NO-SOURCE
+> Task :app:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:desugarReleaseFileDependencies
+> Task :app:checkReleaseDuplicateClasses
+> Task :app:mergeReleaseArtProfile
+> Task :app:mergeReleaseShaders
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets
+> Task :app:processReleaseJavaRes NO-SOURCE
+> Task :app:compressReleaseAssets
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+> Task :app:processReleaseManifestForPackage
+> Task :app:processReleaseResources
+> Task :app:mergeReleaseJavaResource
+> Task :app:mergeExtDexRelease
+
+> Task :app:compileReleaseJavaWithJavac
+
+> Task :app:dexBuilderRelease
+> Task :app:mergeReleaseGlobalSynthetics
+> Task :app:optimizeReleaseResources
+> Task :app:mergeDexRelease
+> Task :app:compileReleaseArtProfile
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:assembleRelease
+
+BUILD SUCCESSFUL in 1m 1s
+39 actionable tasks: 39 executed
+[BUILD test_build_123] $ "C:\Users\User\AppData\Local\Android\Sdk\build-tools\34.0.0\zipalign" -f -v -p 4 "C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app\build\outputs\apk\release\app-release-unsigned.apk" "C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app-aligned.apk"
+[BUILD test_build_123] Verifying alignment of C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app-aligned.apk (4)...
+      87 META-INF/com/android/build/gradle/app-metadata.properties (OK - compressed)
+     180 classes.dex (OK - compressed)
+ 2003063 assets/www/index.html (OK - compressed)
+ 2003431 DebugProbesKt.bin (OK - compressed)
+ 2004304 META-INF/androidx.annotation_annotation-experimental.version (OK)
+ 2004388 META-INF/androidx.arch.core_core-runtime.version (OK)
+ 2004492 META-INF/androidx.asynclayoutinflater_asynclayoutinflater.version (OK)
+ 2004592 META-INF/androidx.coordinatorlayout_coordinatorlayout.version (OK)
+ 2004664 META-INF/androidx.core_core.version (OK)
+ 2004756 META-INF/androidx.cursoradapter_cursoradapter.version (OK)
+ 2004840 META-INF/androidx.customview_customview.version (OK)
+ 2004928 META-INF/androidx.documentfile_documentfile.version (OK)
+ 2005016 META-INF/androidx.drawerlayout_drawerlayout.version (OK)
+ 2005096 META-INF/androidx.fragment_fragment.version (OK)
+ 2005184 META-INF/androidx.interpolator_interpolator.version (OK)
+ 2005276 META-INF/androidx.legacy_legacy-support-core-ui.version (OK)
+ 2005372 META-INF/androidx.legacy_legacy-support-core-utils.version (OK)
+ 2005468 META-INF/androidx.lifecycle_lifecycle-livedata-core.version (OK)
+ 2005560 META-INF/androidx.lifecycle_lifecycle-livedata.version (OK)
+ 2005652 META-INF/androidx.lifecycle_lifecycle-runtime.version (OK)
+ 2005744 META-INF/androidx.lifecycle_lifecycle-viewmodel.version (OK)
+ 2005820 META-INF/androidx.loader_loader.version (OK)
+ 2005928 META-INF/androidx.localbroadcastmanager_localbroadcastmanager.version (OK)
+ 2006004 META-INF/androidx.print_print.version (OK)
+ 2006104 META-INF/androidx.slidingpanelayout_slidingpanelayout.version (OK)
+ 2006204 META-INF/androidx.swiperefreshlayout_swiperefreshlayout.version (OK)
+ 2006308 META-INF/androidx.versionedparcelable_versionedparcelable.version (OK)
+ 2006392 META-INF/androidx.viewpager_viewpager.version (OK)
+ 2006468 META-INF/kotlinx_coroutines_core.version (OK)
+ 2006552 META-INF/kotlinx_coroutines_play_services.version (OK)
+ 2006618 firebase-annotations.properties (OK - compressed)
+ 2006732 firebase-datatransport.properties (OK - compressed)
+ 2006849 firebase-encoders-json.properties (OK - compressed)
+ 2006966 firebase-encoders-proto.properties (OK - compressed)
+ 2007078 firebase-encoders.properties (OK - compressed)
+ 2007187 firebase-iid-interop.properties (OK - compressed)
+ 2007310 firebase-measurement-connector.properties (OK - compressed)
+ 2007445 kotlin/annotation/annotation.kotlin_builtins (OK - compressed)
+ 2008080 kotlin/collections/collections.kotlin_builtins (OK - compressed)
+ 2009675 kotlin/coroutines/coroutines.kotlin_builtins (OK - compressed)
+ 2009902 kotlin/internal/internal.kotlin_builtins (OK - compressed)
+ 2010355 kotlin/kotlin.kotlin_builtins (OK - compressed)
+ 2015425 kotlin/ranges/ranges.kotlin_builtins (OK - compressed)
+ 2016757 kotlin/reflect/reflect.kotlin_builtins (OK - compressed)
+ 2018073 messaging_event.proto (OK - compressed)
+ 2019261 messaging_event_extension.proto (OK - compressed)
+ 2019832 play-services-base.properties (OK - compressed)
+ 2019945 play-services-basement.properties (OK - compressed)
+ 2020068 play-services-cloud-messaging.properties (OK - compressed)
+ 2020189 play-services-stats.properties (OK - compressed)
+ 2020300 play-services-tasks.properties (OK - compressed)
+ 2020413 transport-backend-cct.properties (OK - compressed)
+ 2020523 transport-runtime.properties (OK - compressed)
+ 2020620 AndroidManifest.xml (OK - compressed)
+ 2023103 res/-8.xml (OK - compressed)
+ 2023592 res/-p.png (OK)
+ 2024614 res/0K.xml (OK - compressed)
+ 2024876 res/0Z.png (OK)
+ 2026092 res/1C.9.png (OK)
+ 2026752 res/2K.9.png (OK)
+ 2027017 res/47.xml (OK - compressed)
+ 2027428 res/4z.xml (OK - compressed)
+ 2027888 res/5J.9.png (OK)
+ 2028960 res/5P.png (OK)
+ 2029628 res/5c.png (OK)
+ 2029808 res/5v.png (OK)
+ 2030049 res/5w.xml (OK - compressed)
+ 2030276 res/6P.png (OK)
+ 2030516 res/6d.png (OK)
+ 2031008 res/71.png (OK)
+ 2031340 res/79.9.png (OK)
+ 2032076 res/7R.png (OK)
+ 2032632 res/7V.png (OK)
+ 2032928 res/7m.png (OK)
+ 2033852 res/8G.xml (OK - compressed)
+ 2034115 res/8K.xml (OK - compressed)
+ 2034360 res/8c.png (OK)
+ 2034531 res/8t.xml (OK - compressed)
+ 2035234 res/9m.xml (OK - compressed)
+ 2035448 res/9w.png (OK)
+ 2035619 res/Ac.xml (OK - compressed)
+ 2036084 res/Af.9.png (OK)
+ 2036808 res/Ag.png (OK)
+ 2037316 res/BQ.9.png (OK)
+ 2038256 res/BT.png (OK)
+ 2038560 res/BW.xml (OK - compressed)
+ 2038821 res/Bl.xml (OK - compressed)
+ 2039118 res/Bz.xml (OK - compressed)
+ 2039536 res/C_.9.png (OK)
+ 2039792 res/Ck.png (OK)
+ 2040655 res/D-.xml (OK - compressed)
+ 2041432 res/Dd.png (OK)
+ 2041753 res/EQ.xml (OK - compressed)
+ 2042052 res/Ec.png (OK)
+ 2042300 res/Eh.png (OK)
+ 2042752 res/FS.png (OK)
+ 2042924 res/Ff.png (OK)
+ 2043281 res/G2.xml (OK - compressed)
+ 2043724 res/GY.png (OK)
+ 2044056 res/Gc.png (OK)
+ 2044232 res/I3.9.png (OK)
+ 2045527 res/K-.xml (OK - compressed)
+ 2045828 res/LO.png (OK)
+ 2046132 res/Lr.xml (OK - compressed)
+ 2046448 res/MD.png (OK)
+ 2047664 res/Ma.9.png (OK)
+ 2047952 res/OM.png (OK)
+ 2048376 res/OX.png (OK)
+ 2048792 res/OX1.png (OK)
+ 2049297 res/Pb.xml (OK - compressed)
+ 2049612 res/Q-.png (OK)
+ 2049924 res/Qd.9.png (OK)
+ 2050740 res/Qr.xml (OK - compressed)
+ 2051152 res/RJ.png (OK)
+ 2051323 res/Rt.xml (OK - compressed)
+ 2051736 res/S8.xml (OK - compressed)
+ 2052261 res/T5.xml (OK - compressed)
+ 2052740 res/TK.xml (OK - compressed)
+ 2053151 res/Tl.xml (OK - compressed)
+ 2053836 res/Tr.png (OK)
+ 2054132 res/U-.9.png (OK)
+ 2054396 res/VW.png (OK)
+ 2054888 res/W5.png (OK)
+ 2055400 res/Ws.xml (OK - compressed)
+ 2055908 res/Y3.png (OK)
+ 2056332 res/Y9.png (OK)
+ 2056996 res/YD.png (OK)
+ 2057240 res/ZI.png (OK)
+ 2057964 res/ZL.9.png (OK)
+ 2059090 res/_H.xml (OK - compressed)
+ 2059844 res/_p.png (OK)
+ 2061325 res/_y.xml (OK - compressed)
+ 2061675 res/a0.xml (OK - compressed)
+ 2062252 res/aR.png (OK)
+ 2062916 res/aU.png (OK)
+ 2063584 res/bi.png (OK)
+ 2063941 res/c6.xml (OK - compressed)
+ 2064165 res/cV.xml (OK - compressed)
+ 2064504 res/color/common_google_signin_btn_text_dark.xml (OK - compressed)
+ 2064860 res/color/common_google_signin_btn_text_light.xml (OK - compressed)
+ 2065210 res/color/common_google_signin_btn_tint.xml (OK - compressed)
+ 2065479 res/cr.xml (OK - compressed)
+ 2065724 res/dB.9.png (OK)
+ 2066264 res/df.xml (OK - compressed)
+ 2066556 res/f9.png (OK)
+ 2067160 res/fO.png (OK)
+ 2067336 res/gK.9.png (OK)
+ 2067592 res/gr.png (OK)
+ 2068108 res/hP.9.png (OK)
+ 2068956 res/iQ.png (OK)
+ 2069485 res/iQ.xml (OK - compressed)
+ 2069944 res/iW.png (OK)
+ 2070796 res/je.9.png (OK)
+ 2071048 res/kS.png (OK)
+ 2071463 res/lR.xml (OK - compressed)
+ 2071764 res/nC.9.png (OK)
+ 2072269 res/nz.xml (OK - compressed)
+ 2072564 res/o-.png (OK)
+ 2072740 res/oO.9.png (OK)
+ 2073392 res/o_.9.png (OK)
+ 2073684 res/p7.xml (OK - compressed)
+ 2073980 res/p8.png (OK)
+ 2074843 res/pI.xml (OK - compressed)
+ 2075140 res/pY.png (OK)
+ 2075288 res/pu.png (OK)
+ 2076237 res/qF.xml (OK - compressed)
+ 2076464 res/s4.png (OK)
+ 2076604 res/sA.9.png (OK)
+ 2076856 res/td.png (OK)
+ 2077100 res/tr.9.png (OK)
+ 2078104 res/us.9.png (OK)
+ 2079784 res/vL.9.png (OK)
+ 2080048 res/vo.png (OK)
+ 2080820 res/w2.9.png (OK)
+ 2082000 res/w7.png (OK)
+ 2082312 res/wN.9.png (OK)
+ 2082580 res/wb.png (OK)
+ 2082751 res/xN.xml (OK - compressed)
+ 2083580 res/xa.9.png (OK)
+ 2083841 res/y6.xml (OK - compressed)
+ 2084140 res/yn.png (OK)
+ 2084316 res/z-.9.png (OK)
+ 2084580 res/zL.png (OK)
+ 2084828 res/zR.png (OK)
+ 2085004 res/zw.9.png (OK)
+ 2086556 res/zz.png (OK)
+ 2087484 resources.arsc (OK)
+Verification succesful
+[BUILD test_build_123] $ "C:\Users\User\AppData\Local\Android\Sdk\build-tools\34.0.0\apksigner" sign --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --min-sdk-version 24 --ks "C:\Users\User\Documents\App\backend\storage\keystores\com.site2app.testapp.keystore" --ks-pass pass:android --ks-key-alias app "C:\Users\User\Documents\App\backend\storage\builds\test_build_123\TestApp.apk"
+[BUILD test_build_123] $ "C:\Users\User\AppData\Local\Android\Sdk\build-tools\34.0.0\apksigner" verify --verbose "C:\Users\User\Documents\App\backend\storage\builds\test_build_123\TestApp.apk"
+[BUILD test_build_123] Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): true
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+[BUILD test_build_123] Ô£à Succ├¿s(FCM Injected).
+Build Success: {
+  buildId: 'test_build_123',
+  apkPath: 'C:\\Users\\User\\Documents\\App\\backend\\storage\\builds\\test_build_123\\TestApp.apk',
+  fileName: 'TestApp.apk',
+  size: 2314540,
+  type: 'compiled'
+}

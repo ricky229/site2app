@@ -1,0 +1,3574 @@
+﻿Starting test build...
+[BUILD test_build_123] ­ƒöì ANALYSE DU MODE DE BUILD :
+[BUILD test_build_123]   - Feature Push: Activ├®e
+[BUILD test_build_123]   - Config Google: Pr├®sente
+[BUILD test_build_123] ­ƒö¿ D├ëMARRAGE MODE GRADLE (Puissant, long)
+[BUILD test_build_123] ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+[BUILD test_build_123] ­ƒöÑ BUILD APK (FCM Gradle Mode)
+[BUILD test_build_123] ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+[BUILD test_build_123] ­ƒÄ¿ Using generated fallback icon
+[BUILD test_build_123] ­ƒö¿ Compiling via Gradle... (can take several minutes)
+[BUILD test_build_123] $ "C:\Users\User\Documents\App\backend\storage\gradle\gradle-8.5\bin\gradle.bat" assembleRelease -Dorg.gradle.daemon=false --no-daemon --stacktrace
+node.exe : 
+Au caractère Ligne:1 : 1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo          : 
+    NotSpecified: (:String)   
+  [], RemoteException
+    + FullyQualifiedErrorId : 
+    NativeCommandError
+ 
+FAILURE: Build failed with an 
+exception.
+
+* What went wrong:
+Execution failed for task ':ap
+p:checkReleaseAarMetadata'.
+> Configuration `:app:releaseR
+untimeClasspath` contains 
+AndroidX dependencies, but 
+the `android.useAndroidX` 
+property is not enabled, 
+which may cause runtime 
+issues.
+  Set 
+`android.useAndroidX=true` in 
+the `gradle.properties` file 
+and retry.
+  The following AndroidX 
+dependencies are detected:
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.collect
+ion:collection:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0 
+-> androidx.annotation:annotat
+ion-jvm:1.6.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.annotation:annotat
+ion-experimental:1.3.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-bom:32.7.0 -> com.google.fir
+ebase:firebase-common:20.4.2 
+-> androidx.concurrent:concurr
+ent-futures:1.1.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.interpolator:
+interpolator:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-runtime:2.1.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-common:2.1.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.li
+fecycle:lifecycle-common:2.3.1
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.versionedparcelabl
+e:versionedparcelable:1.1.1
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.documentfile:do
+cumentfile:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0 -> androidx.l
+ifecycle:lifecycle-livedata-co
+re:2.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+ifecycle:lifecycle-viewmodel:2
+.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.localbroadcastm
+anager:localbroadcastmanager:1
+.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> 
+androidx.print:print:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.customview:cu
+stomview:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.viewpager:vie
+wpager:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.coordinatorla
+yout:coordinatorlayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.drawerlayout:
+drawerlayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.slidingpanela
+yout:slidingpanelayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.swiperefreshl
+ayout:swiperefreshlayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.asynclayoutin
+flater:asynclayoutinflater:1.0
+.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.cursoradapter
+:cursoradapter:1.0.0
+
+* Try:
+> Run with --info or --debug 
+option to get more log output.
+> Run with --scan to get full 
+insights.
+> Get more help at 
+https://help.gradle.org.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecu
+tionException: Execution 
+failed for task ':app:checkRel
+easeAarMetadata'.
+	at org.gradle.api.internal.ta
+sks.execution.CatchExceptionTa
+skExecuter.execute(CatchExcept
+ionTaskExecuter.java:38)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.executeTask(EventFir
+ingTaskExecuter.java:77)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:55)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:52)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter.execute(EventFiringTas
+kExecuter.java:52)
+	at org.gradle.execution.plan.
+LocalTaskNodeExecutor.execute(
+LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:331)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:318)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.lambda$execute$0(Default
+TaskExecutionGraph.java:314)
+	at org.gradle.internal.operat
+ions.CurrentBuildOperationRef.
+with(CurrentBuildOperationRef.
+java:80)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:314)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:303)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.execute(DefaultPlanExecut
+or.java:463)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.run(DefaultPlanExecutor.j
+ava:380)
+	at org.gradle.internal.concur
+rent.ExecutorPolicy$CatchAndRe
+cordFailures.onExecute(Executo
+rPolicy.java:64)
+	at org.gradle.internal.concur
+rent.AbstractManagedExecutor$1
+.run(AbstractManagedExecutor.j
+ava:47)
+Caused by: com.android.builder
+.errors.EvalIssueException: 
+Configuration `:app:releaseRun
+timeClasspath` contains 
+AndroidX dependencies, but 
+the `android.useAndroidX` 
+property is not enabled, 
+which may cause runtime 
+issues.
+Set 
+`android.useAndroidX=true` in 
+the `gradle.properties` file 
+and retry.
+The following AndroidX 
+dependencies are detected:
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.collect
+ion:collection:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0 
+-> androidx.annotation:annotat
+ion-jvm:1.6.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.annotation:annotat
+ion-experimental:1.3.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-bom:32.7.0 -> com.google.fir
+ebase:firebase-common:20.4.2 
+-> androidx.concurrent:concurr
+ent-futures:1.1.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.interpolator:
+interpolator:1.0.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-runtime:2.1.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-common:2.1.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.li
+fecycle:lifecycle-common:2.3.1
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.versionedparcelabl
+e:versionedparcelable:1.1.1
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.documentfile:do
+cumentfile:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0 -> androidx.l
+ifecycle:lifecycle-livedata-co
+re:2.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+ifecycle:lifecycle-viewmodel:2
+.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.localbroadcastm
+anager:localbroadcastmanager:1
+.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> 
+androidx.print:print:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.customview:cu
+stomview:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.viewpager:vie
+wpager:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.coordinatorla
+yout:coordinatorlayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.drawerlayout:
+drawerlayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.slidingpanela
+yout:slidingpanelayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.swiperefreshl
+ayout:swiperefreshlayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.asynclayoutin
+flater:asynclayoutinflater:1.0
+.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.cursoradapter
+:cursoradapter:1.0.0
+	at com.android.builder.errors
+.IssueReporter.reportError(Iss
+ueReporter.kt:114)
+	at com.android.builder.errors
+.IssueReporter.reportError$def
+ault(IssueReporter.kt:110)
+	at com.android.build.gradle.i
+nternal.dependency.AndroidXDep
+endencyCheck$AndroidXDisabledJ
+etifierDisabled.execute(Androi
+dXDependencyCheck.kt:77)
+	at com.android.build.gradle.i
+nternal.dependency.AndroidXDep
+endencyCheck$AndroidXDisabledJ
+etifierDisabled.execute(Androi
+dXDependencyCheck.kt:42)
+	at org.gradle.internal.code.D
+efaultUserCodeApplicationConte
+xt$CurrentApplication$1.execut
+e(DefaultUserCodeApplicationCo
+ntext.java:122)
+	at org.gradle.internal.event.
+BroadcastDispatch$ActionInvoca
+tionHandler.dispatch(Broadcast
+Dispatch.java:99)
+	at org.gradle.internal.event.
+BroadcastDispatch$ActionInvoca
+tionHandler.dispatch(Broadcast
+Dispatch.java:87)
+	at org.gradle.internal.event.
+AbstractBroadcastDispatch.disp
+atch(AbstractBroadcastDispatch
+.java:43)
+	at org.gradle.internal.event.
+BroadcastDispatch$SingletonDis
+patch.dispatch(BroadcastDispat
+ch.java:268)
+	at org.gradle.internal.event.
+BroadcastDispatch$SingletonDis
+patch.dispatch(BroadcastDispat
+ch.java:170)
+	at org.gradle.internal.event.
+AbstractBroadcastDispatch.disp
+atch(AbstractBroadcastDispatch
+.java:83)
+	at org.gradle.internal.event.
+AbstractBroadcastDispatch.disp
+atch(AbstractBroadcastDispatch
+.java:69)
+	at org.gradle.internal.event.
+BroadcastDispatch$CompositeDis
+patch.dispatch(BroadcastDispat
+ch.java:381)
+	at org.gradle.internal.event.
+BroadcastDispatch$CompositeDis
+patch.dispatch(BroadcastDispat
+ch.java:272)
+	at org.gradle.internal.event.
+ListenerBroadcast.dispatch(Lis
+tenerBroadcast.java:148)
+	at org.gradle.internal.event.
+ListenerBroadcast.dispatch(Lis
+tenerBroadcast.java:37)
+	at org.gradle.internal.dispat
+ch.ProxyDispatchAdapter$Dispat
+chingInvocationHandler.invoke(
+ProxyDispatchAdapter.java:94)
+	at jdk.proxy1/jdk.proxy1.$Pro
+xy54.afterResolve(Unknown 
+Source)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$1.call(DefaultCo
+nfiguration.java:726)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$1.call(DefaultCo
+nfiguration.java:703)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.resolveGraphInBu
+ildOperation(DefaultConfigurat
+ion.java:703)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.lambda$resolveEx
+clusivelyIfRequired$3(DefaultC
+onfiguration.java:695)
+	at org.gradle.api.internal.pr
+oject.DefaultProjectStateRegis
+try$CalculatedModelValueImpl.u
+pdate(DefaultProjectStateRegis
+try.java:504)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.resolveExclusive
+lyIfRequired(DefaultConfigurat
+ion.java:687)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.resolveGraphIfRe
+quired(DefaultConfiguration.ja
+va:680)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.access$1800(Defa
+ultConfiguration.java:167)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$VisitedArtifacts
+SetProvider.getValue(DefaultCo
+nfiguration.java:1622)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$VisitedArtifacts
+SetProvider.getValue(DefaultCo
+nfiguration.java:1613)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$SelectedArtifact
+sProvider.getValue(DefaultConf
+iguration.java:1659)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$SelectedArtifact
+sProvider.getValue(DefaultConf
+iguration.java:1626)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Resolut
+ionBackedFileCollection.getSel
+ectedArtifacts(ResolutionBacke
+dFileCollection.java:95)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Resolut
+ionBackedFileCollection.visitC
+ontents(ResolutionBackedFileCo
+llection.java:73)
+	at org.gradle.api.internal.fi
+le.AbstractFileCollection.visi
+tStructure(AbstractFileCollect
+ion.java:359)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.lam
+bda$visitContents$0(CompositeF
+ileCollection.java:113)
+	at org.gradle.api.internal.fi
+le.collections.UnpackingVisito
+r.add(UnpackingVisitor.java:67
+)
+	at org.gradle.api.internal.fi
+le.collections.UnpackingVisito
+r.add(UnpackingVisitor.java:92
+)
+	at org.gradle.api.internal.fi
+le.DefaultFileCollectionFactor
+y$ResolvingFileCollection.visi
+tChildren(DefaultFileCollectio
+nFactory.java:285)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.vis
+itContents(CompositeFileCollec
+tion.java:113)
+	at org.gradle.api.internal.fi
+le.AbstractFileCollection.visi
+tStructure(AbstractFileCollect
+ion.java:359)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.lam
+bda$visitContents$0(CompositeF
+ileCollection.java:113)
+	at org.gradle.api.internal.ta
+sks.PropertyFileCollection.vis
+itChildren(PropertyFileCollect
+ion.java:48)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.vis
+itContents(CompositeFileCollec
+tion.java:113)
+	at org.gradle.api.internal.fi
+le.AbstractFileCollection.visi
+tStructure(AbstractFileCollect
+ion.java:359)
+	at org.gradle.internal.finger
+print.impl.DefaultFileCollecti
+onSnapshotter.snapshot(Default
+FileCollectionSnapshotter.java
+:47)
+	at org.gradle.internal.execut
+ion.impl.DefaultInputFingerpri
+nter$InputCollectingVisitor.vi
+sitInputFileProperty(DefaultIn
+putFingerprinter.java:133)
+	at org.gradle.api.internal.ta
+sks.execution.TaskExecution.vi
+sitRegularInputs(TaskExecution
+.java:328)
+	at org.gradle.internal.execut
+ion.impl.DefaultInputFingerpri
+nter.fingerprintInputPropertie
+s(DefaultInputFingerprinter.ja
+va:63)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.captureExecutionSt
+ateWithOutputs(CaptureStateBef
+oreExecutionStep.java:123)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.lambda$captureExec
+utionState$1(CaptureStateBefor
+eExecutionStep.java:82)
+	at org.gradle.internal.execut
+ion.steps.BuildOperationStep$1
+.call(BuildOperationStep.java:
+37)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.internal.execut
+ion.steps.BuildOperationStep.o
+peration(BuildOperationStep.ja
+va:34)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.captureExecutionSt
+ate(CaptureStateBeforeExecutio
+nStep.java:76)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.lambda$execute$0(C
+aptureStateBeforeExecutionStep
+.java:70)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.execute(CaptureSta
+teBeforeExecutionStep.java:70)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.execute(CaptureSta
+teBeforeExecutionStep.java:45)
+	at org.gradle.internal.execut
+ion.steps.SkipEmptyWorkStep.ex
+ecuteWithNonEmptySources(SkipE
+mptyWorkStep.java:177)
+	at org.gradle.internal.execut
+ion.steps.SkipEmptyWorkStep.ex
+ecute(SkipEmptyWorkStep.java:8
+1)
+	at org.gradle.internal.execut
+ion.steps.SkipEmptyWorkStep.ex
+ecute(SkipEmptyWorkStep.java:5
+3)
+	at org.gradle.internal.execut
+ion.steps.RemoveUntrackedExecu
+tionStateStep.execute(RemoveUn
+trackedExecutionStateStep.java
+:32)
+	at org.gradle.internal.execut
+ion.steps.RemoveUntrackedExecu
+tionStateStep.execute(RemoveUn
+trackedExecutionStateStep.java
+:21)
+	at org.gradle.internal.execut
+ion.steps.legacy.MarkSnapshott
+ingInputsStartedStep.execute(M
+arkSnapshottingInputsStartedSt
+ep.java:38)
+	at org.gradle.internal.execut
+ion.steps.LoadPreviousExecutio
+nStateStep.execute(LoadPreviou
+sExecutionStateStep.java:36)
+	at org.gradle.internal.execut
+ion.steps.LoadPreviousExecutio
+nStateStep.execute(LoadPreviou
+sExecutionStateStep.java:23)
+	at org.gradle.internal.execut
+ion.steps.CleanupStaleOutputsS
+tep.execute(CleanupStaleOutput
+sStep.java:75)
+	at org.gradle.internal.execut
+ion.steps.CleanupStaleOutputsS
+tep.execute(CleanupStaleOutput
+sStep.java:41)
+	at org.gradle.internal.execut
+ion.steps.ExecuteWorkBuildOper
+ationFiringStep.lambda$execute
+$2(ExecuteWorkBuildOperationFi
+ringStep.java:66)
+	at org.gradle.internal.execut
+ion.steps.ExecuteWorkBuildOper
+ationFiringStep.execute(Execut
+eWorkBuildOperationFiringStep.
+java:66)
+	at org.gradle.internal.execut
+ion.steps.ExecuteWorkBuildOper
+ationFiringStep.execute(Execut
+eWorkBuildOperationFiringStep.
+java:38)
+	at org.gradle.internal.execut
+ion.steps.AssignWorkspaceStep.
+lambda$execute$0(AssignWorkspa
+ceStep.java:32)
+	at org.gradle.api.internal.ta
+sks.execution.TaskExecution$4.
+withWorkspace(TaskExecution.ja
+va:293)
+	at org.gradle.internal.execut
+ion.steps.AssignWorkspaceStep.
+execute(AssignWorkspaceStep.ja
+va:30)
+	at org.gradle.internal.execut
+ion.steps.AssignWorkspaceStep.
+execute(AssignWorkspaceStep.ja
+va:21)
+	at org.gradle.internal.execut
+ion.steps.IdentityCacheStep.ex
+ecute(IdentityCacheStep.java:3
+7)
+	at org.gradle.internal.execut
+ion.steps.IdentityCacheStep.ex
+ecute(IdentityCacheStep.java:2
+7)
+	at org.gradle.internal.execut
+ion.steps.IdentifyStep.execute
+(IdentifyStep.java:47)
+	at org.gradle.internal.execut
+ion.steps.IdentifyStep.execute
+(IdentifyStep.java:34)
+	at org.gradle.internal.execut
+ion.impl.DefaultExecutionEngin
+e$1.execute(DefaultExecutionEn
+gine.java:64)
+	at org.gradle.api.internal.ta
+sks.execution.ExecuteActionsTa
+skExecuter.executeIfValid(Exec
+uteActionsTaskExecuter.java:14
+5)
+	at org.gradle.api.internal.ta
+sks.execution.ExecuteActionsTa
+skExecuter.execute(ExecuteActi
+onsTaskExecuter.java:134)
+	at org.gradle.api.internal.ta
+sks.execution.FinalizeProperti
+esTaskExecuter.execute(Finaliz
+ePropertiesTaskExecuter.java:4
+6)
+	at org.gradle.api.internal.ta
+sks.execution.ResolveTaskExecu
+tionModeExecuter.execute(Resol
+veTaskExecutionModeExecuter.ja
+va:51)
+	at org.gradle.api.internal.ta
+sks.execution.SkipTaskWithNoAc
+tionsExecuter.execute(SkipTask
+WithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.ta
+sks.execution.SkipOnlyIfTaskEx
+ecuter.execute(SkipOnlyIfTaskE
+xecuter.java:74)
+	at org.gradle.api.internal.ta
+sks.execution.CatchExceptionTa
+skExecuter.execute(CatchExcept
+ionTaskExecuter.java:36)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.executeTask(EventFir
+ingTaskExecuter.java:77)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:55)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:52)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter.execute(EventFiringTas
+kExecuter.java:52)
+	at org.gradle.execution.plan.
+LocalTaskNodeExecutor.execute(
+LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:331)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:318)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.lambda$execute$0(Default
+TaskExecutionGraph.java:314)
+	at org.gradle.internal.operat
+ions.CurrentBuildOperationRef.
+with(CurrentBuildOperationRef.
+java:80)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:314)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:303)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.execute(DefaultPlanExecut
+or.java:463)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.run(DefaultPlanExecutor.j
+ava:380)
+	at org.gradle.internal.concur
+rent.ExecutorPolicy$CatchAndRe
+cordFailures.onExecute(Executo
+rPolicy.java:64)
+	at org.gradle.internal.concur
+rent.AbstractManagedExecutor$1
+.run(AbstractManagedExecutor.j
+ava:47)
+
+
+BUILD FAILED in 3m 20s
+[BUILD test_build_123] ÔØî 
+BUILD FAILED: Error: Command 
+failed: "C:\Users\User\Documen
+ts\App\backend\storage\gradle\
+gradle-8.5\bin\gradle.bat" 
+assembleRelease 
+-Dorg.gradle.daemon=false 
+--no-daemon --stacktrace
+
+FAILURE: Build failed with an 
+exception.
+
+* What went wrong:
+Execution failed for task ':ap
+p:checkReleaseAarMetadata'.
+> Configuration `:app:releaseR
+untimeClasspath` contains 
+AndroidX dependencies, but 
+the `android.useAndroidX` 
+property is not enabled, 
+which may cause runtime 
+issues.
+  Set 
+`android.useAndroidX=true` in 
+the `gradle.properties` file 
+and retry.
+  The following AndroidX 
+dependencies are detected:
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.collect
+ion:collection:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0 
+-> androidx.annotation:annotat
+ion-jvm:1.6.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.annotation:annotat
+ion-experimental:1.3.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-bom:32.7.0 -> com.google.fir
+ebase:firebase-common:20.4.2 
+-> androidx.concurrent:concurr
+ent-futures:1.1.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.interpolator:
+interpolator:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-runtime:2.1.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-common:2.1.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.li
+fecycle:lifecycle-common:2.3.1
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.versionedparcelabl
+e:versionedparcelable:1.1.1
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.documentfile:do
+cumentfile:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0 -> androidx.l
+ifecycle:lifecycle-livedata-co
+re:2.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+ifecycle:lifecycle-viewmodel:2
+.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.localbroadcastm
+anager:localbroadcastmanager:1
+.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> 
+androidx.print:print:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.customview:cu
+stomview:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.viewpager:vie
+wpager:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.coordinatorla
+yout:coordinatorlayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.drawerlayout:
+drawerlayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.slidingpanela
+yout:slidingpanelayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.swiperefreshl
+ayout:swiperefreshlayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.asynclayoutin
+flater:asynclayoutinflater:1.0
+.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.cursoradapter
+:cursoradapter:1.0.0
+
+* Try:
+> Run with --info or --debug 
+option to get more log output.
+> Run with --scan to get full 
+insights.
+> Get more help at 
+https://help.gradle.org.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecu
+tionException: Execution 
+failed for task ':app:checkRel
+easeAarMetadata'.
+	at org.gradle.api.internal.ta
+sks.execution.CatchExceptionTa
+skExecuter.execute(CatchExcept
+ionTaskExecuter.java:38)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.executeTask(EventFir
+ingTaskExecuter.java:77)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:55)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:52)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter.execute(EventFiringTas
+kExecuter.java:52)
+	at org.gradle.execution.plan.
+LocalTaskNodeExecutor.execute(
+LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:331)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:318)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.lambda$execute$0(Default
+TaskExecutionGraph.java:314)
+	at org.gradle.internal.operat
+ions.CurrentBuildOperationRef.
+with(CurrentBuildOperationRef.
+java:80)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:314)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:303)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.execute(DefaultPlanExecut
+or.java:463)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.run(DefaultPlanExecutor.j
+ava:380)
+	at org.gradle.internal.concur
+rent.ExecutorPolicy$CatchAndRe
+cordFailures.onExecute(Executo
+rPolicy.java:64)
+	at org.gradle.internal.concur
+rent.AbstractManagedExecutor$1
+.run(AbstractManagedExecutor.j
+ava:47)
+Caused by: com.android.builder
+.errors.EvalIssueException: 
+Configuration `:app:releaseRun
+timeClasspath` contains 
+AndroidX dependencies, but 
+the `android.useAndroidX` 
+property is not enabled, 
+which may cause runtime 
+issues.
+Set 
+`android.useAndroidX=true` in 
+the `gradle.properties` file 
+and retry.
+The following AndroidX 
+dependencies are detected:
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.collect
+ion:collection:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0 
+-> androidx.annotation:annotat
+ion-jvm:1.6.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.annotation:annotat
+ion-experimental:1.3.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-bom:32.7.0 -> com.google.fir
+ebase:firebase-common:20.4.2 
+-> androidx.concurrent:concurr
+ent-futures:1.1.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.interpolator:
+interpolator:1.0.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-runtime:2.1.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-common:2.1.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.li
+fecycle:lifecycle-common:2.3.1
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.versionedparcelabl
+e:versionedparcelable:1.1.1
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.documentfile:do
+cumentfile:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0 -> androidx.l
+ifecycle:lifecycle-livedata-co
+re:2.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+ifecycle:lifecycle-viewmodel:2
+.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.localbroadcastm
+anager:localbroadcastmanager:1
+.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> 
+androidx.print:print:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.customview:cu
+stomview:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.viewpager:vie
+wpager:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.coordinatorla
+yout:coordinatorlayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.drawerlayout:
+drawerlayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.slidingpanela
+yout:slidingpanelayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.swiperefreshl
+ayout:swiperefreshlayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.asynclayoutin
+flater:asynclayoutinflater:1.0
+.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.cursoradapter
+:cursoradapter:1.0.0
+	at com.android.builder.errors
+.IssueReporter.reportError(Iss
+ueReporter.kt:114)
+	at com.android.builder.errors
+.IssueReporter.reportError$def
+ault(IssueReporter.kt:110)
+	at com.android.build.gradle.i
+nternal.dependency.AndroidXDep
+endencyCheck$AndroidXDisabledJ
+etifierDisabled.execute(Androi
+dXDependencyCheck.kt:77)
+	at com.android.build.gradle.i
+nternal.dependency.AndroidXDep
+endencyCheck$AndroidXDisabledJ
+etifierDisabled.execute(Androi
+dXDependencyCheck.kt:42)
+	at org.gradle.internal.code.D
+efaultUserCodeApplicationConte
+xt$CurrentApplication$1.execut
+e(DefaultUserCodeApplicationCo
+ntext.java:122)
+	at org.gradle.internal.event.
+BroadcastDispatch$ActionInvoca
+tionHandler.dispatch(Broadcast
+Dispatch.java:99)
+	at org.gradle.internal.event.
+BroadcastDispatch$ActionInvoca
+tionHandler.dispatch(Broadcast
+Dispatch.java:87)
+	at org.gradle.internal.event.
+AbstractBroadcastDispatch.disp
+atch(AbstractBroadcastDispatch
+.java:43)
+	at org.gradle.internal.event.
+BroadcastDispatch$SingletonDis
+patch.dispatch(BroadcastDispat
+ch.java:268)
+	at org.gradle.internal.event.
+BroadcastDispatch$SingletonDis
+patch.dispatch(BroadcastDispat
+ch.java:170)
+	at org.gradle.internal.event.
+AbstractBroadcastDispatch.disp
+atch(AbstractBroadcastDispatch
+.java:83)
+	at org.gradle.internal.event.
+AbstractBroadcastDispatch.disp
+atch(AbstractBroadcastDispatch
+.java:69)
+	at org.gradle.internal.event.
+BroadcastDispatch$CompositeDis
+patch.dispatch(BroadcastDispat
+ch.java:381)
+	at org.gradle.internal.event.
+BroadcastDispatch$CompositeDis
+patch.dispatch(BroadcastDispat
+ch.java:272)
+	at org.gradle.internal.event.
+ListenerBroadcast.dispatch(Lis
+tenerBroadcast.java:148)
+	at org.gradle.internal.event.
+ListenerBroadcast.dispatch(Lis
+tenerBroadcast.java:37)
+	at org.gradle.internal.dispat
+ch.ProxyDispatchAdapter$Dispat
+chingInvocationHandler.invoke(
+ProxyDispatchAdapter.java:94)
+	at jdk.proxy1/jdk.proxy1.$Pro
+xy54.afterResolve(Unknown 
+Source)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$1.call(DefaultCo
+nfiguration.java:726)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$1.call(DefaultCo
+nfiguration.java:703)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.resolveGraphInBu
+ildOperation(DefaultConfigurat
+ion.java:703)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.lambda$resolveEx
+clusivelyIfRequired$3(DefaultC
+onfiguration.java:695)
+	at org.gradle.api.internal.pr
+oject.DefaultProjectStateRegis
+try$CalculatedModelValueImpl.u
+pdate(DefaultProjectStateRegis
+try.java:504)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.resolveExclusive
+lyIfRequired(DefaultConfigurat
+ion.java:687)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.resolveGraphIfRe
+quired(DefaultConfiguration.ja
+va:680)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.access$1800(Defa
+ultConfiguration.java:167)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$VisitedArtifacts
+SetProvider.getValue(DefaultCo
+nfiguration.java:1622)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$VisitedArtifacts
+SetProvider.getValue(DefaultCo
+nfiguration.java:1613)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$SelectedArtifact
+sProvider.getValue(DefaultConf
+iguration.java:1659)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$SelectedArtifact
+sProvider.getValue(DefaultConf
+iguration.java:1626)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Resolut
+ionBackedFileCollection.getSel
+ectedArtifacts(ResolutionBacke
+dFileCollection.java:95)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Resolut
+ionBackedFileCollection.visitC
+ontents(ResolutionBackedFileCo
+llection.java:73)
+	at org.gradle.api.internal.fi
+le.AbstractFileCollection.visi
+tStructure(AbstractFileCollect
+ion.java:359)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.lam
+bda$visitContents$0(CompositeF
+ileCollection.java:113)
+	at org.gradle.api.internal.fi
+le.collections.UnpackingVisito
+r.add(UnpackingVisitor.java:67
+)
+	at org.gradle.api.internal.fi
+le.collections.UnpackingVisito
+r.add(UnpackingVisitor.java:92
+)
+	at org.gradle.api.internal.fi
+le.DefaultFileCollectionFactor
+y$ResolvingFileCollection.visi
+tChildren(DefaultFileCollectio
+nFactory.java:285)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.vis
+itContents(CompositeFileCollec
+tion.java:113)
+	at org.gradle.api.internal.fi
+le.AbstractFileCollection.visi
+tStructure(AbstractFileCollect
+ion.java:359)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.lam
+bda$visitContents$0(CompositeF
+ileCollection.java:113)
+	at org.gradle.api.internal.ta
+sks.PropertyFileCollection.vis
+itChildren(PropertyFileCollect
+ion.java:48)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.vis
+itContents(CompositeFileCollec
+tion.java:113)
+	at org.gradle.api.internal.fi
+le.AbstractFileCollection.visi
+tStructure(AbstractFileCollect
+ion.java:359)
+	at org.gradle.internal.finger
+print.impl.DefaultFileCollecti
+onSnapshotter.snapshot(Default
+FileCollectionSnapshotter.java
+:47)
+	at org.gradle.internal.execut
+ion.impl.DefaultInputFingerpri
+nter$InputCollectingVisitor.vi
+sitInputFileProperty(DefaultIn
+putFingerprinter.java:133)
+	at org.gradle.api.internal.ta
+sks.execution.TaskExecution.vi
+sitRegularInputs(TaskExecution
+.java:328)
+	at org.gradle.internal.execut
+ion.impl.DefaultInputFingerpri
+nter.fingerprintInputPropertie
+s(DefaultInputFingerprinter.ja
+va:63)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.captureExecutionSt
+ateWithOutputs(CaptureStateBef
+oreExecutionStep.java:123)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.lambda$captureExec
+utionState$1(CaptureStateBefor
+eExecutionStep.java:82)
+	at org.gradle.internal.execut
+ion.steps.BuildOperationStep$1
+.call(BuildOperationStep.java:
+37)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.internal.execut
+ion.steps.BuildOperationStep.o
+peration(BuildOperationStep.ja
+va:34)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.captureExecutionSt
+ate(CaptureStateBeforeExecutio
+nStep.java:76)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.lambda$execute$0(C
+aptureStateBeforeExecutionStep
+.java:70)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.execute(CaptureSta
+teBeforeExecutionStep.java:70)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.execute(CaptureSta
+teBeforeExecutionStep.java:45)
+	at org.gradle.internal.execut
+ion.steps.SkipEmptyWorkStep.ex
+ecuteWithNonEmptySources(SkipE
+mptyWorkStep.java:177)
+	at org.gradle.internal.execut
+ion.steps.SkipEmptyWorkStep.ex
+ecute(SkipEmptyWorkStep.java:8
+1)
+	at org.gradle.internal.execut
+ion.steps.SkipEmptyWorkStep.ex
+ecute(SkipEmptyWorkStep.java:5
+3)
+	at org.gradle.internal.execut
+ion.steps.RemoveUntrackedExecu
+tionStateStep.execute(RemoveUn
+trackedExecutionStateStep.java
+:32)
+	at org.gradle.internal.execut
+ion.steps.RemoveUntrackedExecu
+tionStateStep.execute(RemoveUn
+trackedExecutionStateStep.java
+:21)
+	at org.gradle.internal.execut
+ion.steps.legacy.MarkSnapshott
+ingInputsStartedStep.execute(M
+arkSnapshottingInputsStartedSt
+ep.java:38)
+	at org.gradle.internal.execut
+ion.steps.LoadPreviousExecutio
+nStateStep.execute(LoadPreviou
+sExecutionStateStep.java:36)
+	at org.gradle.internal.execut
+ion.steps.LoadPreviousExecutio
+nStateStep.execute(LoadPreviou
+sExecutionStateStep.java:23)
+	at org.gradle.internal.execut
+ion.steps.CleanupStaleOutputsS
+tep.execute(CleanupStaleOutput
+sStep.java:75)
+	at org.gradle.internal.execut
+ion.steps.CleanupStaleOutputsS
+tep.execute(CleanupStaleOutput
+sStep.java:41)
+	at org.gradle.internal.execut
+ion.steps.ExecuteWorkBuildOper
+ationFiringStep.lambda$execute
+$2(ExecuteWorkBuildOperationFi
+ringStep.java:66)
+	at org.gradle.internal.execut
+ion.steps.ExecuteWorkBuildOper
+ationFiringStep.execute(Execut
+eWorkBuildOperationFiringStep.
+java:66)
+	at org.gradle.internal.execut
+ion.steps.ExecuteWorkBuildOper
+ationFiringStep.execute(Execut
+eWorkBuildOperationFiringStep.
+java:38)
+	at org.gradle.internal.execut
+ion.steps.AssignWorkspaceStep.
+lambda$execute$0(AssignWorkspa
+ceStep.java:32)
+	at org.gradle.api.internal.ta
+sks.execution.TaskExecution$4.
+withWorkspace(TaskExecution.ja
+va:293)
+	at org.gradle.internal.execut
+ion.steps.AssignWorkspaceStep.
+execute(AssignWorkspaceStep.ja
+va:30)
+	at org.gradle.internal.execut
+ion.steps.AssignWorkspaceStep.
+execute(AssignWorkspaceStep.ja
+va:21)
+	at org.gradle.internal.execut
+ion.steps.IdentityCacheStep.ex
+ecute(IdentityCacheStep.java:3
+7)
+	at org.gradle.internal.execut
+ion.steps.IdentityCacheStep.ex
+ecute(IdentityCacheStep.java:2
+7)
+	at org.gradle.internal.execut
+ion.steps.IdentifyStep.execute
+(IdentifyStep.java:47)
+	at org.gradle.internal.execut
+ion.steps.IdentifyStep.execute
+(IdentifyStep.java:34)
+	at org.gradle.internal.execut
+ion.impl.DefaultExecutionEngin
+e$1.execute(DefaultExecutionEn
+gine.java:64)
+	at org.gradle.api.internal.ta
+sks.execution.ExecuteActionsTa
+skExecuter.executeIfValid(Exec
+uteActionsTaskExecuter.java:14
+5)
+	at org.gradle.api.internal.ta
+sks.execution.ExecuteActionsTa
+skExecuter.execute(ExecuteActi
+onsTaskExecuter.java:134)
+	at org.gradle.api.internal.ta
+sks.execution.FinalizeProperti
+esTaskExecuter.execute(Finaliz
+ePropertiesTaskExecuter.java:4
+6)
+	at org.gradle.api.internal.ta
+sks.execution.ResolveTaskExecu
+tionModeExecuter.execute(Resol
+veTaskExecutionModeExecuter.ja
+va:51)
+	at org.gradle.api.internal.ta
+sks.execution.SkipTaskWithNoAc
+tionsExecuter.execute(SkipTask
+WithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.ta
+sks.execution.SkipOnlyIfTaskEx
+ecuter.execute(SkipOnlyIfTaskE
+xecuter.java:74)
+	at org.gradle.api.internal.ta
+sks.execution.CatchExceptionTa
+skExecuter.execute(CatchExcept
+ionTaskExecuter.java:36)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.executeTask(EventFir
+ingTaskExecuter.java:77)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:55)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:52)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter.execute(EventFiringTas
+kExecuter.java:52)
+	at org.gradle.execution.plan.
+LocalTaskNodeExecutor.execute(
+LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:331)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:318)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.lambda$execute$0(Default
+TaskExecutionGraph.java:314)
+	at org.gradle.internal.operat
+ions.CurrentBuildOperationRef.
+with(CurrentBuildOperationRef.
+java:80)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:314)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:303)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.execute(DefaultPlanExecut
+or.java:463)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.run(DefaultPlanExecutor.j
+ava:380)
+	at org.gradle.internal.concur
+rent.ExecutorPolicy$CatchAndRe
+cordFailures.onExecute(Executo
+rPolicy.java:64)
+	at org.gradle.internal.concur
+rent.AbstractManagedExecutor$1
+.run(AbstractManagedExecutor.j
+ava:47)
+
+
+BUILD FAILED in 3m 20s
+
+    at genericNodeError 
+(node:internal/errors:985:15)
+    at wrappedFn 
+(node:internal/errors:539:14)
+    at checkExecSyncError 
+(node:child_process:925:11)
+    at execSync 
+(node:child_process:997:15)
+    at Builder._run (file:///C
+:/Users/User/Documents/App/bac
+kend/src/services/Builder.js:8
+2:24)
+    at 
+Builder._buildApkWithGradle (f
+ile:///C:/Users/User/Documents
+/App/backend/src/services/Buil
+der.js:1466:18)
+    at async Builder.buildApk 
+(file:///C:/Users/User/Documen
+ts/App/backend/src/services/Bu
+ilder.js:1144:20)
+    at async test (C:\Users\Us
+er\Documents\App\backend\test-
+build.ts:40:24) {
+  status: 1,
+  signal: null,
+  output: [
+    null,
+    <Buffer 54 6f 20 68 6f 6e 
+6f 75 72 20 74 68 65 20 4a 56 
+4d 20 73 65 74 74 69 6e 67 73 
+20 66 6f 72 20 74 68 69 73 20 
+62 75 69 6c 64 20 61 20 73 69 
+6e 67 6c 65 ... 941 more 
+bytes>,
+    <Buffer 0d 0a 46 41 49 4c 
+55 52 45 3a 20 42 75 69 6c 64 
+20 66 61 69 6c 65 64 20 77 69 
+74 68 20 61 6e 20 65 78 63 65 
+70 74 69 6f 6e 2e 0d 0a 0d 0a 
+2a 20 57 68 ... 30127 more 
+bytes>
+  ],
+  pid: 52156,
+  stdout: <Buffer 54 6f 20 68 
+6f 6e 6f 75 72 20 74 68 65 20 
+4a 56 4d 20 73 65 74 74 69 6e 
+67 73 20 66 6f 72 20 74 68 69 
+73 20 62 75 69 6c 64 20 61 20 
+73 69 6e 67 6c 65 ... 941 
+more bytes>,
+  stderr: <Buffer 0d 0a 46 41 
+49 4c 55 52 45 3a 20 42 75 69 
+6c 64 20 66 61 69 6c 65 64 20 
+77 69 74 68 20 61 6e 20 65 78 
+63 65 70 74 69 6f 6e 2e 0d 0a 
+0d 0a 2a 20 57 68 ... 30127 
+more bytes>
+}
+Build Crashed! Error: Command 
+failed: "C:\Users\User\Documen
+ts\App\backend\storage\gradle\
+gradle-8.5\bin\gradle.bat" 
+assembleRelease 
+-Dorg.gradle.daemon=false 
+--no-daemon --stacktrace
+
+FAILURE: Build failed with an 
+exception.
+
+* What went wrong:
+Execution failed for task ':ap
+p:checkReleaseAarMetadata'.
+> Configuration `:app:releaseR
+untimeClasspath` contains 
+AndroidX dependencies, but 
+the `android.useAndroidX` 
+property is not enabled, 
+which may cause runtime 
+issues.
+  Set 
+`android.useAndroidX=true` in 
+the `gradle.properties` file 
+and retry.
+  The following AndroidX 
+dependencies are detected:
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.collect
+ion:collection:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0 
+-> androidx.annotation:annotat
+ion-jvm:1.6.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.annotation:annotat
+ion-experimental:1.3.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-bom:32.7.0 -> com.google.fir
+ebase:firebase-common:20.4.2 
+-> androidx.concurrent:concurr
+ent-futures:1.1.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.interpolator:
+interpolator:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-runtime:2.1.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-common:2.1.0
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.li
+fecycle:lifecycle-common:2.3.1
+  
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.versionedparcelabl
+e:versionedparcelable:1.1.1
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.documentfile:do
+cumentfile:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0 -> androidx.l
+ifecycle:lifecycle-livedata-co
+re:2.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+ifecycle:lifecycle-viewmodel:2
+.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.localbroadcastm
+anager:localbroadcastmanager:1
+.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> 
+androidx.print:print:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.customview:cu
+stomview:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.viewpager:vie
+wpager:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.coordinatorla
+yout:coordinatorlayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.drawerlayout:
+drawerlayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.slidingpanela
+yout:slidingpanelayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.swiperefreshl
+ayout:swiperefreshlayout:1.0.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.asynclayoutin
+flater:asynclayoutinflater:1.0
+.0
+  
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.cursoradapter
+:cursoradapter:1.0.0
+
+* Try:
+> Run with --info or --debug 
+option to get more log output.
+> Run with --scan to get full 
+insights.
+> Get more help at 
+https://help.gradle.org.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecu
+tionException: Execution 
+failed for task ':app:checkRel
+easeAarMetadata'.
+	at org.gradle.api.internal.ta
+sks.execution.CatchExceptionTa
+skExecuter.execute(CatchExcept
+ionTaskExecuter.java:38)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.executeTask(EventFir
+ingTaskExecuter.java:77)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:55)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:52)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter.execute(EventFiringTas
+kExecuter.java:52)
+	at org.gradle.execution.plan.
+LocalTaskNodeExecutor.execute(
+LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:331)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:318)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.lambda$execute$0(Default
+TaskExecutionGraph.java:314)
+	at org.gradle.internal.operat
+ions.CurrentBuildOperationRef.
+with(CurrentBuildOperationRef.
+java:80)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:314)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:303)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.execute(DefaultPlanExecut
+or.java:463)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.run(DefaultPlanExecutor.j
+ava:380)
+	at org.gradle.internal.concur
+rent.ExecutorPolicy$CatchAndRe
+cordFailures.onExecute(Executo
+rPolicy.java:64)
+	at org.gradle.internal.concur
+rent.AbstractManagedExecutor$1
+.run(AbstractManagedExecutor.j
+ava:47)
+Caused by: com.android.builder
+.errors.EvalIssueException: 
+Configuration `:app:releaseRun
+timeClasspath` contains 
+AndroidX dependencies, but 
+the `android.useAndroidX` 
+property is not enabled, 
+which may cause runtime 
+issues.
+Set 
+`android.useAndroidX=true` in 
+the `gradle.properties` file 
+and retry.
+The following AndroidX 
+dependencies are detected:
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.collect
+ion:collection:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> androidx
+.annotation:annotation:1.6.0 
+-> androidx.annotation:annotat
+ion-jvm:1.6.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.annotation:annotat
+ion-experimental:1.3.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-bom:32.7.0 -> com.google.fir
+ebase:firebase-common:20.4.2 
+-> androidx.concurrent:concurr
+ent-futures:1.1.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.interpolator:
+interpolator:1.0.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-runtime:2.1.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.ar
+ch.core:core-common:2.1.0
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.lifecycle:lifecycl
+e-runtime:2.3.1 -> androidx.li
+fecycle:lifecycle-common:2.3.1
+:app:releaseRuntimeClasspath 
+-> androidx.core:core:1.12.0 
+-> androidx.versionedparcelabl
+e:versionedparcelable:1.1.1
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.documentfile:do
+cumentfile:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> 
+androidx.loader:loader:1.0.0 
+-> androidx.lifecycle:lifecycl
+e-livedata:2.0.0 -> androidx.l
+ifecycle:lifecycle-livedata-co
+re:2.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+ifecycle:lifecycle-viewmodel:2
+.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> androidx.localbroadcastm
+anager:localbroadcastmanager:1
+.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-s
+tats:17.0.2 -> androidx.legacy
+:legacy-support-core-utils:1.0
+.0 -> 
+androidx.print:print:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.customview:cu
+stomview:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.viewpager:vie
+wpager:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.coordinatorla
+yout:coordinatorlayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.drawerlayout:
+drawerlayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.slidingpanela
+yout:slidingpanelayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.swiperefreshl
+ayout:swiperefreshlayout:1.0.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.asynclayoutin
+flater:asynclayoutinflater:1.0
+.0
+:app:releaseRuntimeClasspath 
+-> com.google.firebase:firebas
+e-messaging:23.4.0 -> com.goog
+le.android.gms:play-services-b
+ase:18.0.1 -> androidx.fragmen
+t:fragment:1.0.0 -> androidx.l
+egacy:legacy-support-core-ui:1
+.0.0 -> androidx.cursoradapter
+:cursoradapter:1.0.0
+	at com.android.builder.errors
+.IssueReporter.reportError(Iss
+ueReporter.kt:114)
+	at com.android.builder.errors
+.IssueReporter.reportError$def
+ault(IssueReporter.kt:110)
+	at com.android.build.gradle.i
+nternal.dependency.AndroidXDep
+endencyCheck$AndroidXDisabledJ
+etifierDisabled.execute(Androi
+dXDependencyCheck.kt:77)
+	at com.android.build.gradle.i
+nternal.dependency.AndroidXDep
+endencyCheck$AndroidXDisabledJ
+etifierDisabled.execute(Androi
+dXDependencyCheck.kt:42)
+	at org.gradle.internal.code.D
+efaultUserCodeApplicationConte
+xt$CurrentApplication$1.execut
+e(DefaultUserCodeApplicationCo
+ntext.java:122)
+	at org.gradle.internal.event.
+BroadcastDispatch$ActionInvoca
+tionHandler.dispatch(Broadcast
+Dispatch.java:99)
+	at org.gradle.internal.event.
+BroadcastDispatch$ActionInvoca
+tionHandler.dispatch(Broadcast
+Dispatch.java:87)
+	at org.gradle.internal.event.
+AbstractBroadcastDispatch.disp
+atch(AbstractBroadcastDispatch
+.java:43)
+	at org.gradle.internal.event.
+BroadcastDispatch$SingletonDis
+patch.dispatch(BroadcastDispat
+ch.java:268)
+	at org.gradle.internal.event.
+BroadcastDispatch$SingletonDis
+patch.dispatch(BroadcastDispat
+ch.java:170)
+	at org.gradle.internal.event.
+AbstractBroadcastDispatch.disp
+atch(AbstractBroadcastDispatch
+.java:83)
+	at org.gradle.internal.event.
+AbstractBroadcastDispatch.disp
+atch(AbstractBroadcastDispatch
+.java:69)
+	at org.gradle.internal.event.
+BroadcastDispatch$CompositeDis
+patch.dispatch(BroadcastDispat
+ch.java:381)
+	at org.gradle.internal.event.
+BroadcastDispatch$CompositeDis
+patch.dispatch(BroadcastDispat
+ch.java:272)
+	at org.gradle.internal.event.
+ListenerBroadcast.dispatch(Lis
+tenerBroadcast.java:148)
+	at org.gradle.internal.event.
+ListenerBroadcast.dispatch(Lis
+tenerBroadcast.java:37)
+	at org.gradle.internal.dispat
+ch.ProxyDispatchAdapter$Dispat
+chingInvocationHandler.invoke(
+ProxyDispatchAdapter.java:94)
+	at jdk.proxy1/jdk.proxy1.$Pro
+xy54.afterResolve(Unknown 
+Source)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$1.call(DefaultCo
+nfiguration.java:726)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$1.call(DefaultCo
+nfiguration.java:703)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.resolveGraphInBu
+ildOperation(DefaultConfigurat
+ion.java:703)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.lambda$resolveEx
+clusivelyIfRequired$3(DefaultC
+onfiguration.java:695)
+	at org.gradle.api.internal.pr
+oject.DefaultProjectStateRegis
+try$CalculatedModelValueImpl.u
+pdate(DefaultProjectStateRegis
+try.java:504)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.resolveExclusive
+lyIfRequired(DefaultConfigurat
+ion.java:687)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.resolveGraphIfRe
+quired(DefaultConfiguration.ja
+va:680)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration.access$1800(Defa
+ultConfiguration.java:167)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$VisitedArtifacts
+SetProvider.getValue(DefaultCo
+nfiguration.java:1622)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$VisitedArtifacts
+SetProvider.getValue(DefaultCo
+nfiguration.java:1613)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$SelectedArtifact
+sProvider.getValue(DefaultConf
+iguration.java:1659)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Default
+Configuration$SelectedArtifact
+sProvider.getValue(DefaultConf
+iguration.java:1626)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Resolut
+ionBackedFileCollection.getSel
+ectedArtifacts(ResolutionBacke
+dFileCollection.java:95)
+	at org.gradle.api.internal.ar
+tifacts.configurations.Resolut
+ionBackedFileCollection.visitC
+ontents(ResolutionBackedFileCo
+llection.java:73)
+	at org.gradle.api.internal.fi
+le.AbstractFileCollection.visi
+tStructure(AbstractFileCollect
+ion.java:359)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.lam
+bda$visitContents$0(CompositeF
+ileCollection.java:113)
+	at org.gradle.api.internal.fi
+le.collections.UnpackingVisito
+r.add(UnpackingVisitor.java:67
+)
+	at org.gradle.api.internal.fi
+le.collections.UnpackingVisito
+r.add(UnpackingVisitor.java:92
+)
+	at org.gradle.api.internal.fi
+le.DefaultFileCollectionFactor
+y$ResolvingFileCollection.visi
+tChildren(DefaultFileCollectio
+nFactory.java:285)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.vis
+itContents(CompositeFileCollec
+tion.java:113)
+	at org.gradle.api.internal.fi
+le.AbstractFileCollection.visi
+tStructure(AbstractFileCollect
+ion.java:359)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.lam
+bda$visitContents$0(CompositeF
+ileCollection.java:113)
+	at org.gradle.api.internal.ta
+sks.PropertyFileCollection.vis
+itChildren(PropertyFileCollect
+ion.java:48)
+	at org.gradle.api.internal.fi
+le.CompositeFileCollection.vis
+itContents(CompositeFileCollec
+tion.java:113)
+	at org.gradle.api.internal.fi
+le.AbstractFileCollection.visi
+tStructure(AbstractFileCollect
+ion.java:359)
+	at org.gradle.internal.finger
+print.impl.DefaultFileCollecti
+onSnapshotter.snapshot(Default
+FileCollectionSnapshotter.java
+:47)
+	at org.gradle.internal.execut
+ion.impl.DefaultInputFingerpri
+nter$InputCollectingVisitor.vi
+sitInputFileProperty(DefaultIn
+putFingerprinter.java:133)
+	at org.gradle.api.internal.ta
+sks.execution.TaskExecution.vi
+sitRegularInputs(TaskExecution
+.java:328)
+	at org.gradle.internal.execut
+ion.impl.DefaultInputFingerpri
+nter.fingerprintInputPropertie
+s(DefaultInputFingerprinter.ja
+va:63)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.captureExecutionSt
+ateWithOutputs(CaptureStateBef
+oreExecutionStep.java:123)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.lambda$captureExec
+utionState$1(CaptureStateBefor
+eExecutionStep.java:82)
+	at org.gradle.internal.execut
+ion.steps.BuildOperationStep$1
+.call(BuildOperationStep.java:
+37)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.internal.execut
+ion.steps.BuildOperationStep.o
+peration(BuildOperationStep.ja
+va:34)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.captureExecutionSt
+ate(CaptureStateBeforeExecutio
+nStep.java:76)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.lambda$execute$0(C
+aptureStateBeforeExecutionStep
+.java:70)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.execute(CaptureSta
+teBeforeExecutionStep.java:70)
+	at org.gradle.internal.execut
+ion.steps.CaptureStateBeforeEx
+ecutionStep.execute(CaptureSta
+teBeforeExecutionStep.java:45)
+	at org.gradle.internal.execut
+ion.steps.SkipEmptyWorkStep.ex
+ecuteWithNonEmptySources(SkipE
+mptyWorkStep.java:177)
+	at org.gradle.internal.execut
+ion.steps.SkipEmptyWorkStep.ex
+ecute(SkipEmptyWorkStep.java:8
+1)
+	at org.gradle.internal.execut
+ion.steps.SkipEmptyWorkStep.ex
+ecute(SkipEmptyWorkStep.java:5
+3)
+	at org.gradle.internal.execut
+ion.steps.RemoveUntrackedExecu
+tionStateStep.execute(RemoveUn
+trackedExecutionStateStep.java
+:32)
+	at org.gradle.internal.execut
+ion.steps.RemoveUntrackedExecu
+tionStateStep.execute(RemoveUn
+trackedExecutionStateStep.java
+:21)
+	at org.gradle.internal.execut
+ion.steps.legacy.MarkSnapshott
+ingInputsStartedStep.execute(M
+arkSnapshottingInputsStartedSt
+ep.java:38)
+	at org.gradle.internal.execut
+ion.steps.LoadPreviousExecutio
+nStateStep.execute(LoadPreviou
+sExecutionStateStep.java:36)
+	at org.gradle.internal.execut
+ion.steps.LoadPreviousExecutio
+nStateStep.execute(LoadPreviou
+sExecutionStateStep.java:23)
+	at org.gradle.internal.execut
+ion.steps.CleanupStaleOutputsS
+tep.execute(CleanupStaleOutput
+sStep.java:75)
+	at org.gradle.internal.execut
+ion.steps.CleanupStaleOutputsS
+tep.execute(CleanupStaleOutput
+sStep.java:41)
+	at org.gradle.internal.execut
+ion.steps.ExecuteWorkBuildOper
+ationFiringStep.lambda$execute
+$2(ExecuteWorkBuildOperationFi
+ringStep.java:66)
+	at org.gradle.internal.execut
+ion.steps.ExecuteWorkBuildOper
+ationFiringStep.execute(Execut
+eWorkBuildOperationFiringStep.
+java:66)
+	at org.gradle.internal.execut
+ion.steps.ExecuteWorkBuildOper
+ationFiringStep.execute(Execut
+eWorkBuildOperationFiringStep.
+java:38)
+	at org.gradle.internal.execut
+ion.steps.AssignWorkspaceStep.
+lambda$execute$0(AssignWorkspa
+ceStep.java:32)
+	at org.gradle.api.internal.ta
+sks.execution.TaskExecution$4.
+withWorkspace(TaskExecution.ja
+va:293)
+	at org.gradle.internal.execut
+ion.steps.AssignWorkspaceStep.
+execute(AssignWorkspaceStep.ja
+va:30)
+	at org.gradle.internal.execut
+ion.steps.AssignWorkspaceStep.
+execute(AssignWorkspaceStep.ja
+va:21)
+	at org.gradle.internal.execut
+ion.steps.IdentityCacheStep.ex
+ecute(IdentityCacheStep.java:3
+7)
+	at org.gradle.internal.execut
+ion.steps.IdentityCacheStep.ex
+ecute(IdentityCacheStep.java:2
+7)
+	at org.gradle.internal.execut
+ion.steps.IdentifyStep.execute
+(IdentifyStep.java:47)
+	at org.gradle.internal.execut
+ion.steps.IdentifyStep.execute
+(IdentifyStep.java:34)
+	at org.gradle.internal.execut
+ion.impl.DefaultExecutionEngin
+e$1.execute(DefaultExecutionEn
+gine.java:64)
+	at org.gradle.api.internal.ta
+sks.execution.ExecuteActionsTa
+skExecuter.executeIfValid(Exec
+uteActionsTaskExecuter.java:14
+5)
+	at org.gradle.api.internal.ta
+sks.execution.ExecuteActionsTa
+skExecuter.execute(ExecuteActi
+onsTaskExecuter.java:134)
+	at org.gradle.api.internal.ta
+sks.execution.FinalizeProperti
+esTaskExecuter.execute(Finaliz
+ePropertiesTaskExecuter.java:4
+6)
+	at org.gradle.api.internal.ta
+sks.execution.ResolveTaskExecu
+tionModeExecuter.execute(Resol
+veTaskExecutionModeExecuter.ja
+va:51)
+	at org.gradle.api.internal.ta
+sks.execution.SkipTaskWithNoAc
+tionsExecuter.execute(SkipTask
+WithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.ta
+sks.execution.SkipOnlyIfTaskEx
+ecuter.execute(SkipOnlyIfTaskE
+xecuter.java:74)
+	at org.gradle.api.internal.ta
+sks.execution.CatchExceptionTa
+skExecuter.execute(CatchExcept
+ionTaskExecuter.java:36)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.executeTask(EventFir
+ingTaskExecuter.java:77)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:55)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter$1.call(EventFiringTask
+Executer.java:52)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:204)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$CallableBuildOperationWorke
+r.execute(DefaultBuildOperatio
+nRunner.java:199)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:66)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er$2.execute(DefaultBuildOpera
+tionRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:157)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.execute(DefaultBuildOperati
+onRunner.java:59)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationRunn
+er.call(DefaultBuildOperationR
+unner.java:53)
+	at org.gradle.internal.operat
+ions.DefaultBuildOperationExec
+utor.call(DefaultBuildOperatio
+nExecutor.java:73)
+	at org.gradle.api.internal.ta
+sks.execution.EventFiringTaskE
+xecuter.execute(EventFiringTas
+kExecuter.java:52)
+	at org.gradle.execution.plan.
+LocalTaskNodeExecutor.execute(
+LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:331)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$InvokeNodeExecutorsAction.exe
+cute(DefaultTaskExecutionGraph
+.java:318)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.lambda$execute$0(Default
+TaskExecutionGraph.java:314)
+	at org.gradle.internal.operat
+ions.CurrentBuildOperationRef.
+with(CurrentBuildOperationRef.
+java:80)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:314)
+	at org.gradle.execution.taskg
+raph.DefaultTaskExecutionGraph
+$BuildOperationAwareExecutionA
+ction.execute(DefaultTaskExecu
+tionGraph.java:303)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.execute(DefaultPlanExecut
+or.java:463)
+	at org.gradle.execution.plan.
+DefaultPlanExecutor$ExecutorWo
+rker.run(DefaultPlanExecutor.j
+ava:380)
+	at org.gradle.internal.concur
+rent.ExecutorPolicy$CatchAndRe
+cordFailures.onExecute(Executo
+rPolicy.java:64)
+	at org.gradle.internal.concur
+rent.AbstractManagedExecutor$1
+.run(AbstractManagedExecutor.j
+ava:47)
+
+
+BUILD FAILED in 3m 20s
+
+    at genericNodeError 
+(node:internal/errors:985:15)
+    at wrappedFn 
+(node:internal/errors:539:14)
+    at checkExecSyncError 
+(node:child_process:925:11)
+    at execSync 
+(node:child_process:997:15)
+    at Builder._run (file:///C
+:/Users/User/Documents/App/bac
+kend/src/services/Builder.js:8
+2:24)
+    at 
+Builder._buildApkWithGradle (f
+ile:///C:/Users/User/Documents
+/App/backend/src/services/Buil
+der.js:1466:18)
+    at async Builder.buildApk 
+(file:///C:/Users/User/Documen
+ts/App/backend/src/services/Bu
+ilder.js:1144:20)
+    at async test (C:\Users\Us
+er\Documents\App\backend\test-
+build.ts:40:24) {
+  status: 1,
+  signal: null,
+  output: [
+    null,
+    <Buffer 54 6f 20 68 6f 6e 
+6f 75 72 20 74 68 65 20 4a 56 
+4d 20 73 65 74 74 69 6e 67 73 
+20 66 6f 72 20 74 68 69 73 20 
+62 75 69 6c 64 20 61 20 73 69 
+6e 67 6c 65 ... 941 more 
+bytes>,
+    <Buffer 0d 0a 46 41 49 4c 
+55 52 45 3a 20 42 75 69 6c 64 
+20 66 61 69 6c 65 64 20 77 69 
+74 68 20 61 6e 20 65 78 63 65 
+70 74 69 6f 6e 2e 0d 0a 0d 0a 
+2a 20 57 68 ... 30127 more 
+bytes>
+  ],
+  pid: 52156,
+  stdout: <Buffer 54 6f 20 68 
+6f 6e 6f 75 72 20 74 68 65 20 
+4a 56 4d 20 73 65 74 74 69 6e 
+67 73 20 66 6f 72 20 74 68 69 
+73 20 62 75 69 6c 64 20 61 20 
+73 69 6e 67 6c 65 ... 941 
+more bytes>,
+  stderr: <Buffer 0d 0a 46 41 
+49 4c 55 52 45 3a 20 42 75 69 
+6c 64 20 66 61 69 6c 65 64 20 
+77 69 74 68 20 61 6e 20 65 78 
+63 65 70 74 69 6f 6e 2e 0d 0a 
+0d 0a 2a 20 57 68 ... 30127 
+more bytes>
+}

@@ -1,0 +1,25 @@
+{
+    "name": "Site2App — Convertisseur Web → App Mobile",
+    "short_name": "Site2App",
+    "description": "Convertissez votre site web en application mobile native Android & iOS. Sans code, en quelques minutes.",
+    "lang": "fr",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "theme_color": "#3461f5",
+    "background_color": "#0c0e14",
+    "categories": [
+        "developer tools",
+        "productivity",
+        "utilities"
+    ],
+    "icons": [
+        {
+            "src": "/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}

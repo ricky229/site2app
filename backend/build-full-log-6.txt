@@ -1,0 +1,315 @@
+﻿Starting test build...
+[BUILD test_build_123] ­ƒöì ANALYSE DU MODE DE BUILD :
+[BUILD test_build_123]   - Feature Push: Activ├®e
+[BUILD test_build_123]   - Config Google: Pr├®sente
+[BUILD test_build_123] ­ƒö¿ D├ëMARRAGE MODE GRADLE (Puissant, long)
+[BUILD test_build_123] ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+[BUILD test_build_123] ­ƒöÑ BUILD APK (FCM Gradle Mode)
+[BUILD test_build_123] ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+[BUILD test_build_123] ­ƒÄ¿ Using generated fallback icon
+[BUILD test_build_123] ­ƒö¿ Compiling via Gradle... (can take several minutes)
+[BUILD test_build_123] $ "C:\Users\User\Documents\App\backend\storage\gradle\gradle-8.5\bin\gradle.bat" assembleRelease -Dorg.gradle.daemon=false --no-daemon --stacktrace
+node.exe : Note: Some input 
+files use or override a 
+deprecated API.
+Au caractère Ligne:1 : 1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo          : 
+    NotSpecified: (Note: Som  
+  e inpu...deprecated API.:   
+ String) [], RemoteExcepti    
+on
+    + FullyQualifiedErrorId : 
+    NativeCommandError
+ 
+Note: Recompile with 
+-Xlint:deprecation for 
+details.
+[BUILD test_build_123] To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.5/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:javaPreCompileRelease
+> Task :app:generateReleaseResValues
+> Task :app:checkReleaseAarMetadata
+> Task :app:processReleaseGoogleServices
+> Task :app:mapReleaseSourceSetPaths
+> Task :app:generateReleaseResources
+> Task :app:packageReleaseResources
+> Task :app:createReleaseCompatibleScreenManifests
+> Task :app:extractDeepLinksRelease
+> Task :app:parseReleaseLocalResources
+> Task :app:mergeReleaseResources
+
+> Task :app:processReleaseMainManifest
+package="com.site2app.testapp" found in source AndroidManifest.xml: C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app\src\main\AndroidManifest.xml.
+Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported, and the value is ignored.
+Recommendation: remove package="com.site2app.testapp" from the source AndroidManifest.xml: C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app\src\main\AndroidManifest.xml.
+
+> Task :app:processReleaseManifest
+> Task :app:extractProguardFiles
+> Task :app:mergeReleaseJniLibFolders
+> Task :app:mergeReleaseNativeLibs NO-SOURCE
+> Task :app:stripReleaseDebugSymbols NO-SOURCE
+> Task :app:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:desugarReleaseFileDependencies
+> Task :app:checkReleaseDuplicateClasses
+> Task :app:mergeReleaseArtProfile
+> Task :app:mergeReleaseShaders
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets
+> Task :app:processReleaseJavaRes NO-SOURCE
+> Task :app:compressReleaseAssets
+> Task :app:collectReleaseDependencies
+> Task :app:sdkReleaseDependencyData
+> Task :app:writeReleaseAppMetadata
+> Task :app:writeReleaseSigningConfigVersions
+> Task :app:processReleaseManifestForPackage
+> Task :app:processReleaseResources
+> Task :app:mergeReleaseJavaResource
+> Task :app:mergeExtDexRelease
+
+> Task :app:compileReleaseJavaWithJavac
+
+> Task :app:dexBuilderRelease
+> Task :app:mergeReleaseGlobalSynthetics
+> Task :app:optimizeReleaseResources
+> Task :app:mergeDexRelease
+> Task :app:compileReleaseArtProfile
+> Task :app:packageRelease
+> Task :app:createReleaseApkListingFileRedirect
+> Task :app:lintVitalAnalyzeRelease
+> Task :app:lintVitalReportRelease
+> Task :app:lintVitalRelease
+> Task :app:assembleRelease
+
+BUILD SUCCESSFUL in 1m 2s
+39 actionable tasks: 39 executed
+[BUILD test_build_123] $ "C:\Users\User\AppData\Local\Android\Sdk\build-tools\34.0.0\zipalign" -f -v -p 4 "C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app\build\outputs\apk\release\app-release-unsigned.apk" "C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app-aligned.apk"
+[BUILD test_build_123] Verifying alignment of C:\Users\User\Documents\App\backend\storage\builds\test_build_123\app-aligned.apk (4)...
+      87 META-INF/com/android/build/gradle/app-metadata.properties (OK - compressed)
+     180 classes.dex (OK - compressed)
+ 2002608 assets/www/index.html (OK - compressed)
+ 2002976 DebugProbesKt.bin (OK - compressed)
+ 2003848 META-INF/androidx.annotation_annotation-experimental.version (OK)
+ 2003932 META-INF/androidx.arch.core_core-runtime.version (OK)
+ 2004036 META-INF/androidx.asynclayoutinflater_asynclayoutinflater.version (OK)
+ 2004136 META-INF/androidx.coordinatorlayout_coordinatorlayout.version (OK)
+ 2004208 META-INF/androidx.core_core.version (OK)
+ 2004300 META-INF/androidx.cursoradapter_cursoradapter.version (OK)
+ 2004384 META-INF/androidx.customview_customview.version (OK)
+ 2004472 META-INF/androidx.documentfile_documentfile.version (OK)
+ 2004560 META-INF/androidx.drawerlayout_drawerlayout.version (OK)
+ 2004640 META-INF/androidx.fragment_fragment.version (OK)
+ 2004728 META-INF/androidx.interpolator_interpolator.version (OK)
+ 2004820 META-INF/androidx.legacy_legacy-support-core-ui.version (OK)
+ 2004916 META-INF/androidx.legacy_legacy-support-core-utils.version (OK)
+ 2005012 META-INF/androidx.lifecycle_lifecycle-livedata-core.version (OK)
+ 2005104 META-INF/androidx.lifecycle_lifecycle-livedata.version (OK)
+ 2005196 META-INF/androidx.lifecycle_lifecycle-runtime.version (OK)
+ 2005288 META-INF/androidx.lifecycle_lifecycle-viewmodel.version (OK)
+ 2005364 META-INF/androidx.loader_loader.version (OK)
+ 2005472 META-INF/androidx.localbroadcastmanager_localbroadcastmanager.version (OK)
+ 2005548 META-INF/androidx.print_print.version (OK)
+ 2005648 META-INF/androidx.slidingpanelayout_slidingpanelayout.version (OK)
+ 2005748 META-INF/androidx.swiperefreshlayout_swiperefreshlayout.version (OK)
+ 2005852 META-INF/androidx.versionedparcelable_versionedparcelable.version (OK)
+ 2005936 META-INF/androidx.viewpager_viewpager.version (OK)
+ 2006012 META-INF/kotlinx_coroutines_core.version (OK)
+ 2006096 META-INF/kotlinx_coroutines_play_services.version (OK)
+ 2006162 firebase-annotations.properties (OK - compressed)
+ 2006276 firebase-datatransport.properties (OK - compressed)
+ 2006393 firebase-encoders-json.properties (OK - compressed)
+ 2006510 firebase-encoders-proto.properties (OK - compressed)
+ 2006622 firebase-encoders.properties (OK - compressed)
+ 2006731 firebase-iid-interop.properties (OK - compressed)
+ 2006854 firebase-measurement-connector.properties (OK - compressed)
+ 2006989 kotlin/annotation/annotation.kotlin_builtins (OK - compressed)
+ 2007624 kotlin/collections/collections.kotlin_builtins (OK - compressed)
+ 2009219 kotlin/coroutines/coroutines.kotlin_builtins (OK - compressed)
+ 2009446 kotlin/internal/internal.kotlin_builtins (OK - compressed)
+ 2009899 kotlin/kotlin.kotlin_builtins (OK - compressed)
+ 2014969 kotlin/ranges/ranges.kotlin_builtins (OK - compressed)
+ 2016301 kotlin/reflect/reflect.kotlin_builtins (OK - compressed)
+ 2017617 messaging_event.proto (OK - compressed)
+ 2018805 messaging_event_extension.proto (OK - compressed)
+ 2019376 play-services-base.properties (OK - compressed)
+ 2019489 play-services-basement.properties (OK - compressed)
+ 2019612 play-services-cloud-messaging.properties (OK - compressed)
+ 2019733 play-services-stats.properties (OK - compressed)
+ 2019844 play-services-tasks.properties (OK - compressed)
+ 2019957 transport-backend-cct.properties (OK - compressed)
+ 2020067 transport-runtime.properties (OK - compressed)
+ 2020164 AndroidManifest.xml (OK - compressed)
+ 2022474 res/-8.xml (OK - compressed)
+ 2022964 res/-p.png (OK)
+ 2023986 res/0K.xml (OK - compressed)
+ 2024248 res/0Z.png (OK)
+ 2025464 res/1C.9.png (OK)
+ 2026124 res/2K.9.png (OK)
+ 2026389 res/47.xml (OK - compressed)
+ 2026800 res/4z.xml (OK - compressed)
+ 2027260 res/5J.9.png (OK)
+ 2028332 res/5P.png (OK)
+ 2029000 res/5c.png (OK)
+ 2029180 res/5v.png (OK)
+ 2029421 res/5w.xml (OK - compressed)
+ 2029648 res/6P.png (OK)
+ 2029888 res/6d.png (OK)
+ 2030380 res/71.png (OK)
+ 2030712 res/79.9.png (OK)
+ 2031448 res/7R.png (OK)
+ 2032004 res/7V.png (OK)
+ 2032300 res/7m.png (OK)
+ 2033224 res/8G.xml (OK - compressed)
+ 2033487 res/8K.xml (OK - compressed)
+ 2033732 res/8c.png (OK)
+ 2033903 res/8t.xml (OK - compressed)
+ 2034606 res/9m.xml (OK - compressed)
+ 2034820 res/9w.png (OK)
+ 2034991 res/Ac.xml (OK - compressed)
+ 2035456 res/Af.9.png (OK)
+ 2036180 res/Ag.png (OK)
+ 2036688 res/BQ.9.png (OK)
+ 2037628 res/BT.png (OK)
+ 2037932 res/BW.xml (OK - compressed)
+ 2038193 res/Bl.xml (OK - compressed)
+ 2038490 res/Bz.xml (OK - compressed)
+ 2038908 res/C_.9.png (OK)
+ 2039164 res/Ck.png (OK)
+ 2040027 res/D-.xml (OK - compressed)
+ 2040804 res/Dd.png (OK)
+ 2041125 res/EQ.xml (OK - compressed)
+ 2041424 res/Ec.png (OK)
+ 2041672 res/Eh.png (OK)
+ 2042124 res/FS.png (OK)
+ 2042296 res/Ff.png (OK)
+ 2042653 res/G2.xml (OK - compressed)
+ 2043096 res/GY.png (OK)
+ 2043428 res/Gc.png (OK)
+ 2043604 res/I3.9.png (OK)
+ 2044899 res/K-.xml (OK - compressed)
+ 2045200 res/LO.png (OK)
+ 2045504 res/Lr.xml (OK - compressed)
+ 2045820 res/MD.png (OK)
+ 2047036 res/Ma.9.png (OK)
+ 2047324 res/OM.png (OK)
+ 2047748 res/OX.png (OK)
+ 2048164 res/OX1.png (OK)
+ 2048669 res/Pb.xml (OK - compressed)
+ 2048984 res/Q-.png (OK)
+ 2049296 res/Qd.9.png (OK)
+ 2050112 res/Qr.xml (OK - compressed)
+ 2050524 res/RJ.png (OK)
+ 2050695 res/Rt.xml (OK - compressed)
+ 2051108 res/S8.xml (OK - compressed)
+ 2051633 res/T5.xml (OK - compressed)
+ 2052112 res/TK.xml (OK - compressed)
+ 2052523 res/Tl.xml (OK - compressed)
+ 2053208 res/Tr.png (OK)
+ 2053504 res/U-.9.png (OK)
+ 2053768 res/VW.png (OK)
+ 2054260 res/W5.png (OK)
+ 2054772 res/Ws.xml (OK - compressed)
+ 2055280 res/Y3.png (OK)
+ 2055704 res/Y9.png (OK)
+ 2056368 res/YD.png (OK)
+ 2056612 res/ZI.png (OK)
+ 2057336 res/ZL.9.png (OK)
+ 2058462 res/_H.xml (OK - compressed)
+ 2059216 res/_p.png (OK)
+ 2060697 res/_y.xml (OK - compressed)
+ 2061047 res/a0.xml (OK - compressed)
+ 2061624 res/aR.png (OK)
+ 2062288 res/aU.png (OK)
+ 2062956 res/bi.png (OK)
+ 2063313 res/c6.xml (OK - compressed)
+ 2063537 res/cV.xml (OK - compressed)
+ 2063876 res/color/common_google_signin_btn_text_dark.xml (OK - compressed)
+ 2064232 res/color/common_google_signin_btn_text_light.xml (OK - compressed)
+ 2064582 res/color/common_google_signin_btn_tint.xml (OK - compressed)
+ 2064851 res/cr.xml (OK - compressed)
+ 2065096 res/dB.9.png (OK)
+ 2065636 res/df.xml (OK - compressed)
+ 2065928 res/f9.png (OK)
+ 2066532 res/fO.png (OK)
+ 2066708 res/gK.9.png (OK)
+ 2066964 res/gr.png (OK)
+ 2067480 res/hP.9.png (OK)
+ 2068328 res/iQ.png (OK)
+ 2068857 res/iQ.xml (OK - compressed)
+ 2069316 res/iW.png (OK)
+ 2070168 res/je.9.png (OK)
+ 2070420 res/kS.png (OK)
+ 2070835 res/lR.xml (OK - compressed)
+ 2071136 res/nC.9.png (OK)
+ 2071641 res/nz.xml (OK - compressed)
+ 2071936 res/o-.png (OK)
+ 2072112 res/oO.9.png (OK)
+ 2072764 res/o_.9.png (OK)
+ 2073056 res/p7.xml (OK - compressed)
+ 2073352 res/p8.png (OK)
+ 2074215 res/pI.xml (OK - compressed)
+ 2074512 res/pY.png (OK)
+ 2074660 res/pu.png (OK)
+ 2075609 res/qF.xml (OK - compressed)
+ 2075836 res/s4.png (OK)
+ 2075976 res/sA.9.png (OK)
+ 2076228 res/td.png (OK)
+ 2076472 res/tr.9.png (OK)
+ 2077476 res/us.9.png (OK)
+ 2079156 res/vL.9.png (OK)
+ 2079420 res/vo.png (OK)
+ 2080192 res/w2.9.png (OK)
+ 2081372 res/w7.png (OK)
+ 2081684 res/wN.9.png (OK)
+ 2081952 res/wb.png (OK)
+ 2082123 res/xN.xml (OK - compressed)
+ 2082952 res/xa.9.png (OK)
+ 2083213 res/y6.xml (OK - compressed)
+ 2083512 res/yn.png (OK)
+ 2083688 res/z-.9.png (OK)
+ 2083952 res/zL.png (OK)
+ 2084200 res/zR.png (OK)
+ 2084376 res/zw.9.png (OK)
+ 2085928 res/zz.png (OK)
+ 2086856 resources.arsc (OK)
+Verification succesful
+[BUILD test_build_123] $ "C:\Program Files\Eclipse Adoptium\jdk-17.0.18.8-hotspot\bin\keytool" -genkey -v -keystore "C:\Users\User\Documents\App\backend\storage\keystores\com.site2app.testapp.keystore" -alias app -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=TestApp,O=Site2App,C=FR"
+GÚnÚration d'une paire de 
+clÚs RSA de 2?048 bits et 
+d'un certificat auto-signÚ 
+(SHA256withRSA) d'une 
+validitÚ de 10?000 jours
+	pour : CN=TestApp, 
+O=Site2App, C=FR
+[Stockage de C:\Users\User\Doc
+uments\App\backend\storage\key
+stores\com.site2app.testapp.ke
+ystore]
+[BUILD test_build_123] $ "C:\Users\User\AppData\Local\Android\Sdk\build-tools\34.0.0\apksigner" sign --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true --min-sdk-version 24 --ks "C:\Users\User\Documents\App\backend\storage\keystores\com.site2app.testapp.keystore" --ks-pass pass:android --ks-key-alias app "C:\Users\User\Documents\App\backend\storage\builds\test_build_123\TestApp.apk"
+[BUILD test_build_123] $ "C:\Users\User\AppData\Local\Android\Sdk\build-tools\34.0.0\apksigner" verify --verbose "C:\Users\User\Documents\App\backend\storage\builds\test_build_123\TestApp.apk"
+[BUILD test_build_123] Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): true
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+[BUILD test_build_123] Ô£à Succ├¿s (FCM Injected).
+Build Success: {
+  buildId: 'test_build_123',
+  apkPath: 'C:\\Users\\User\\Documents\\App\\backend\\storage\\builds\\test_build_123\\TestApp.apk',
+  fileName: 'TestApp.apk',
+  size: 2314540,
+  type: 'compiled'
+}
