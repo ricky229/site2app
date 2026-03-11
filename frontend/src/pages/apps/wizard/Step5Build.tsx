@@ -33,8 +33,8 @@ const BUILD_STEPS: BuildStepItem[] = [
 
 type BuildPhase = 'select' | 'building' | 'done' | 'error'
 
-const GITHUB_PAT = import.meta.env.VITE_GITHUB_PAT || ''
-const GITHUB_REPO = 'ricky229/site2app'
+const BUBBLE_WF = 'https://site2app-34905.bubbleapps.io/version-test/api/1.1/wf'
+const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
 
 export default function Step5Build() {
     const navigate = useNavigate()
@@ -94,31 +94,22 @@ export default function Step5Build() {
             setBuildId(appId)
             console.log('[Build] App created in Bubble:', appId)
 
-            // Step 2: Trigger GitHub Actions
-            const ghRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/dispatches`, {
+            // Step 2: Trigger GitHub Actions via Bubble Backend Workflow
+            const triggerRes = await fetch(`${BUBBLE_WF}/trigger_build`, {
                 method: 'POST',
                 headers: {
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Authorization': `token ${GITHUB_PAT}`,
-                    'User-Agent': 'Site2App-Frontend'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${BUBBLE_TOKEN}`,
                 },
-                body: JSON.stringify({
-                    event_type: 'build_apk',
-                    client_payload: {
-                        buildId: appId,
-                        ...appData,
-                        icon: config.icon || null,
-                        splashImage: config.splashScreen || null,
-                        features: config.features || {},
-                    }
-                })
+                body: JSON.stringify({ buildId: appId })
             })
 
-            if (!ghRes.ok) {
-                throw new Error(`GitHub Actions n'a pas pu être contacté (${ghRes.status})`)
+            if (!triggerRes.ok) {
+                const errData = await triggerRes.text()
+                throw new Error(`Impossible de lancer la compilation (${triggerRes.status}): ${errData}`)
             }
 
-            console.log('[Build] GitHub Action triggered!')
+            console.log('[Build] GitHub Action triggered via Bubble!')
 
         } catch (error: any) {
             console.error('Build start error:', error)
