@@ -1393,13 +1393,17 @@ ${this.features.offlineMode ? `
             throw new Error('Environment manquant: JDK ou Android SDK')
         }
 
-        const aapt2 = path.join(this.bt, 'aapt2.exe')
-        const d8 = path.join(this.bt, 'd8.bat')
-        const zipalign = path.join(this.bt, 'zipalign.exe')
-        const javac = path.join(this.javaHome, 'bin', 'javac.exe')
-        const jar = path.join(this.javaHome, 'bin', 'jar.exe')
-        const keytool = path.join(this.javaHome, 'bin', 'keytool.exe')
-        const apksigner = path.join(this.bt, 'apksigner.bat')
+        const isWin = process.platform === 'win32'
+        const exe = isWin ? '.exe' : ''
+        const bat = isWin ? '.bat' : ''
+
+        const aapt2 = path.join(this.bt, `aapt2${exe}`)
+        const d8 = path.join(this.bt, isWin ? 'd8.bat' : 'd8')
+        const zipalign = path.join(this.bt, `zipalign${exe}`)
+        const javac = path.join(this.javaHome, 'bin', `javac${exe}`)
+        const jar = path.join(this.javaHome, 'bin', `jar${exe}`)
+        const keytool = path.join(this.javaHome, 'bin', `keytool${exe}`)
+        const apksigner = path.join(this.bt, isWin ? 'apksigner.bat' : 'apksigner')
 
         const genDir = path.join(this.buildDir, 'gen')
         const objDir = path.join(this.buildDir, 'obj')
