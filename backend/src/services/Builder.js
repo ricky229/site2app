@@ -1455,9 +1455,15 @@ ${this.features.offlineMode ? `
         const javaStr = uniqueJava.map(f => `"${f}"`).join(' ')
         this._run(`"${javac}" -source 1.8 -target 1.8 -bootclasspath "${this.androidJar}" -classpath "${this.androidJar}" -d "${objDir}" ${javaStr}`)
 
-        // ── STEP 5: d8 ──
+        // ── STEP 5: d8 (via intermediate jar to prevent cross-platform command line bugs) ──
         console.log(`[BUILD ${this.buildId}] 🔄 Step 5: d8`)
-        this._run(`"${d8}" --release --min-api 21 --output "${binDir}" "${objDir}"`)
+        
+        // 5.1: Package classes into a temporary jar
+        const tempJar = path.join(binDir, 'temp_classes.jar')
+        this._run(`"${jar}" cvf "${tempJar}" -C "${objDir}" .`)
+        
+        // 5.2: Convert jar to DEX using d8
+        this._run(`"${d8}" --release --min-api 21 --output "${binDir}" "${tempJar}"`)
 
         if (!existsSync(path.join(binDir, 'classes.dex'))) throw new Error('classes.dex not generated')
 
