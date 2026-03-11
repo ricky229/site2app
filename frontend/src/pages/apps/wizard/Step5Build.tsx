@@ -7,10 +7,11 @@ import {
     BookOpen, Star
 } from 'lucide-react'
 import { useWizardStore } from '../../../store/wizardStore'
+import { useAuthStore } from '../../../store/authStore'
 import Button from '../../../components/ui/Button'
 import { platformLabel } from '../../../lib/utils'
 import toast from 'react-hot-toast'
-import api from '../../../lib/api'
+import { createApp, getAppById, updateApp } from '../../../lib/api'
 
 type BuildStepStatus = 'pending' | 'running' | 'done' | 'failed'
 
@@ -32,9 +33,13 @@ const BUILD_STEPS: BuildStepItem[] = [
 
 type BuildPhase = 'select' | 'building' | 'done' | 'error'
 
+const GITHUB_PAT = import.meta.env.VITE_GITHUB_PAT || ''
+const GITHUB_REPO = 'ricky229/site2app'
+
 export default function Step5Build() {
     const navigate = useNavigate()
     const { state, reset } = useWizardStore()
+    const { user } = useAuthStore()
     const { config, platform: wizardPlatform, siteAnalysis } = state
 
     const [platform, setPlatform] = useState<'android' | 'ios' | 'both'>(wizardPlatform || 'android')
@@ -45,6 +50,7 @@ export default function Step5Build() {
     const [elapsedTime, setElapsedTime] = useState(0)
     const [buildId, setBuildId] = useState<string | null>(null)
     const [buildError, setBuildError] = useState<string | null>(null)
+    const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>
@@ -64,46 +70,75 @@ export default function Step5Build() {
         setTotalProgress(0)
         setBuildError(null)
 
-        let newBuildId = null;
+        let appId: string | null = null
 
         try {
-            // Start build on backend
-            const response = await api.post('/build', {
+            // Step 1: Create App record in Bubble
+            const appData = {
                 appName: config.name || siteAnalysis?.title || 'MonApp',
                 url: config.url || siteAnalysis?.url || 'https://example.com',
                 platform: platform,
-                packageName: config.packageName || undefined,
-                statusBarColor: config.statusBar?.color || config.primaryColor,
-                themeColor: config.statusBar?.color || config.primaryColor,
-                splashBgColor: config.statusBar?.color || config.primaryColor,
-                primaryColor: config.primaryColor,
-                secondaryColor: config.secondaryColor,
-                enableFullscreen: config.features?.fullscreen || false,
+                packageName: config.packageName || `com.site2app.${(config.name || 'app').toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+                themeColor: config.statusBar?.color || config.primaryColor || '#3461f5',
+                splashBgColor: config.statusBar?.color || config.primaryColor || '#3461f5',
                 orientation: config.orientation || 'portrait',
-                features: config.features || {},
-                icon: config.icon || undefined,
-                splashImage: config.splashScreen || undefined,
+                enableFullscreen: config.features?.fullscreen || false,
+                status: 'building',
+                versionCode: 1,
+                versionName: '1.0',
+                owner: user?.id || '',
+            }
+
+            const createRes = await createApp(appData)
+            appId = createRes.id
+            setBuildId(appId)
+            console.log('[Build] App created in Bubble:', appId)
+
+            // Step 2: Trigger GitHub Actions
+            const ghRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/dispatches`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Authorization': `token ${GITHUB_PAT}`,
+                    'User-Agent': 'Site2App-Frontend'
+                },
+                body: JSON.stringify({
+                    event_type: 'build_apk',
+                    client_payload: {
+                        buildId: appId,
+                        ...appData,
+                        icon: config.icon || null,
+                        splashImage: config.splashScreen || null,
+                        features: config.features || {},
+                    }
+                })
             })
 
-            newBuildId = response.data.buildId
-            setBuildId(newBuildId)
-            console.log('[Build] Started with ID:', newBuildId)
+            if (!ghRes.ok) {
+                throw new Error(`GitHub Actions n'a pas pu être contacté (${ghRes.status})`)
+            }
+
+            console.log('[Build] GitHub Action triggered!')
+
         } catch (error: any) {
             console.error('Build start error:', error)
             setPhase('error')
-            setBuildError(error.response?.data?.error || "Impossible de contacter le serveur de compilation.")
+            setBuildError(error?.response?.data?.message || error?.message || "Impossible de démarrer la compilation.")
+            if (appId) {
+                try { await updateApp(appId, { status: 'failed', errorMessage: error?.message }) } catch (_) {}
+            }
             return
         }
 
-        // Wait for backend to finish (Real Polling)
+        // Step 3: Poll Bubble for build status
         let isDone = false
         const startTime = Date.now()
 
         while (!isDone) {
             try {
-                const { data: statusData } = await api.get(`/build/${newBuildId}/status`)
+                const appStatus = await getAppById(appId!)
 
-                if (statusData.status === 'completed') {
+                if (appStatus?.status === 'completed') {
                     isDone = true
                     setTotalProgress(100)
                     setStepStatuses(s => {
@@ -111,19 +146,20 @@ export default function Step5Build() {
                         BUILD_STEPS.forEach(step => next[step.id] = 'done')
                         return next
                     })
-                } else if (statusData.status === 'failed') {
+                    if (appStatus.apkFile) {
+                        setDownloadUrl(appStatus.apkFile)
+                    }
+                } else if (appStatus?.status === 'failed') {
                     setPhase('error')
-                    setBuildError(statusData.error || 'Erreur inconnue')
+                    setBuildError(appStatus.errorMessage || 'Erreur inconnue')
                     toast.error('Échec de la compilation')
                     return
                 } else {
-                    // Update UI based on elapsed time relative to expected duration
                     const now = Date.now()
-                    const totalEstimated = 180000 // 3 minutes max estimate for Gradle
+                    const totalEstimated = 300000 // 5 minutes
                     const currentProgress = Math.min(95, Math.round(((now - startTime) / totalEstimated) * 100))
                     setTotalProgress(currentProgress)
 
-                    // Update steps based on progress
                     const stepIdx = Math.floor((currentProgress / 100) * BUILD_STEPS.length)
                     setCurrentStepIdx(stepIdx)
                     BUILD_STEPS.forEach((step, idx) => {
@@ -135,7 +171,7 @@ export default function Step5Build() {
                 console.warn('Status poll failed', e)
             }
 
-            if (!isDone) await new Promise(r => setTimeout(r, 3000))
+            if (!isDone) await new Promise(r => setTimeout(r, 5000))
         }
 
         setPhase('done')
@@ -143,10 +179,12 @@ export default function Step5Build() {
     }
 
     const handleDownload = () => {
-        if (!buildId) return
-        const url = `${api.defaults.baseURL}/download/${buildId}`
+        if (!downloadUrl) {
+            toast.error('Le fichier APK n\'est pas encore disponible.')
+            return
+        }
         const a = document.createElement('a')
-        a.href = url
+        a.href = downloadUrl
         a.download = `${config.name || 'app'}.apk`
         document.body.appendChild(a)
         a.click()
@@ -155,9 +193,8 @@ export default function Step5Build() {
     }
 
     const handleCopyLink = () => {
-        if (!buildId) return
-        const url = `${window.location.origin}${api.defaults.baseURL}/download/${buildId}`
-        navigator.clipboard.writeText(url)
+        if (!downloadUrl) return
+        navigator.clipboard.writeText(downloadUrl)
         toast.success('Lien copié !')
     }
 

@@ -26,18 +26,24 @@ jobs:
     - name: Accept Android licenses
       run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
-    - name: Ensure correct file permissions
-      working-directory: ./backend
-      run: chmod +x scripts/github-build.js || true
-
     - name: Install dependencies
       working-directory: ./backend
       run: npm install
 
-    - name: Download Gradle and Build APK
+    - name: Build APK and upload to Bubble
       working-directory: ./backend
-      run: node scripts/github-build.js
+      run: node scripts/github-build-bubble.js
       env:
         BUILD_ID: ${{ github.event.client_payload.buildId }}
-        API_URL: ${{ github.event.client_payload.apiUrl }}
-        BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}
+        APP_NAME: ${{ github.event.client_payload.appName }}
+        APP_URL: ${{ github.event.client_payload.url }}
+        PACKAGE_NAME: ${{ github.event.client_payload.packageName }}
+        THEME_COLOR: ${{ github.event.client_payload.themeColor }}
+        SPLASH_BG_COLOR: ${{ github.event.client_payload.splashBgColor }}
+        ORIENTATION: ${{ github.event.client_payload.orientation }}
+        ENABLE_FULLSCREEN: ${{ github.event.client_payload.enableFullscreen }}
+        PLATFORM: ${{ github.event.client_payload.platform }}
+        VERSION_CODE: ${{ github.event.client_payload.versionCode }}
+        VERSION_NAME: ${{ github.event.client_payload.versionName }}
+        BUBBLE_API_URL: ${{ secrets.BUBBLE_API_URL }}
+        BUBBLE_API_TOKEN: ${{ secrets.BUBBLE_API_TOKEN }}
