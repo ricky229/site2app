@@ -39,7 +39,7 @@ jobs:
         working-directory: ./frontend
         run: npm run build
         env:
-          VITE_API_URL: "https://site2app-backend.onrender.com"
+          VITE_GITHUB_PAT: ${{ secrets.GH_PAT }}
           
       - name: Copy index.html to 404.html
         working-directory: ./frontend
