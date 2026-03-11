@@ -1457,15 +1457,7 @@ ${this.features.offlineMode ? `
 
         // ── STEP 5: d8 ──
         console.log(`[BUILD ${this.buildId}] 🔄 Step 5: d8`)
-        const allClasses = this._findFiles(objDir, '.class')
-        // Deduplicate class files by relative path
-        const classMap = new Map()
-        for (const f of allClasses) {
-            const rel = path.relative(objDir, f)
-            if (!classMap.has(rel)) classMap.set(rel, f)
-        }
-        const classStr = [...classMap.values()].map(f => `"${f}"`).join(' ')
-        this._run(`"${d8}" --release --min-api 21 --output "${binDir}" ${classStr}`)
+        this._run(`"${d8}" --release --min-api 21 --output "${binDir}" "${objDir}"`)
 
         if (!existsSync(path.join(binDir, 'classes.dex'))) throw new Error('classes.dex not generated')
 
