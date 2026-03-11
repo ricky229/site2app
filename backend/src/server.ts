@@ -61,6 +61,7 @@ interface BuildInfo {
     versionName?: string
     activeUsers?: number
     downloadCount?: number
+    builderConfig?: any
 }
 
 // In-memory maps
@@ -327,7 +328,7 @@ app.post('/api/build', authMiddleware, (req: any, res) => {
     console.log(`[API]   - Push Feature: ${!!features?.pushNotifications}`)
     console.log(`[API]   - Google Services JSON: ${req.user?.googleServicesJson ? 'Trouvé' : 'MANQUANT'}`)
 
-    const builder = new Builder(buildData.url, buildData.appName, buildData.packageName, {
+    const builderOptions = {
         buildId: buildId,
         apiUrl: req.protocol + '://' + rawHost,
         statusBarColor: statusBarColor || primaryColor || '#3461f5',
@@ -342,7 +343,44 @@ app.post('/api/build', authMiddleware, (req: any, res) => {
         versionCode: buildData.versionCode,
         versionName: buildData.versionName,
         googleServicesJson: req.user?.googleServicesJson || null,
-    })
+    };
+
+    buildData.builderConfig = {
+        appUrl: buildData.url,
+        appName: buildData.appName,
+        packageName: buildData.packageName,
+        options: builderOptions
+    };
+    builds.set(buildId, buildData);
+    saveBuilds();
+
+    if (process.env.GITHUB_PAT && process.env.GITHUB_REPO) {
+        console.log(`[API] 🚀 Triggering GitHub Action for build ${buildId}...`);
+        fetch(`https://api.github.com/repos/${process.env.GITHUB_REPO}/dispatches`, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/vnd.github.v3+json',
+                'Authorization': `token ${process.env.GITHUB_PAT}`,
+                'User-Agent': 'Site2App-Backend'
+            },
+            body: JSON.stringify({
+                event_type: 'build_apk',
+                client_payload: {
+                    buildId: buildId,
+                    apiUrl: req.protocol + '://' + rawHost
+                }
+            })
+        }).then(res => {
+            if (!res.ok) console.error('[API] ❌ Failed to trigger GitHub Action:', res.status, res.statusText);
+            else console.log(`[API] ✅ GitHub Action triggered successfully.`);
+        }).catch(err => {
+            console.error('[API] ❌ Error triggering GitHub Action:', err);
+        });
+        
+        return res.json({ buildId, status: 'building' });
+    }
+
+    const builder = new Builder(buildData.url, buildData.appName, buildData.packageName, builderOptions);
 
     builder.buildApk()
         .then((result: any) => {
@@ -368,6 +406,64 @@ app.post('/api/build', authMiddleware, (req: any, res) => {
 
     res.json({ buildId, status: 'building' })
 })
+
+// ─── Internal Webhooks for CI (GitHub Actions) ─────────
+const internalAuth = (req: any, res: any, next: any) => {
+    const authHeader = req.headers.authorization;
+    const secret = process.env.BUILDER_SECRET || 'dev_secret_123';
+    if (!authHeader || authHeader !== `Bearer ${secret}`) {
+        return res.status(401).json({ error: 'Unauthorized CI' });
+    }
+    next();
+};
+
+app.get('/api/internal/build/:buildId/config', internalAuth, (req, res) => {
+    const build = builds.get(req.params.buildId);
+    if (!build || !build.builderConfig) return res.status(404).json({ error: 'Config not found' });
+    res.json(build.builderConfig);
+});
+
+app.post('/api/internal/build/:buildId/upload', internalAuth, express.raw({ type: '*/*', limit: '100mb' }), async (req: any, res) => {
+    const buildId = req.params.buildId;
+    const build = builds.get(buildId);
+    if (!build) return res.status(404).json({ error: 'Build not found' });
+
+    try {
+        const buildDir = path.join(STORAGE_PATH, 'builds', buildId);
+        if (!fsSync.existsSync(buildDir)) fsSync.mkdirSync(buildDir, { recursive: true });
+        
+        const fileName = req.headers['x-file-name'] || `${build.packageName}.apk`;
+        const filePath = path.join(buildDir, fileName);
+        
+        await fs.writeFile(filePath, req.body);
+        
+        build.status = 'completed';
+        build.completedAt = new Date().toISOString();
+        build.fileName = fileName;
+        build.size = req.body.length;
+        delete build.builderConfig; // Cleanup config to save space
+        saveBuilds();
+        
+        console.log(`[CI] ✅ Build ${buildId} apk received successfully (${req.body.length} bytes)`);
+        res.json({ success: true });
+    } catch (e: any) {
+        console.error(`[CI] ❌ Failed to save uploaded APK:`, e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post('/api/internal/build/:buildId/fail', internalAuth, (req, res) => {
+    const buildId = req.params.buildId;
+    const build = builds.get(buildId);
+    if (build) {
+        build.status = 'failed';
+        build.error = req.body.error || 'CI Build Failed';
+        delete build.builderConfig;
+        saveBuilds();
+        console.log(`[CI] ❌ Build ${buildId} failed in CI:`, build.error);
+    }
+    res.json({ success: true });
+});
 
 // ─── Build Status & List ───────────────────────────
 app.get('/api/build/:buildId/status', authMiddleware, (req: any, res) => {

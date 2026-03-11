@@ -1484,8 +1484,9 @@ ${this.features.offlineMode ? `
 
     async _ensureGradle() {
         const gradleDir = path.join(__dirname, '../../storage/gradle');
-        const gradleBat = path.join(gradleDir, 'gradle-8.5', 'bin', 'gradle.bat');
-        if (fs.existsSync(gradleBat)) return gradleBat;
+        const isWin = process.platform === 'win32';
+        const gradlePath = path.join(gradleDir, 'gradle-8.5', 'bin', isWin ? 'gradle.bat' : 'gradle');
+        if (fs.existsSync(gradlePath)) return gradlePath;
 
         console.log(`[BUILD ${this.buildId}] 🌍 Downloading Gradle 8.5...`);
         fs.mkdirSync(gradleDir, { recursive: true });
@@ -1493,14 +1494,16 @@ ${this.features.offlineMode ? `
 
         return new Promise((resolve, reject) => {
             try {
-                // Using curl to handle redirects natively which NodeJS https.get doesn't do easily
-                execSync(`curl.exe -L -o "${zipPath}" "https://services.gradle.org/distributions/gradle-8.5-bin.zip"`);
-
+                execSync(`curl -L -o "${zipPath}" "https://services.gradle.org/distributions/gradle-8.5-bin.zip"`);
                 console.log(`[BUILD ${this.buildId}] 📦 Extracting Gradle...`);
-                execSync(`tar.exe -xf "${zipPath}" -C "${gradleDir}"`);
-
+                execSync(`tar -xf "${zipPath}" -C "${gradleDir}"`);
                 if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
-                resolve(gradleBat);
+                
+                if (!isWin) {
+                    execSync(`chmod +x "${gradlePath}"`);
+                }
+                
+                resolve(gradlePath);
             } catch (err) {
                 console.error(`[BUILD ${this.buildId}] ❌ Error installing Gradle: `, err.message);
                 reject(err);

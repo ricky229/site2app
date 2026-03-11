@@ -1,0 +1,43 @@
+name: Build APK
+
+on:
+  repository_dispatch:
+    types: [build_apk]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Accept Android licenses
+      run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+
+    - name: Ensure correct file permissions
+      working-directory: ./backend
+      run: chmod +x scripts/github-build.js || true
+
+    - name: Install dependencies
+      working-directory: ./backend
+      run: npm install
+
+    - name: Download Gradle and Build APK
+      working-directory: ./backend
+      run: node scripts/github-build.js
+      env:
+        BUILD_ID: ${{ github.event.client_payload.buildId }}
+        API_URL: ${{ github.event.client_payload.apiUrl }}
+        BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}
