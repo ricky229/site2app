@@ -156,7 +156,12 @@ loadBuilds()
 const app = express()
 
 // Middlewares
-app.use(cors())
+app.use(cors({
+    origin: function (origin, callback) {
+        callback(null, true) // Allow all origins explicitly for credentials
+    },
+    credentials: true
+}))
 app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
     contentSecurityPolicy: false,
