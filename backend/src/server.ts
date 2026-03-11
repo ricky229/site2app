@@ -1072,6 +1072,7 @@ app.post('/api/auth/register', async (req, res) => {
         const hash = await bcrypt.hash(password, salt);
 
         const newUser = await bubble.createUser({
+            email: email,
             emailAddress: email,
             passwordHash: hash,
             name: name,
