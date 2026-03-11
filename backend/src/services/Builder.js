@@ -1405,13 +1405,17 @@ ${this.features.offlineMode ? `
         const keytool = path.join(this.javaHome, 'bin', `keytool${exe}`)
         const apksigner = path.join(this.bt, isWin ? 'apksigner.bat' : 'apksigner')
 
+        // ── Clean entire build directory for total isolation ──
+        if (existsSync(this.buildDir)) {
+            try { fs.rmSync(this.buildDir, { recursive: true, force: true }); } catch (_) { }
+        }
+
         const genDir = path.join(this.buildDir, 'gen')
         const objDir = path.join(this.buildDir, 'obj')
         const binDir = path.join(this.buildDir, 'bin')
         const compiledDir = path.join(this.buildDir, 'compiled_res')
 
         for (const d of [genDir, objDir, binDir, compiledDir]) {
-            if (existsSync(d)) { try { fs.rmSync(d, { recursive: true }); } catch(_) {} }
             mkdirSync(d, { recursive: true })
         }
 
@@ -1544,6 +1548,11 @@ ${this.features.offlineMode ? `
         if (!this.javaHome || !this.sdk) throw new Error('Environment manquant: JDK ou Android SDK');
 
         const gradleBat = await this._ensureGradle();
+
+        // ── Clean entire build directory for total isolation ──
+        if (fs.existsSync(this.buildDir)) {
+            try { fs.rmSync(this.buildDir, { recursive: true, force: true }); } catch (_) { }
+        }
 
         // Setup directories
         const appDir = path.join(this.buildDir, 'app');
