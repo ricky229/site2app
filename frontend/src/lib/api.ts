@@ -1,40 +1,81 @@
 /// <reference types="vite/client" />
 import axios from 'axios'
 
-const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || '/api',
+// ─── Bubble.io API Configuration ─────────────────────
+const BUBBLE_BASE = 'https://site2app-34905.bubbleapps.io/version-test/api/1.1'
+const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
+
+// Workflow API (auth, actions)
+const wfApi = axios.create({
+    baseURL: `${BUBBLE_BASE}/wf`,
     headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${BUBBLE_TOKEN}`,
     },
-    withCredentials: true,
 })
 
-// Request interceptor: attach token
-api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('site2app_token')
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`
-        }
-        return config
+// Data API (CRUD on App, User, etc.)
+const dataApi = axios.create({
+    baseURL: `${BUBBLE_BASE}/obj`,
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${BUBBLE_TOKEN}`,
     },
-    (error) => Promise.reject(error)
-)
+})
 
-// Response interceptor: handle auth errors
-api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            localStorage.removeItem('site2app_token')
-            localStorage.removeItem('site2app_user')
-            localStorage.removeItem('site2app_auth')
-            if (!window.location.pathname.startsWith('/auth')) {
-                window.location.href = '/auth/login'
-            }
-        }
-        return Promise.reject(error.response?.data || error)
-    }
-)
+// ─── Auth Functions ──────────────────────────────────
+export async function bubbleRegister(name: string, email: string, password: string) {
+    const res = await wfApi.post('/register', { name, email, password })
+    return res.data // { response: { user_id, name, email, plan, token } }
+}
+
+export async function bubbleLogin(email: string, password: string) {
+    const res = await wfApi.post('/login', { email, password })
+    return res.data
+}
+
+// ─── Data API: Apps ──────────────────────────────────
+export async function getAppsByUser(userId: string) {
+    const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: userId }])
+    const res = await dataApi.get(`/app?constraints=${encodeURIComponent(constraints)}&sort_field=Created%20Date&descending=true`)
+    return res.data?.response?.results || []
+}
+
+export async function getAppById(appId: string) {
+    const res = await dataApi.get(`/app/${appId}`)
+    return res.data?.response || null
+}
+
+export async function createApp(appData: any) {
+    const res = await dataApi.post('/app', appData)
+    return res.data
+}
+
+export async function updateApp(appId: string, appData: any) {
+    const res = await dataApi.patch(`/app/${appId}`, appData)
+    return res.data
+}
+
+export async function deleteApp(appId: string) {
+    const res = await dataApi.delete(`/app/${appId}`)
+    return res.data
+}
+
+// ─── Data API: User ──────────────────────────────────
+export async function getUserById(userId: string) {
+    const res = await dataApi.get(`/user/${userId}`)
+    return res.data?.response || null
+}
+
+// ─── Legacy default export for compatibility ─────────
+// Some pages might still import `api` and use api.post('/auth/...', ...)
+// We create a compatibility layer so nothing breaks
+const api = axios.create({
+    baseURL: `${BUBBLE_BASE}/obj`,
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${BUBBLE_TOKEN}`,
+    },
+})
 
 export default api
