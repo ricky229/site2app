@@ -118,6 +118,18 @@ export default function Step5Build() {
                 finalSplashUrl = config.splashScreen;
             }
 
+            // Determine versionCode: increment for updates, start at 1 for new apps
+            let currentVersionCode = 1;
+            if (appId) {
+                try {
+                    const existingApp = await getAppById(appId);
+                    currentVersionCode = (parseInt(existingApp?.versionCode) || 0) + 1;
+                    console.log('[Build] Incrementing versionCode to', currentVersionCode);
+                } catch (_) {
+                    currentVersionCode = 2; // Safe fallback for updates
+                }
+            }
+
             const appData: any = {
                 appName: config.name || siteAnalysis?.title || 'MonApp',
                 url: config.url || siteAnalysis?.url || 'https://example.com',
@@ -128,8 +140,8 @@ export default function Step5Build() {
                 orientation: config.orientation || 'portrait',
                 enableFullscreen: config.features?.fullscreen || false,
                 status: 'building',
-                versionCode: 1,
-                versionName: '1.0',
+                versionCode: currentVersionCode,
+                versionName: appId ? `1.${currentVersionCode - 1}` : '1.0',
                 // Save logo to bubble
                 icon: finalIconUrl || ""
             }

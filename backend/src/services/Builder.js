@@ -126,7 +126,7 @@ class Builder {
                 console.log(`[BUILD ${this.buildId}] 🎨 Using user-uploaded icon (${iconPngBuffer.length} bytes)`)
                 isCustomIcon = true
             } catch (e) {
-                console.log(`[BUILD ${this.buildId}] ⚠️ Failed to decode icon base64, using fallback`)
+                console.log(`[BUILD ${this.buildId}] ⚠️ Failed to decode icon base64 data URL, using fallback`)
             }
         } else if (this.iconBase64 && this.iconBase64.startsWith('http')) {
             // Icon is a URL — try to download it synchronously
@@ -137,6 +137,20 @@ class Builder {
                 isCustomIcon = true
             } catch (e) {
                 console.log(`[BUILD ${this.buildId}] ⚠️ Failed to download icon URL, using fallback`)
+            }
+        } else if (this.iconBase64 && this.iconBase64.length > 100) {
+            // Raw base64 string (from downloadBase64() in github-build-bubble.js which returns raw base64 without data: prefix)
+            try {
+                iconPngBuffer = Buffer.from(this.iconBase64, 'base64')
+                if (iconPngBuffer.length > 100) {
+                    console.log(`[BUILD ${this.buildId}] 🎨 Using raw base64 icon (${iconPngBuffer.length} bytes)`)
+                    isCustomIcon = true
+                } else {
+                    iconPngBuffer = null
+                    console.log(`[BUILD ${this.buildId}] ⚠️ Raw base64 icon too small, using fallback`)
+                }
+            } catch (e) {
+                console.log(`[BUILD ${this.buildId}] ⚠️ Failed to decode raw base64 icon, using fallback`)
             }
         }
 
