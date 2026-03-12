@@ -87,6 +87,9 @@ async function uploadFileToBubble(filePath, fileName) {
 async function downloadBase64(url) {
     if (!url) return null;
     try {
+        if (url.startsWith('//')) {
+            url = 'https:' + url;
+        }
         console.log(`[CI] Downloading image from ${url}`);
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
