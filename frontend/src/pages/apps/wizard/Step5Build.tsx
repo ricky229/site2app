@@ -118,7 +118,7 @@ export default function Step5Build() {
                 finalSplashUrl = config.splashScreen;
             }
 
-            const appData = {
+            const appData: any = {
                 appName: config.name || siteAnalysis?.title || 'MonApp',
                 url: config.url || siteAnalysis?.url || 'https://example.com',
                 platform: platform,
@@ -130,10 +130,11 @@ export default function Step5Build() {
                 status: 'building',
                 versionCode: 1,
                 versionName: '1.0',
-                owner: user?.id || '',
                 // Save logo to bubble
-                icon: finalIconUrl || "",
-                splashScreen: finalSplashUrl || ""
+                icon: finalIconUrl || ""
+            }
+            if (user?.id) {
+                appData.owner = user.id;
             }
 
             if (appId) {
@@ -182,8 +183,10 @@ export default function Step5Build() {
 
         } catch (error: any) {
             console.error('Build start error:', error)
+            console.error('Error response data:', error?.response?.data)
             setPhase('error')
-            setBuildError(error?.response?.data?.message || error?.message || "Impossible de démarrer la compilation.")
+            const detailedError = error?.response?.data ? JSON.stringify(error.response.data) : error?.message
+            setBuildError(detailedError || "Impossible de démarrer la compilation.")
             if (appId) {
                 try { await updateApp(appId, { status: 'failed', errorMessage: error?.message }) } catch (_) {}
             }
