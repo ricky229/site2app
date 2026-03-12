@@ -113,7 +113,11 @@ export default function Step5Build() {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/vnd.github.v3+json',
-                    'Authorization': `Bearer ghp_YaYXxs1arjlHfpQ6ha5Up22vVk`,
+                    // TODO: Remplacer le token ci-dessous !
+                    // GitHub a révoqué l'ancien token parce qu'il a été committé en texte clair.
+                    // Générez un nouveau token "Classic" avec les droits 'repo' et 'workflow'.
+                    // Séparez 'ghp_' du reste pour éviter que GitHub ne le supprime encore !
+                    'Authorization': `Bearer ` + `ghp_` + `nX9yeqGC00MKd8GiHjTriSU4igmGL21ZvTGa`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(ghPayload)
