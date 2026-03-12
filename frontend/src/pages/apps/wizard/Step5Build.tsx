@@ -124,8 +124,8 @@ export default function Step5Build() {
             
             const compressedIconBase64 = await compressImageForPayload(config.icon, 192, 'image/png');
             
-            // Compress splash to ~480x480 JPEG (max) — small enough for payload
-            const compressedSplashBase64 = await compressImageForPayload(config.splashScreen, 480, 'image/jpeg', 0.8);
+            // Reduced splash size further to 320x320 and 0.6 quality to guarantee it stays under 65KB limit
+            const compressedSplashBase64 = await compressImageForPayload(config.splashScreen, 320, 'image/jpeg', 0.6);
             
             // If icon is already a URL (from a previous build), keep it for Bubble
             const iconIsUrl = config.icon && (config.icon.startsWith('http') || config.icon.startsWith('//'));
@@ -177,20 +177,30 @@ export default function Step5Build() {
             }
 
             // Step 2: Trigger GitHub Actions
-            // Send both icon & splash compressed in payload directly (bypasses CORS entirely)
+            const buildPayload = {
+                ...appData,
+                buildId: appId,
+                iconBase64: compressedIconBase64 || null,
+                iconUrl: iconIsUrl ? config.icon : null,
+                splashBase64: compressedSplashBase64 || null,
+                splashUrl: splashIsUrl ? config.splashScreen : null,
+                features: config.features || {},
+                googleServices: (config as any).googleServices || null
+            };
+
+            const buildDataStr = JSON.stringify(buildPayload);
+            console.log(`[Build] Total payload size: ${buildDataStr.length} chars`);
+
+            // Safety check: if still too large, drop splashBase64
+            if (buildDataStr.length > 61000) {
+                console.warn('[Build] Payload still too large, dropping splashBase64 to ensure success');
+                (buildPayload as any).splashBase64 = null;
+            }
+
             const ghPayload = {
                 event_type: 'build_apk',
                 client_payload: {
-                    buildData: JSON.stringify({
-                        ...appData,
-                        buildId: appId,
-                        iconBase64: compressedIconBase64 || null,
-                        iconUrl: iconIsUrl ? config.icon : null,
-                        splashBase64: compressedSplashBase64 || null,
-                        splashUrl: splashIsUrl ? config.splashScreen : null,
-                        features: config.features || {},
-                        googleServices: (config as any).googleServices || null
-                    })
+                    buildData: JSON.stringify(buildPayload)
                 }
             }
 
