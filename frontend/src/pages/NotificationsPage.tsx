@@ -54,7 +54,11 @@ export default function NotificationsPage() {
     })
     const { data: userProfile } = useQuery<any>({ 
         queryKey: ['userProfile', user?.id], 
-        queryFn: async () => user?.id ? await getUserById(user.id) : null,
+        queryFn: async () => {
+            if (!user?.id) return null;
+            const res = await nodeApi.get('/auth/me');
+            return res.data;
+        },
         enabled: !!user?.id
     })
     const { data: registeredDevices = [] } = useQuery<any[]>({ queryKey: ['devices'], queryFn: async () => await getDevices() })

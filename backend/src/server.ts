@@ -189,8 +189,14 @@ const authMiddleware = async (req: any, res: any, next: any) => {
         const user = await bubble.getUserById(decoded.userId);
         if (!user) throw new Error('User not found in Bubble');
         
-        // Sync to local users map so background polling works for this user
-        const userSafe = { id: user._id, ...user };
+        // Merge Bubble data with local config data (sensitive keys are ONLY local)
+        const localUser = users.get(user._id) || {};
+        const userSafe = { 
+            ...localUser,
+            ...user, 
+            id: user._id 
+        };
+        
         users.set(user._id, userSafe);
         saveUsers(); // Keep users.json updated
 
@@ -1111,19 +1117,8 @@ app.post('/api/auth/firebase-config', authMiddleware, async (req: any, res) => {
         saveUsers()
     }
 
-    // 2. Update BUBBLE (for persistence across server restarts)
-    try {
-        await bubble.updateUser(req.user.id, {
-            firebaseKey: adminSdkJson,
-            googleServicesJson: googleServicesJson,
-            bubbleApiUrl: bubbleApiUrl
-        })
-        console.log(`[Config] Sync successful for user ${req.user.id}`);
-        res.json({ success: true, user: users.get(req.user.id) })
-    } catch (e: any) {
-        console.error(`[Config] Bubble sync failed:`, e.message);
-        res.status(500).json({ error: `Échec de la synchronisation Bubble: ${e.message}` })
-    }
+    // 2. Return success (User config is now solely in Node Backend's users.json)
+    res.json({ success: true, user: users.get(req.user.id) })
 })
 
 app.delete('/api/user', authMiddleware, (req: any, res) => {
