@@ -99,12 +99,25 @@ export default function Step5Build() {
         setTotalProgress(0)
         setBuildError(null)
 
-        let appId: string | null = null
+        // Ensure we know if we are editing an existing app
+        const isEdit = window.location.hash.includes('/apps/') && !window.location.hash.endsWith('/create')
+        const existingAppId = isEdit ? window.location.hash.split('/').pop()?.split('?')[0] : null
+        let appId: string | null = existingAppId || null
 
         try {
             const safeName = (config.name || 'app').toLowerCase().replace(/[^a-z0-9]/g, '');
             const generatedPackageName = config.packageName || `com.site2app.${safeName}.${Date.now().toString().slice(-6)}`;
             
+            // Step 1: Upload images first before creating/updating app so we can save them
+            let finalIconUrl = await uploadImageToBubble(config.icon, 'icon.png');
+            if (!finalIconUrl && config.icon && config.icon.startsWith('http')) {
+                finalIconUrl = config.icon; // Use existing url
+            }
+            let finalSplashUrl = await uploadImageToBubble(config.splashScreen, 'splash.png');
+            if (!finalSplashUrl && config.splashScreen && config.splashScreen.startsWith('http')) {
+                finalSplashUrl = config.splashScreen;
+            }
+
             const appData = {
                 appName: config.name || siteAnalysis?.title || 'MonApp',
                 url: config.url || siteAnalysis?.url || 'https://example.com',
@@ -118,22 +131,24 @@ export default function Step5Build() {
                 versionCode: 1,
                 versionName: '1.0',
                 owner: user?.id || '',
+                // Save logo to bubble
+                icon: finalIconUrl || "",
+                splashScreen: finalSplashUrl || ""
             }
 
-            const createRes = await createApp(appData)
-            appId = createRes.id
-            setBuildId(appId)
-            console.log('[Build] App created in Bubble:', appId)
-
-            // Step 2: Upload images to Bubble Storage before Github Action if they exist
-            const finalIconUrl = await uploadImageToBubble(config.icon, 'icon.png');
-            let finalSplashUrl = await uploadImageToBubble(config.splashScreen, 'splash.png');
-            if (!finalSplashUrl && config.splashScreen) {
-                // If it wasn't a data URL (e.g. already a bubble url?)
-                if (config.splashScreen.startsWith('http')) finalSplashUrl = config.splashScreen;
+            if (appId) {
+                // Update existing app
+                await updateApp(appId, appData)
+                console.log('[Build] App updated in Bubble:', appId)
+            } else {
+                // Create new app
+                const createRes = await createApp(appData)
+                appId = createRes.id
+                setBuildId(appId)
+                console.log('[Build] App created in Bubble:', appId)
             }
 
-            // Step 3: Trigger GitHub Actions directly with full payload grouped to avoid 10-properties limit
+            // Step 2: Trigger GitHub Actions
             const ghPayload = {
                 event_type: 'build_apk',
                 client_payload: {
@@ -152,10 +167,6 @@ export default function Step5Build() {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/vnd.github.v3+json',
-                    // TODO: Remplacer le token ci-dessous !
-                    // GitHub a révoqué l'ancien token parce qu'il a été committé en texte clair.
-                    // Générez un nouveau token "Classic" avec les droits 'repo' et 'workflow'.
-                    // Séparez 'ghp_' du reste pour éviter que GitHub ne le supprime encore !
                     'Authorization': `Bearer ` + `ghp_` + `nX9yeqGC00MKd8GiHjTriSU4igmGL21ZvTGa`,
                     'Content-Type': 'application/json',
                 },

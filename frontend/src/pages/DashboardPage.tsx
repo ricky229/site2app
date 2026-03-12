@@ -15,25 +15,48 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../lib/api'
 import type { App, DashboardStats } from '../types'
 
-async function fetchStats(): Promise<DashboardStats> {
+import { getAppsByUser } from '../lib/api'
+
+async function fetchStats(userId: string): Promise<DashboardStats> {
+    const defaultStats = {
+        totalApps: 0,
+        totalDownloads: 0,
+        activeUsers: 0,
+        totalBuilds: 0,
+        pendingBuilds: 0,
+        storageUsed: 0,
+        storageLimit: 1024 * 1024 * 1024,
+    }
+    if (!userId) return defaultStats;
     try {
-        const { data } = await api.get('/stats')
-        return data
-    } catch {
-        // /stats endpoint may not exist yet — return sensible defaults
+        const apps = await getAppsByUser(userId)
+        
+        let totalDownloads = 0
+        let activeUsers = 0
+        let pendingBuilds = 0
+        
+        // Handle variations of objects coming from Bubble
+        const appList = Array.isArray(apps) ? apps : []
+        
+        appList.forEach((app: any) => {
+            totalDownloads += app.downloadCount || 0
+            activeUsers += app.activeUsers || 0
+            if (app.status === 'building') pendingBuilds++
+        })
+        
         return {
-            totalApps: 0,
-            totalDownloads: 0,
-            activeUsers: 0,
-            totalBuilds: 0,
-            pendingBuilds: 0,
+            totalApps: appList.length,
+            totalDownloads,
+            activeUsers,
+            totalBuilds: appList.length,
+            pendingBuilds,
             storageUsed: 0,
             storageLimit: 1024 * 1024 * 1024,
         }
+    } catch {
+        return defaultStats
     }
 }
-
-import { getAppsByUser } from '../lib/api'
 
 async function fetchBuilds(userId: string): Promise<any[]> {
     if (!userId) return [];
@@ -132,7 +155,11 @@ const AppCard = ({ app }: { app: App }) => {
 export default function DashboardPage() {
     const { user } = useAuthStore()
     const navigate = useNavigate()
-    const { data: stats, isLoading: statsLoading } = useQuery({ queryKey: ['stats'], queryFn: fetchStats, refetchInterval: 10000 })
+    const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({ 
+        queryKey: ['stats', user?.id], 
+        queryFn: () => fetchStats(user?.id || ''), 
+        refetchInterval: 10000 
+    })
     const { data: apps, isLoading: appsLoading } = useQuery({
         queryKey: ['builds', user?.id],
         queryFn: () => fetchBuilds(user?.id || ''),

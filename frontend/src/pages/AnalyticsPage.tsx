@@ -12,7 +12,9 @@ import { StatCard } from '../components/ui/Card'
 import { Select } from '../components/ui/FormControls'
 import { formatNumber, formatRelativeTime } from '../lib/utils'
 import { useQuery } from '@tanstack/react-query'
-import api from '../lib/api'
+import { useAuthStore } from '../store/authStore'
+import { getAppsByUser } from '../lib/api'
+import axios from 'axios'
 
 const CHART_COLORS = { primary: '#3461f5', secondary: '#7c3aed', success: '#10b981', warning: '#f59e0b' }
 
@@ -32,12 +34,164 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     )
 }
 
+// Helper to fetch notifications from Bubble Data API
+async function getUserNotifications(userId: string) {
+    try {
+        const constraints = JSON.stringify([{ key: 'userId', constraint_type: 'equals', value: userId }])
+        // Since we don't have a helper in api.ts for this, use raw fetch to avoid changing api.ts if possible
+        const BUBBLE_BASE = 'https://site2app.online/api/1.1/obj'
+        const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
+        const res = await axios.get(`${BUBBLE_BASE}/notification?constraints=${encodeURIComponent(constraints)}`, {
+            headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` }
+        })
+        return res.data?.response?.results || []
+    } catch {
+        return []
+    }
+}
+
+async function getUserDevices(userId: string) {
+    try {
+        const constraints = JSON.stringify([{ key: 'userId', constraint_type: 'equals', value: userId }])
+        const BUBBLE_BASE = 'https://site2app.online/api/1.1/obj'
+        const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
+        const res = await axios.get(`${BUBBLE_BASE}/device?constraints=${encodeURIComponent(constraints)}`, {
+            headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` }
+        })
+        return res.data?.response?.results || []
+    } catch {
+        return []
+    }
+}
+
 export default function AnalyticsPage() {
     const [period, setPeriod] = useState('30')
+    const { user } = useAuthStore()
 
     const { data: analytics, isLoading } = useQuery<any>({
-        queryKey: ['analytics', period],
-        queryFn: async () => (await api.get(`/analytics?period=${period}`)).data,
+        queryKey: ['analytics', period, user?.id],
+        queryFn: async () => {
+             if (!user?.id) throw new Error('Not logged in')
+             
+             // Fetch real data from Bubble
+             const [apps, notifs, devices] = await Promise.all([
+                 getAppsByUser(user.id),
+                 getUserNotifications(user.id),
+                 getUserDevices(user.id)
+             ])
+             
+             const periodDays = parseInt(period) || 30
+             const now = new Date()
+             const periodStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000)
+             
+             // Filter by date
+             const periodNotifs = notifs.filter((n: any) => new Date(n['Created Date'] || n.createdAt) >= periodStart)
+             const periodDevices = devices.filter((d: any) => new Date(d['Created Date'] || d.createdAt) >= periodStart)
+
+             // Calculate stats
+             const totalSent = periodNotifs.reduce((sum: number, n: any) => sum + (n.sent || 0), 0)
+             const totalDelivered = periodNotifs.reduce((sum: number, n: any) => sum + (n.delivered || 0), 0)
+             const avgDeliveryRate = totalSent > 0 ? Math.round((totalDelivered / totalSent) * 100) : 0
+             
+             const summary = {
+                 totalApps: apps.length,
+                 totalDevices: devices.length,
+                 totalSent,
+                 totalDelivered,
+                 avgDeliveryRate
+             }
+             
+             // Daily timeline
+             const dailyData: Record<string, { sent: number, delivered: number, devices: number }> = {}
+             for (let i = 0; i < periodDays; i++) {
+                 const day = new Date(now.getTime() - (periodDays - 1 - i) * 24 * 60 * 60 * 1000)
+                 const key = day.toISOString().split('T')[0]
+                 dailyData[key] = { sent: 0, delivered: 0, devices: 0 }
+             }
+             
+             periodNotifs.forEach((n: any) => {
+                 const d1 = new Date(n['Created Date'] || n.createdAt)
+                 if (isNaN(d1.getTime())) return;
+                 const key = d1.toISOString().split('T')[0]
+                 if (dailyData[key]) {
+                     dailyData[key].sent += (n.sent || 0)
+                     dailyData[key].delivered += (n.delivered || 0)
+                 }
+             })
+             
+             periodDevices.forEach((d: any) => {
+                 const d1 = new Date(d['Created Date'] || d.createdAt)
+                 if (isNaN(d1.getTime())) return;
+                 const key = d1.toISOString().split('T')[0]
+                 if (dailyData[key]) {
+                     dailyData[key].devices += 1
+                 }
+             })
+             
+             const sendTimeline = Object.entries(dailyData).map(([date, data]) => ({
+                 date: new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
+                 sent: data.sent,
+                 delivered: data.delivered
+             }))
+             
+             const deviceTimeline = Object.entries(dailyData).map(([date, data]) => ({
+                 date: new Date(date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
+                 devices: data.devices
+             }))
+             
+             // Platform stats based on apps
+             const androidApps = apps.filter((a: any) => a.platform === 'android' || a.platform === 'both').length
+             const iosApps = apps.filter((a: any) => a.platform === 'ios' || a.platform === 'both').length
+             const totalPlatforms = androidApps + iosApps || 1
+             
+             const platformData = [
+                 { name: 'Android', value: Math.round((androidApps / totalPlatforms) * 100), count: androidApps, color: '#3ddc84' },
+                 { name: 'iOS', value: Math.round((iosApps / totalPlatforms) * 100), count: iosApps, color: '#000000' }
+             ]
+             
+             // Apps stats mapping
+             const appStats = apps.map((a: any) => {
+                 const appNotifs = notifs.filter((n: any) => n.appId === a._id)
+                 const aSent = appNotifs.reduce((sum: number, n: any) => sum + (n.sent || 0), 0)
+                 const aDeliv = appNotifs.reduce((sum: number, n: any) => sum + (n.delivered || 0), 0)
+                 return {
+                     id: a._id,
+                     name: a.appName || a.name || 'App',
+                     devices: devices.filter((d: any) => d.appId === a._id).length || a.activeUsers || 0,
+                     notificationsSent: aSent,
+                     deliveryRate: aSent > 0 ? Math.round((aDeliv / aSent) * 100) : 0
+                 }
+             })
+             
+             // Top notifs
+             const topNotifications = periodNotifs.sort((a: any, b: any) => new Date(b['Created Date'] || b.createdAt).getTime() - new Date(a['Created Date'] || a.createdAt).getTime()).slice(0, 5).map((n: any) => ({
+                 id: n._id,
+                 title: n.title,
+                 sent: n.sent || 0,
+                 delivered: n.delivered || 0,
+                 deliveryRate: n.sent > 0 ? Math.round(((n.delivered || 0) / n.sent) * 100) : 0,
+                 sentAt: n['Created Date'] || n.createdAt
+             }))
+             
+             // Recent devices fallback
+             const recentDevices = periodDevices.slice(0, 5).map((d: any) => ({
+                 os: d.os || 'android',
+                 buildName: d.appName || 'App',
+                 id: (d.deviceId || d._id || '').slice(0, 15) + '...',
+                 fullId: d.deviceId || d._id,
+                 registeredAt: d['Created Date'] || d.createdAt
+             }))
+
+             return {
+                 summary,
+                 sendTimeline,
+                 deviceTimeline,
+                 platformData,
+                 appStats,
+                 topNotifications,
+                 recentDevices
+             }
+        },
         refetchInterval: 30000 // Rafraîchir toutes les 30s
     })
 
