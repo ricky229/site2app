@@ -62,32 +62,46 @@ async function uploadFileToBubble(filePath, fileName) {
     }
 }
 
-async function run() {
-    const buildId = process.env.BUILD_ID;
-    const appName = process.env.APP_NAME || 'MonApp';
-    const appUrl = process.env.APP_URL || 'https://example.com';
-    const packageName = process.env.PACKAGE_NAME || 'com.site2app.monapp';
-    const themeColor = process.env.THEME_COLOR || '#3461f5';
-    const splashBgColor = process.env.SPLASH_BG_COLOR || '#3461f5';
-    const orientation = process.env.ORIENTATION || 'portrait';
-    const enableFullscreen = process.env.ENABLE_FULLSCREEN === 'true';
-    const platform = process.env.PLATFORM || 'android';
-    const versionCode = parseInt(process.env.VERSION_CODE) || 1;
-    const versionName = process.env.VERSION_NAME || '1.0';
+async function downloadBase64(url) {
+    if (!url) return null;
+    try {
+        console.log(`[CI] Downloading image from ${url}`);
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+        const arrayBuffer = await res.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        return buffer.toString('base64');
+    } catch(e) {
+        console.error(`[CI] Error downloading image from ${url}:`, e);
+        return null;
+    }
+}
 
-    // Parse JSON features if available
-    let parsedFeatures = {};
-    if (process.env.FEATURES_JSON && process.env.FEATURES_JSON !== 'null') {
-        try { parsedFeatures = JSON.parse(process.env.FEATURES_JSON); } catch(e) { console.error('Error parsing features JSON', e); }
+async function run() {
+    let buildData = {};
+    if (process.env.BUILD_DATA && process.env.BUILD_DATA !== 'null') {
+        try { buildData = JSON.parse(process.env.BUILD_DATA); } catch(e) { console.error('Error parsing BUILD_DATA JSON', e); }
+    } else {
+        console.error('Missing BUILD_DATA environment variable');
+        process.exit(1);
     }
     
-    let parsedGoogleServices = null;
-    if (process.env.GOOGLE_SERVICES_JSON && process.env.GOOGLE_SERVICES_JSON !== 'null') {
-        try { parsedGoogleServices = JSON.parse(process.env.GOOGLE_SERVICES_JSON); } catch(e) { console.error('Error parsing Google Services JSON', e); }
-    }
+    const buildId = buildData.buildId;
+    const appName = buildData.appName || 'MonApp';
+    const appUrl = buildData.url || buildData.appUrl || 'https://example.com';
+    const packageName = buildData.packageName || 'com.site2app.monapp';
+    const themeColor = buildData.themeColor || '#3461f5';
+    const splashBgColor = buildData.splashBgColor || '#3461f5';
+    const orientation = buildData.orientation || 'portrait';
+    const enableFullscreen = buildData.enableFullscreen === true || buildData.enableFullscreen === 'true';
+    const platform = buildData.platform || 'android';
+    const versionCode = parseInt(buildData.versionCode) || 1;
+    const versionName = buildData.versionName || '1.0';
+    const parsedFeatures = buildData.features || {};
+    const parsedGoogleServices = buildData.googleServices || null;
 
     if (!buildId) {
-        console.error('Missing BUILD_ID');
+        console.error('Missing BUILD_ID in BUILD_DATA');
         process.exit(1);
     }
 
@@ -96,6 +110,10 @@ async function run() {
         
         // Prepare storage
         fs.mkdirSync(path.join(__dirname, '../storage/builds', buildId), { recursive: true });
+
+        // Download images from Bubble Storage URLs back into Base64 format for Builder
+        const iconBase64 = await downloadBase64(buildData.iconUrl);
+        const splashImageBase64 = await downloadBase64(buildData.splashUrl);
 
         const builderOptions = {
             buildId: buildId,
@@ -107,8 +125,8 @@ async function run() {
             platform: platform,
             orientation: orientation,
             features: parsedFeatures,
-            iconBase64: process.env.ICON_BASE64 || null,
-            splashImageBase64: process.env.SPLASH_BASE64 || null,
+            iconBase64: iconBase64,
+            splashImageBase64: splashImageBase64,
             versionCode: versionCode,
             versionName: versionName,
             googleServicesJson: parsedGoogleServices,

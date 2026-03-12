@@ -36,6 +36,35 @@ type BuildPhase = 'select' | 'building' | 'done' | 'error'
 const BUBBLE_WF = 'https://site2app.online/api/1.1/wf'
 const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
 
+const uploadImageToBubble = async (dataUrl: string | undefined | null, fileName: string) => {
+    if (!dataUrl || !dataUrl.startsWith('data:image/')) return null;
+    try {
+        const base64Data = dataUrl.split(',')[1];
+        const res = await fetch(`https://site2app.online/api/1.1/fileupload`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${BUBBLE_TOKEN}`
+            },
+            body: JSON.stringify({ name: fileName, contents: base64Data, private: false })
+        });
+        
+        let text = await res.text();
+        text = text.replace(/^"|"$/g, '');
+        try {
+            const json = JSON.parse(text);
+            let finalUrl = json?.response?.file || json?.file || text;
+            if (finalUrl && finalUrl.startsWith('//')) finalUrl = 'https:' + finalUrl;
+            return finalUrl;
+        } catch {
+            return text;
+        }
+    } catch(e) {
+        console.error('Failed to upload image to bubble:', e);
+        return null;
+    }
+}
+
 export default function Step5Build() {
     const navigate = useNavigate()
     const { state, reset } = useWizardStore()
@@ -96,16 +125,26 @@ export default function Step5Build() {
             setBuildId(appId)
             console.log('[Build] App created in Bubble:', appId)
 
-            // Step 2: Trigger GitHub Actions directly with full payload to ensure features and icons work
+            // Step 2: Upload images to Bubble Storage before Github Action if they exist
+            const finalIconUrl = await uploadImageToBubble(config.icon, 'icon.png');
+            let finalSplashUrl = await uploadImageToBubble(config.splashScreen, 'splash.png');
+            if (!finalSplashUrl && config.splashScreen) {
+                // If it wasn't a data URL (e.g. already a bubble url?)
+                if (config.splashScreen.startsWith('http')) finalSplashUrl = config.splashScreen;
+            }
+
+            // Step 3: Trigger GitHub Actions directly with full payload grouped to avoid 10-properties limit
             const ghPayload = {
                 event_type: 'build_apk',
                 client_payload: {
-                    ...appData,
-                    buildId: appId,
-                    icon: config.icon || null,
-                    splashScreen: config.splashScreen || null,
-                    features: config.features || {},
-                    googleServices: (config as any).googleServices || null
+                    buildData: JSON.stringify({
+                        ...appData,
+                        buildId: appId,
+                        iconUrl: finalIconUrl,
+                        splashUrl: finalSplashUrl,
+                        features: config.features || {},
+                        googleServices: (config as any).googleServices || null
+                    })
                 }
             }
 
