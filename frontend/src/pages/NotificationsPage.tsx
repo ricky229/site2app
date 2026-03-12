@@ -14,7 +14,7 @@ import { StatCard } from '../components/ui/Card'
 import { formatRelativeTime, formatNumber } from '../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api, { getUserById, updateUser, getDevices } from '../lib/api'
+import api, { getUserById, updateUser, getDevices, getAppsByUser } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import type { App } from '../types'
 
@@ -37,8 +37,21 @@ export default function NotificationsPage() {
 
     const { user, updateUser: updateAuthUser } = useAuthStore()
 
-    const { data: apps = [] } = useQuery<App[]>({ queryKey: ['builds'], queryFn: async () => (await api.get('/builds')).data })
-    const { data: notifications = [] } = useQuery<any[]>({ queryKey: ['notifications'], queryFn: async () => (await api.get('/notifications')).data })
+    const { data: apps = [] } = useQuery<App[]>({ 
+        queryKey: ['apps', user?.id], 
+        queryFn: async () => user?.id ? await getAppsByUser(user.id) : [],
+        enabled: !!user?.id
+    })
+    const { data: notifications = [] } = useQuery<any[]>({ 
+        queryKey: ['notifications', user?.id], 
+        queryFn: async () => {
+            if (!user?.id) return []
+            const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
+            const res = await api.get(`/notification?constraints=${encodeURIComponent(constraints)}`)
+            return res.data?.response?.results || []
+        },
+        enabled: !!user?.id
+    })
     const { data: userProfile } = useQuery<any>({ 
         queryKey: ['userProfile', user?.id], 
         queryFn: async () => user?.id ? await getUserById(user.id) : null,
@@ -76,7 +89,6 @@ export default function NotificationsPage() {
             if (data && data.response) {
                 updateAuthUser(data.response)
             }
-            queryClient.invalidateQueries({ queryKey: ['userProfile'] })
             toast.success('Configuration sauvegardée !')
         }
     })

@@ -517,11 +517,26 @@ ${this.features.deepLinking ? `            <intent-filter android:autoVerify="tr
 
         // ── Save user-uploaded splash image if provided ──
         let hasSplashImage = false
+        let splashBuffer = null
+
         if (this.splashImageBase64 && this.splashImageBase64.startsWith('data:')) {
             try {
                 const base64Data = this.splashImageBase64.split(',')[1]
-                const splashBuffer = Buffer.from(base64Data, 'base64')
+                splashBuffer = Buffer.from(base64Data, 'base64')
+            } catch (e) {
+                console.log(`[BUILD ${this.buildId}] ⚠️ Failed to decode splash image data URL`)
+            }
+        } else if (this.splashImageBase64 && this.splashImageBase64.length > 100) {
+            // Raw base64 from CI
+            try {
+                splashBuffer = Buffer.from(this.splashImageBase64, 'base64')
+            } catch (e) {
+                console.log(`[BUILD ${this.buildId}] ⚠️ Failed to decode raw splash image base64`)
+            }
+        }
 
+        if (splashBuffer && splashBuffer.length > 100) {
+            try {
                 let ext = 'png'
                 if (splashBuffer.length > 4) {
                     if (splashBuffer[0] === 0xFF && splashBuffer[1] === 0xD8 && splashBuffer[2] === 0xFF) ext = 'jpg'
@@ -529,10 +544,12 @@ ${this.features.deepLinking ? `            <intent-filter android:autoVerify="tr
                 }
 
                 writeFileSync(path.join(drawableDir, `splash_custom.${ext}`), splashBuffer)
+                // Also write to any other names referenced if needed, 
+                // but SplashActivity uses splash_custom.
                 hasSplashImage = true
-                console.log(`[BUILD ${this.buildId}] 🖼️ Saved user splash image (${splashBuffer.length} bytes)`)
+                console.log(`[BUILD ${this.buildId}] 🖼️ Saved user splash image (${splashBuffer.length} bytes, ext: ${ext})`)
             } catch (e) {
-                console.log(`[BUILD ${this.buildId}] ⚠️ Failed to decode splash image base64`)
+                console.log(`[BUILD ${this.buildId}] ⚠️ Failed to write splash image file`)
             }
         }
 
