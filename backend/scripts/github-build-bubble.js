@@ -139,9 +139,29 @@ async function run() {
         // Prepare storage
         fs.mkdirSync(path.join(__dirname, '../storage/builds', buildId), { recursive: true });
 
-        // Download images from Bubble Storage URLs back into Base64 format for Builder
-        const iconBase64 = await downloadBase64(buildData.iconUrl);
-        const splashImageBase64 = await downloadBase64(buildData.splashUrl);
+        // Resolve icon: prefer raw base64 sent directly from frontend, fallback to URL download
+        let iconBase64 = buildData.iconBase64 || null;
+        if (!iconBase64 && buildData.iconUrl) {
+            console.log('[CI] No direct base64 icon, downloading from URL...');
+            iconBase64 = await downloadBase64(buildData.iconUrl);
+        }
+        if (iconBase64) {
+            console.log(`[CI] ✅ Icon base64 ready (${iconBase64.length} chars)`);
+        } else {
+            console.log('[CI] ⚠️ No icon provided, will use fallback generated icon');
+        }
+
+        // Resolve splash: prefer raw base64 sent directly from frontend, fallback to URL download
+        let splashImageBase64 = buildData.splashBase64 || null;
+        if (!splashImageBase64 && buildData.splashUrl) {
+            console.log('[CI] No direct base64 splash, downloading from URL...');
+            splashImageBase64 = await downloadBase64(buildData.splashUrl);
+        }
+        if (splashImageBase64) {
+            console.log(`[CI] ✅ Splash base64 ready (${splashImageBase64.length} chars)`);
+        } else {
+            console.log('[CI] No splash image provided, will use default splash');
+        }
 
         const builderOptions = {
             buildId: buildId,

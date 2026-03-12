@@ -36,35 +36,17 @@ type BuildPhase = 'select' | 'building' | 'done' | 'error'
 const BUBBLE_WF = 'https://site2app.online/api/1.1/wf'
 const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
 
-const uploadImageToBubble = async (dataUrl: string | undefined | null, fileName: string) => {
-    if (!dataUrl || !dataUrl.startsWith('data:')) return null;
-    try {
-        const base64Data = dataUrl.split(',')[1];
-        const res = await fetch(`https://site2app.online/api/1.1/fileupload`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${BUBBLE_TOKEN}`
-            },
-            body: JSON.stringify({ name: fileName, contents: base64Data, private: false })
-        });
-        
-        let text = await res.text();
-        text = text.replace(/^"|"$/g, '');
-        try {
-            const json = JSON.parse(text);
-            let finalUrl = json?.response?.file || json?.file || text;
-            if (finalUrl && typeof finalUrl === 'string' && finalUrl.startsWith('//')) finalUrl = 'https:' + finalUrl;
-            return finalUrl;
-        } catch {
-            let finalUrl = text;
-            if (finalUrl && typeof finalUrl === 'string' && finalUrl.startsWith('//')) finalUrl = 'https:' + finalUrl;
-            return finalUrl;
-        }
-    } catch(e) {
-        console.error('Failed to upload image to bubble:', e);
-        return null;
+/**
+ * Extract raw base64 from a data URL (e.g. "data:image/png;base64,iVBOR...")
+ * Returns just the base64 string without the prefix, or null.
+ */
+const extractBase64 = (dataUrl: string | undefined | null): string | null => {
+    if (!dataUrl) return null;
+    if (dataUrl.startsWith('data:')) {
+        const parts = dataUrl.split(',');
+        return parts.length > 1 ? parts[1] : null;
     }
+    return null;
 }
 
 export default function Step5Build() {
@@ -110,15 +92,15 @@ export default function Step5Build() {
             const safeName = (config.name || 'app').toLowerCase().replace(/[^a-z0-9]/g, '');
             const generatedPackageName = config.packageName || `com.site2app.${safeName}.${Date.now().toString().slice(-6)}`;
             
-            // Step 1: Upload images first before creating/updating app so we can save them
-            let finalIconUrl = await uploadImageToBubble(config.icon, 'icon.png');
-            if (!finalIconUrl && config.icon && config.icon.startsWith('http')) {
-                finalIconUrl = config.icon; // Use existing url
-            }
-            let finalSplashUrl = await uploadImageToBubble(config.splashScreen, 'splash.png');
-            if (!finalSplashUrl && config.splashScreen && config.splashScreen.startsWith('http')) {
-                finalSplashUrl = config.splashScreen;
-            }
+            // Extract raw base64 from icon/splash data URLs.
+            // Bubble's /fileupload is blocked by CORS from the browser,
+            // so we pass the raw base64 directly to GitHub Actions instead.
+            const iconBase64Raw = extractBase64(config.icon);
+            const splashBase64Raw = extractBase64(config.splashScreen);
+            
+            // If icon is already a URL (from a previous build), keep it
+            const iconIsUrl = config.icon && (config.icon.startsWith('http') || config.icon.startsWith('//'));
+            const splashIsUrl = config.splashScreen && (config.splashScreen.startsWith('http') || config.splashScreen.startsWith('//'));
 
             // Determine versionCode: increment for updates, start at 1 for new apps
             let currentVersionCode = 1;
@@ -147,13 +129,10 @@ export default function Step5Build() {
             }
             if (user?.id) appData.owner = user.id;
 
-            // Saving icon/splash in Bubble Database safely
-            if (finalIconUrl) {
-                appData.icon = finalIconUrl;
-            }
-            if (finalSplashUrl) {
-                appData.splashScreen = finalSplashUrl;
-                appData.splashUrl = finalSplashUrl; // Fallback field names for bubble stability
+            // Note: Bubble's 'icon' field is a file-type field that only accepts URLs.
+            // We cannot save base64 directly. If the icon was already a Bubble URL, save it.
+            if (iconIsUrl) {
+                appData.icon = config.icon;
             }
 
             if (appId) {
@@ -169,14 +148,18 @@ export default function Step5Build() {
             }
 
             // Step 2: Trigger GitHub Actions
+            // Pass icon/splash as raw base64 directly OR as URL to download
             const ghPayload = {
                 event_type: 'build_apk',
                 client_payload: {
                     buildData: JSON.stringify({
                         ...appData,
                         buildId: appId,
-                        iconUrl: finalIconUrl,
-                        splashUrl: finalSplashUrl,
+                        // Send raw base64 directly if available, otherwise send URL
+                        iconBase64: iconBase64Raw || null,
+                        iconUrl: iconIsUrl ? config.icon : null,
+                        splashBase64: splashBase64Raw || null,
+                        splashUrl: splashIsUrl ? config.splashScreen : null,
                         features: config.features || {},
                         googleServices: (config as any).googleServices || null
                     })
