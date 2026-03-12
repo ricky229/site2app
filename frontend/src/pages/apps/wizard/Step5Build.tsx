@@ -37,12 +37,19 @@ const BUBBLE_WF = 'https://site2app.online/api/1.1/wf'
 const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
 
 /**
- * Compress an image (data URL or URL) to a small 192x192 PNG via Canvas.
- * Returns a raw base64 string (no data: prefix) that is small enough
- * to fit in the GitHub Actions client_payload (max ~65KB).
- * Returns null on failure.
+ * Compress an image (data URL or URL) to a small size via Canvas.
+ * Returns a raw base64 string (no data: prefix) small enough
+ * to fit in the GitHub Actions client_payload (max ~65KB total).
+ * @param size - target width/height in pixels
+ * @param format - 'image/png' or 'image/jpeg'
+ * @param quality - JPEG quality (0-1), ignored for PNG
  */
-const compressIconForPayload = (imageSource: string | undefined | null): Promise<string | null> => {
+const compressImageForPayload = (
+    imageSource: string | undefined | null,
+    size: number = 192,
+    format: string = 'image/png',
+    quality: number = 0.7
+): Promise<string | null> => {
     return new Promise((resolve) => {
         if (!imageSource) return resolve(null);
         const img = new Image();
@@ -50,23 +57,22 @@ const compressIconForPayload = (imageSource: string | undefined | null): Promise
         img.onload = () => {
             try {
                 const canvas = document.createElement('canvas');
-                canvas.width = 192;
-                canvas.height = 192;
+                canvas.width = size;
+                canvas.height = size;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return resolve(null);
-                ctx.drawImage(img, 0, 0, 192, 192);
-                // Use PNG for quality, but at 192x192 it's small (~5-15KB base64)
-                const dataUrl = canvas.toDataURL('image/png');
+                ctx.drawImage(img, 0, 0, size, size);
+                const dataUrl = canvas.toDataURL(format, quality);
                 const base64 = dataUrl.split(',')[1] || null;
-                console.log(`[Build] Icon compressed to ${base64 ? base64.length : 0} chars base64`);
+                console.log(`[Build] Image compressed to ${size}x${size} ${format}: ${base64 ? base64.length : 0} chars`);
                 resolve(base64);
             } catch (e) {
-                console.warn('[Build] Failed to compress icon:', e);
+                console.warn('[Build] Failed to compress image:', e);
                 resolve(null);
             }
         };
         img.onerror = () => {
-            console.warn('[Build] Failed to load icon image for compression');
+            console.warn('[Build] Failed to load image for compression');
             resolve(null);
         };
         img.src = imageSource;
@@ -116,9 +122,10 @@ export default function Step5Build() {
             const safeName = (config.name || 'app').toLowerCase().replace(/[^a-z0-9]/g, '');
             const generatedPackageName = config.packageName || `com.site2app.${safeName}.${Date.now().toString().slice(-6)}`;
             
-            // Compress icon to 192x192 PNG via Canvas — small enough for GitHub payload
-            // This works for both data URLs and http URLs
-            const compressedIconBase64 = await compressIconForPayload(config.icon);
+            const compressedIconBase64 = await compressImageForPayload(config.icon, 192, 'image/png');
+            
+            // Compress splash to ~480x480 JPEG (max) — small enough for payload
+            const compressedSplashBase64 = await compressImageForPayload(config.splashScreen, 480, 'image/jpeg', 0.8);
             
             // If icon is already a URL (from a previous build), keep it for Bubble
             const iconIsUrl = config.icon && (config.icon.startsWith('http') || config.icon.startsWith('//'));
@@ -170,8 +177,7 @@ export default function Step5Build() {
             }
 
             // Step 2: Trigger GitHub Actions
-            // Icon: send compressed base64 (small, ~5-15KB) directly in payload
-            // Splash: only send URL if available (too large for inline base64)
+            // Send both icon & splash compressed in payload directly (bypasses CORS entirely)
             const ghPayload = {
                 event_type: 'build_apk',
                 client_payload: {
@@ -180,6 +186,7 @@ export default function Step5Build() {
                         buildId: appId,
                         iconBase64: compressedIconBase64 || null,
                         iconUrl: iconIsUrl ? config.icon : null,
+                        splashBase64: compressedSplashBase64 || null,
                         splashUrl: splashIsUrl ? config.splashScreen : null,
                         features: config.features || {},
                         googleServices: (config as any).googleServices || null

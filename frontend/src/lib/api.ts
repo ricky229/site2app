@@ -67,6 +67,25 @@ export async function getUserById(userId: string) {
     return res.data?.response || null
 }
 
+export async function updateUser(userId: string, userData: any) {
+    const res = await dataApi.patch(`/user/${userId}`, userData)
+    return res.data
+}
+
+export async function getDevices(appId?: string) {
+    let url = '/device'
+    if (appId) {
+        const constraints = JSON.stringify([{ key: 'buildId', constraint_type: 'equals', value: appId }])
+        url += `?constraints=${encodeURIComponent(constraints)}`
+    }
+    try {
+        const res = await dataApi.get(url)
+        return res.data?.response?.results || []
+    } catch {
+        return []
+    }
+}
+
 // ─── Legacy default export for compatibility ─────────
 // Some pages might still import `api` and use api.post('/auth/...', ...)
 // We create a compatibility layer so nothing breaks

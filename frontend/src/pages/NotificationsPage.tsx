@@ -14,7 +14,8 @@ import { StatCard } from '../components/ui/Card'
 import { formatRelativeTime, formatNumber } from '../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '../lib/api'
+import api, { getUserById, updateUser, getDevices } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
 import type { App } from '../types'
 
 export default function NotificationsPage() {
@@ -34,10 +35,16 @@ export default function NotificationsPage() {
     const [targetMode, setTargetMode] = useState<'all' | 'specific'>('all')
     const [selectedDevices, setSelectedDevices] = useState<string[]>([])
 
+    const { user, updateUser: updateAuthUser } = useAuthStore()
+
     const { data: apps = [] } = useQuery<App[]>({ queryKey: ['builds'], queryFn: async () => (await api.get('/builds')).data })
     const { data: notifications = [] } = useQuery<any[]>({ queryKey: ['notifications'], queryFn: async () => (await api.get('/notifications')).data })
-    const { data: userProfile } = useQuery<any>({ queryKey: ['userProfile'], queryFn: async () => (await api.get('/auth/me')).data })
-    const { data: registeredDevices = [] } = useQuery<any[]>({ queryKey: ['devices'], queryFn: async () => (await api.get('/devices')).data })
+    const { data: userProfile } = useQuery<any>({ 
+        queryKey: ['userProfile', user?.id], 
+        queryFn: async () => user?.id ? await getUserById(user.id) : null,
+        enabled: !!user?.id
+    })
+    const { data: registeredDevices = [] } = useQuery<any[]>({ queryKey: ['devices'], queryFn: async () => await getDevices() })
 
     const [firebaseConfig, setFirebaseConfig] = useState({
         adminSdkJson: '',
@@ -56,8 +63,19 @@ export default function NotificationsPage() {
     }, [userProfile])
 
     const firebaseMutation = useMutation({
-        mutationFn: async (payload: any) => await api.post('/auth/firebase-config', payload),
-        onSuccess: () => {
+        mutationFn: async (payload: any) => {
+            if (!user?.id) throw new Error("Non authentifié")
+            return await updateUser(user.id, { 
+                firebaseKey: payload.adminSdkJson,
+                googleServicesJson: payload.googleServicesJson,
+                bubbleApiUrl: payload.bubbleApiUrl
+            })
+        },
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+            if (data && data.response) {
+                updateAuthUser(data.response)
+            }
             queryClient.invalidateQueries({ queryKey: ['userProfile'] })
             toast.success('Configuration sauvegardée !')
         }
