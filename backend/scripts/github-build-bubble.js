@@ -29,8 +29,16 @@ async function uploadFileToBubble(filePath, fileName) {
     const formData = new FormData();
     formData.append('file', blob, fileName);
     
-    // Upload to Bubble file manager via workflow
-    const res = await fetch(`${BUBBLE_API_URL.replace('/obj', '/wf')}/upload_apk`, {
+    // Upload to Bubble file manager directly via the native /fileupload endpoint
+    let uploadUrl = BUBBLE_API_URL.replace('/api/1.1/obj', '/fileupload');
+    if (!uploadUrl.endsWith('/fileupload')) {
+        // Fallback robust construction
+        const urlObj = new URL(BUBBLE_API_URL);
+        const versionPath = BUBBLE_API_URL.includes('/version-test') ? '/version-test' : '';
+        uploadUrl = urlObj.origin + versionPath + '/fileupload';
+    }
+    
+    const res = await fetch(uploadUrl, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${BUBBLE_API_TOKEN}`,
@@ -43,8 +51,14 @@ async function uploadFileToBubble(filePath, fileName) {
         return null;
     }
     
-    const data = await res.json();
-    return data;
+    // The endpoint returns the URL directly as a string or a JSON
+    const text = await res.text();
+    try {
+        const json = JSON.parse(text);
+        return json.response?.file || json.file || text;
+    } catch(e) {
+        return text;
+    }
 }
 
 async function run() {
