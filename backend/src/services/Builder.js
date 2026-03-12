@@ -177,13 +177,26 @@ class Builder {
             mkdirSync(dir, { recursive: true })
             writeFileSync(path.join(dir, `ic_launcher.${ext}`), iconPngBuffer)
             writeFileSync(path.join(dir, `ic_launcher_round.${ext}`), iconPngBuffer)
+            writeFileSync(path.join(dir, `ic_launcher_foreground.${ext}`), iconPngBuffer)
         }
 
-        // Only generate Adaptive Icons (API 26+) for fallback generated icons.
-        // If a user uploaded a custom square/circle icon, skipping the adaptive XML
-        // guarantees Android will natively render their raw image without clipping/masking issues.
+        // ALWAYS generate Adaptive Icons (API 26+) so Android 8+ doesn't shrink it into a white circle
+        
+        // Background color for adaptive icon
+        const valuesDir = path.join(baseDir, 'res', 'values')
+        mkdirSync(valuesDir, { recursive: true })
+        this._write(path.join(valuesDir, 'ic_launcher_background.xml'),
+            `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">${this.statusBarColor}</color>
+</resources>`)
+
+        // Adaptive icon XMLs (API 26+)
+        const anydpiDir = path.join(baseDir, 'res', 'mipmap-anydpi-v26')
+        mkdirSync(anydpiDir, { recursive: true })
+
         if (!isCustomIcon) {
-            // ── Foreground vector drawable for adaptive icons (API 26+) ──
+            // Foreground vector drawable for fallback
             this._write(path.join(baseDir, 'res', 'drawable', 'ic_launcher_foreground.xml'),
                 `<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -194,32 +207,24 @@ class Builder {
             android:pathData="M30,4 L14,30 L26,30 L22,50 L40,24 L28,24 L32,4 Z"/>
     </group>
 </vector>`)
-
-            // Background color for adaptive icon
-            this._write(path.join(baseDir, 'res', 'values', 'ic_launcher_background.xml'),
-                `<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <color name="ic_launcher_background">${this.statusBarColor}</color>
-</resources>`)
-
-            // Adaptive icon XMLs (API 26+)
-            const anydpiDir = path.join(baseDir, 'res', 'mipmap-anydpi-v26')
-            mkdirSync(anydpiDir, { recursive: true })
-
-            this._write(path.join(anydpiDir, 'ic_launcher.xml'),
-                `<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background"/>
-    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-</adaptive-icon>`)
-
-            this._write(path.join(anydpiDir, 'ic_launcher_round.xml'),
-                `<?xml version="1.0" encoding="utf-8"?>
-<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background"/>
-    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-</adaptive-icon>`)
         }
+
+        // Set the foreground dynamically based on custom vs fallback
+        const foregroundRef = isCustomIcon ? '@mipmap/ic_launcher_foreground' : '@drawable/ic_launcher_foreground'
+
+        this._write(path.join(anydpiDir, 'ic_launcher.xml'),
+            `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="${foregroundRef}"/>
+</adaptive-icon>`)
+
+        this._write(path.join(anydpiDir, 'ic_launcher_round.xml'),
+            `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="${foregroundRef}"/>
+</adaptive-icon>`)
     }
 
     /** Create a minimal valid PNG file (solid color square) */

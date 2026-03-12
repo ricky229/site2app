@@ -1,0 +1,20 @@
+{
+  "status": "completed",
+  "versionName": "1.0",
+  "Created Date": "2026-03-12T10:17:06.971Z",
+  "Modified Date": "2026-03-12T10:17:50.278Z",
+  "appName": "BATHOS PRO",
+  "packageName": "com.site2app.bathos.pro",
+  "apkFile": "https://33b6733e5db1e700fc1070ad5f5beff5.cdn.bubble.io/f1773310669540x119688468870689620/BATHOS_PRO.apk",
+  "url": "https://bathospro.com",
+  "_id": "1773310626971x611893746116160400",
+  "orientation": "portrait",
+  "splashBgColor": "#374151",
+  "owner": "1773303671790x329603089340145340",
+  "fileSize": 34632,
+  "enableFullscreen": false,
+  "themeColor": "#374151",
+  "Created By": "admin_user_site2app-34905_live",
+  "platform": "android",
+  "versionCode": 1
+}
