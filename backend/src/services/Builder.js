@@ -1493,17 +1493,14 @@ ${this.features.offlineMode ? `
         // ── STEP 8: Sign with apksigner (v1+v2+v3) ──
         console.log(`[BUILD ${this.buildId}] 🔑 Step 8: apksigner(v1 + v2 + v3)`)
 
-        const keystoresDir = path.join(__dirname, '../../storage/keystores')
-        mkdirSync(keystoresDir, { recursive: true })
-        const ks = path.join(keystoresDir, `${this.packageName}.keystore`)
-
+        const ks = path.join(__dirname, 'site2app.keystore')
         const finalApk = path.join(this.buildDir, `${safeName}.apk`)
 
         if (!existsSync(ks)) {
-            console.log(`[BUILD ${this.buildId}] Generating new keystore for package ${this.packageName}...`)
-            this._run(`"${keytool}" -genkey -v -keystore "${ks}" -alias app -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=${safeName},O=Site2App,C=FR"`)
+            console.error(`[BUILD ${this.buildId}] CRITICAL: Static keystore missing at ${ks}! Signature failed.`);
+            throw new Error('Static keystore missing.');
         } else {
-            console.log(`[BUILD ${this.buildId}] Reusing existing keystore for package ${this.packageName}`)
+            console.log(`[BUILD ${this.buildId}] Using static keystore for package ${this.packageName}`)
         }
 
         copyFileSync(alignedApk, finalApk)
@@ -1957,12 +1954,13 @@ configurations.all {
 
             this._run(`"${path.join(bt, 'zipalign')}" -f -v -p 4 "${apkGenerated}" "${apkAligned}"`);
 
-            const ksDir = path.join(__dirname, '../../storage/keystores');
-            fs.mkdirSync(ksDir, { recursive: true });
-            const ksPath = path.join(ksDir, this.packageName + '.keystore');
+            const ksPath = path.join(__dirname, 'site2app.keystore');
 
             if (!fs.existsSync(ksPath)) {
-                this._run(`"${path.join(javaHome, 'bin', 'keytool')}" -genkey -v -keystore "${ksPath}" -alias app -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=${safeName},O=Site2App,C=FR"`);
+                console.error(`[BUILD ${this.buildId}] CRITICAL: Static keystore missing at ${ksPath}! Signature failed.`);
+                throw new Error('Static keystore missing.');
+            } else {
+                console.log(`[BUILD ${this.buildId}] Using static keystore for package ${this.packageName}`);
             }
 
             fs.copyFileSync(apkAligned, finalApk);
