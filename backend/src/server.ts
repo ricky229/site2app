@@ -186,19 +186,30 @@ const authMiddleware = async (req: any, res: any, next: any) => {
     try {
         const secret = process.env.JWT_SECRET || 'site2app_super_secret';
         const decoded = jwt.verify(token, secret) as any;
-        const user = await bubble.getUserById(decoded.userId);
-        if (!user) throw new Error('User not found in Bubble');
+        const bubbleUser = await bubble.getUserById(decoded.userId);
+        if (!bubbleUser) throw new Error('User not found in Bubble');
         
-        // Merge Bubble data with local config data (sensitive keys are ONLY local)
-        const localUser = users.get(user._id) || {};
+        const bubbleId = bubbleUser._id;
+        
+        // Load existing local user data (contains sensitive keys)
+        const localUser = users.get(bubbleId) || {};
+        
+        // Merge: Bubble provides profile data, LOCAL provides sensitive config
+        // LOCAL keys ALWAYS win to prevent loss of Firebase credentials
         const userSafe = { 
-            ...user, // Bubble data (name, email)
-            ...localUser, // Local data WINS (firebaseKey, googleServicesJson)
-            id: user._id 
+            id: bubbleId,
+            email: bubbleUser.email || bubbleUser.emailAddress || localUser.email,
+            name: bubbleUser.name || localUser.name,
+            plan: bubbleUser.plan || localUser.plan || 'free',
+            role: bubbleUser.role || localUser.role || 'user',
+            // Sensitive keys: ALWAYS from local storage (never from Bubble)
+            firebaseKey: localUser.firebaseKey || '',
+            googleServicesJson: localUser.googleServicesJson || '',
+            bubbleApiUrl: localUser.bubbleApiUrl || '',
         };
         
-        users.set(user._id, userSafe);
-        saveUsers(); // Keep users.json updated
+        users.set(bubbleId, userSafe);
+        saveUsers();
 
         req.user = userSafe;
         next()
@@ -660,26 +671,37 @@ const sendNotificationCore = async (user: any, payload: any) => {
         }
     };
 
+    let fcmError: string | null = null;
+
     if (!scheduledAt) {
-        if (user.firebaseKey) {
+        if (!user.firebaseKey) {
+            console.warn(`[CORE] No Firebase key configured for user ${user.id}. Notification saved but NOT sent via FCM.`);
+            fcmError = 'Aucune clé Firebase configurée. Allez dans Configuration Firebase pour enregistrer votre clé.';
+        } else {
             try {
                 const parsedKey = typeof user.firebaseKey === 'string' ? JSON.parse(user.firebaseKey) : user.firebaseKey;
-                // Use a hash of the key to differentiate apps and force re-init if key changes
-                const keyStr = typeof user.firebaseKey === 'string' ? user.firebaseKey : JSON.stringify(user.firebaseKey);
-                const keyHash = Buffer.from(keyStr).toString('hex').substring(0, 8);
-                const appName = `app_${user.id.replace(/[^a-zA-Z0-9]/g, '')}_${keyHash}`;
+                
+                // Validate the key has required fields
+                if (!parsedKey.project_id || !parsedKey.private_key || !parsedKey.client_email) {
+                    throw new Error('Clé Firebase invalide: project_id, private_key et client_email sont requis.');
+                }
+
+                // Use project_id + user_id for stable app naming
+                const safeUserId = user.id.replace(/[^a-zA-Z0-9]/g, '');
+                const appName = `fcm_${safeUserId}_${parsedKey.project_id}`;
                 let userApp;
 
-                if (!admin.apps.some((a: any) => a?.name === appName)) {
-                    // Cleanup old apps for this user to save memory
-                    admin.apps.forEach(a => {
-                        if (a?.name.startsWith(`app_${user.id.replace(/[^a-zA-Z0-9]/g, '')}`)) {
-                            try { (a as any).delete(); } catch(e) {}
-                        }
-                    });
-                    userApp = admin.initializeApp({ credential: admin.credential.cert(parsedKey) }, appName);
-                } else {
+                try {
                     userApp = admin.app(appName);
+                } catch (e: any) {
+                    // App doesn't exist yet, cleanup any old apps for this user first
+                    for (const a of admin.apps) {
+                        if (a?.name?.startsWith(`fcm_${safeUserId}_`) || a?.name?.startsWith(`app_${safeUserId}_`)) {
+                            try { await a.delete(); } catch(delErr) {}
+                        }
+                    }
+                    userApp = admin.initializeApp({ credential: admin.credential.cert(parsedKey) }, appName);
+                    console.log(`[CORE] Firebase app initialized: ${appName}`);
                 }
 
                 const notificationPayload: any = { title, body };
@@ -689,18 +711,30 @@ const sendNotificationCore = async (user: any, payload: any) => {
                 if (image) dataPayload.image = image;
                 if (actionUrl) dataPayload.actionUrl = actionUrl;
 
+                // Resolve target tokens
                 let tokensToSend: string[] = [];
                 if (Array.isArray(target) && target.length > 0) {
                     tokensToSend = target;
                 } else {
-                    const allDevices = Array.from(devices.values()) as any[];
+                    // Get all devices, optionally filtered by buildId
+                    const allDevicesList = Array.from(devices.values()) as any[];
+                    
+                    // If a specific app is selected, only send to that app's devices
+                    // Otherwise, only send to devices belonging to this user's builds
+                    const userBuildIds = Array.from(builds.values())
+                        .filter((b: any) => b.userId === user.id)
+                        .map(b => b.id);
+                    
                     const filteredDevices = buildId && buildId !== 'all'
-                        ? allDevices.filter((d: any) => d.buildId === buildId)
-                        : allDevices;
+                        ? allDevicesList.filter((d: any) => d.buildId === buildId)
+                        : allDevicesList.filter((d: any) => userBuildIds.includes(d.buildId));
+                    
                     tokensToSend = filteredDevices
                         .map((d: any) => d.id)
-                        .filter((id: string) => id && !id.startsWith('android-') && id !== 'test_token');
+                        .filter((id: string) => id && !id.startsWith('android-') && id !== 'test_token' && id.includes(':'));
                 }
+
+                console.log(`[CORE] Tokens to send: ${tokensToSend.length}`);
 
                 if (tokensToSend.length > 0) {
                     const response = await userApp.messaging().sendEachForMulticast({
@@ -709,21 +743,59 @@ const sendNotificationCore = async (user: any, payload: any) => {
                         android: { priority: 'high' as const },
                         tokens: tokensToSend
                     });
+                    
                     notif.stats.sent = tokensToSend.length;
                     notif.stats.delivered = response.successCount;
                     notif.stats.deliveryRate = Math.round((response.successCount / tokensToSend.length) * 100);
+                    
+                    console.log(`[CORE] FCM Result: ${response.successCount}/${tokensToSend.length} delivered`);
+
+                    // Log individual failures for debugging
+                    if (response.failureCount > 0) {
+                        response.responses.forEach((r: any, i: number) => {
+                            if (!r.success) {
+                                const errorCode = r.error?.code || 'unknown';
+                                console.warn(`[CORE] Token failed [${errorCode}]: ${tokensToSend[i]?.substring(0, 30)}...`);
+                                
+                                // Remove invalid/unregistered tokens automatically
+                                if (errorCode === 'messaging/registration-token-not-registered' ||
+                                    errorCode === 'messaging/invalid-registration-token') {
+                                    const tokenToRemove = tokensToSend[i];
+                                    if (tokenToRemove && devices.has(tokenToRemove)) {
+                                        devices.delete(tokenToRemove);
+                                        console.log(`[CORE] Removed stale token: ${tokenToRemove.substring(0, 30)}...`);
+                                    }
+                                }
+                            }
+                        });
+                        saveDevices();
+                    }
+                } else {
+                    console.warn(`[CORE] No valid tokens found to send notification.`);
                 }
             } catch (err: any) {
                 console.error('[CORE] Firebase Error:', err.message);
-                throw err;
+                fcmError = err.message;
+                
+                // If it's a credential error, delete the cached firebase app so it re-inits next time
+                if (err.message?.includes('credential') || err.message?.includes('OAuth')) {
+                    const safeUserId = user.id.replace(/[^a-zA-Z0-9]/g, '');
+                    for (const a of admin.apps) {
+                        if (a?.name?.startsWith(`fcm_${safeUserId}_`) || a?.name?.startsWith(`app_${safeUserId}_`)) {
+                            try { await a.delete(); } catch(delErr) {}
+                        }
+                    }
+                    console.log(`[CORE] Cleaned up Firebase apps for user ${user.id} after credential error.`);
+                }
             }
         }
     }
 
+    // Always save the notification to history
     notifications.set(notif.id, notif);
     saveNotifications();
 
-    // Sync to Bubble (History)
+    // Sync to Bubble (History) - don't let this block/fail the response
     try {
         await bubble.createNotification({
             title: notif.title,
@@ -739,6 +811,11 @@ const sendNotificationCore = async (user: any, payload: any) => {
         });
     } catch (e: any) {
         console.error(`[CORE] Bubble History Sync Failed:`, e.message);
+    }
+
+    // If there was an FCM error, attach it to the response but don't throw
+    if (fcmError) {
+        notif.fcmError = fcmError;
     }
 
     return notif;
@@ -1047,10 +1124,22 @@ app.post('/node/auth/login', async (req, res) => {
         const secret = process.env.JWT_SECRET || 'site2app_super_secret';
         const token = jwt.sign({ userId: user._id }, secret, { expiresIn: '30d' });
 
-        const { passwordHash: _, ...userSafe } = user
-        userSafe.id = user._id;
+        // Load existing local data to preserve Firebase keys
+        const existingLocal = users.get(user._id) || {};
 
-        // Sync to local storage
+        const userSafe = {
+            id: user._id,
+            email: user.email || user.emailAddress,
+            name: user.name,
+            plan: user.plan || 'free',
+            role: user.role || 'user',
+            // Preserve locally-stored sensitive config 
+            firebaseKey: existingLocal.firebaseKey || '',
+            googleServicesJson: existingLocal.googleServicesJson || '',
+            bubbleApiUrl: existingLocal.bubbleApiUrl || '',
+        };
+
+        // Sync to local storage (preserving Firebase keys)
         users.set(userSafe.id, userSafe);
         saveUsers();
 
@@ -1091,8 +1180,16 @@ app.post('/node/auth/register', async (req, res) => {
         const id = newUser._id || newUser.id;
         const token = jwt.sign({ userId: id }, secret, { expiresIn: '30d' });
 
-        const { passwordHash: _, ...userSafe } = newUser
-        userSafe.id = id;
+        const userSafe = {
+            id,
+            email,
+            name,
+            plan: 'free',
+            role: 'user',
+            firebaseKey: '',
+            googleServicesJson: '',
+            bubbleApiUrl: '',
+        };
 
         // Sync to local storage
         users.set(id, userSafe);

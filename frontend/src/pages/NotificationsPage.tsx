@@ -14,7 +14,7 @@ import { StatCard } from '../components/ui/Card'
 import { formatRelativeTime, formatNumber } from '../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api, { getUserById, updateUser, getDevices, getAppsByUser, dataApi, nodeApi } from '../lib/api'
+import api, { getAppsByUser, nodeApi } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import type { App } from '../types'
 
@@ -46,9 +46,8 @@ export default function NotificationsPage() {
         queryKey: ['notifications', user?.id], 
         queryFn: async () => {
             if (!user?.id) return []
-            const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
-            const res = await dataApi.get(`/notification?constraints=${encodeURIComponent(constraints)}`)
-            return res.data?.response?.results || []
+            const res = await nodeApi.get('/notifications')
+            return res.data || []
         },
         enabled: !!user?.id
     })
@@ -61,7 +60,14 @@ export default function NotificationsPage() {
         },
         enabled: !!user?.id
     })
-    const { data: registeredDevices = [] } = useQuery<any[]>({ queryKey: ['devices'], queryFn: async () => await getDevices() })
+    const { data: registeredDevices = [] } = useQuery<any[]>({
+        queryKey: ['devices', user?.id],
+        queryFn: async () => {
+            const res = await nodeApi.get('/devices')
+            return res.data || []
+        },
+        enabled: !!user?.id
+    })
 
     const [firebaseConfig, setFirebaseConfig] = useState({
         adminSdkJson: '',
@@ -101,10 +107,18 @@ export default function NotificationsPage() {
     })
 
     const sendMutation = useMutation({
-        mutationFn: async (payload: any) => await nodeApi.post('/notifications/send', payload),
-        onSuccess: () => {
+        mutationFn: async (payload: any) => {
+            const res = await nodeApi.post('/notifications/send', payload)
+            return res.data
+        },
+        onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
-            toast.success(form.scheduled ? '📅 Notification programmée !' : '🚀 Notification envoyée avec succès !')
+            if (data?.fcmError) {
+                toast.error(`⚠️ ${data.fcmError}`, { duration: 6000 })
+                toast.success('Notification enregistrée dans l\'historique (mais non envoyée via Push).')
+            } else {
+                toast.success(form.scheduled ? '📅 Notification programmée !' : '🚀 Notification envoyée avec succès !')
+            }
             setForm(f => ({ ...f, title: '', body: '' }))
             if (!form.scheduled) setTab('history')
         },
@@ -127,7 +141,7 @@ export default function NotificationsPage() {
     }
 
     const deleteMutation = useMutation({
-        mutationFn: async (id: string) => await api.delete(`/notifications/${id}`),
+        mutationFn: async (id: string) => await nodeApi.delete(`/notifications/${id}`),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
             toast.success('Notification supprimée')
@@ -135,7 +149,7 @@ export default function NotificationsPage() {
     })
 
     const clearAllMutation = useMutation({
-        mutationFn: async () => await api.delete('/notifications'),
+        mutationFn: async () => await nodeApi.delete('/notifications'),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
             toast.success('Historique effacé')
