@@ -22,6 +22,31 @@ async function updateBubbleApp(appId, data) {
 }
 
 
+async function uploadFileToBubble(filePath, fileName) {
+    const fileBuffer = fs.readFileSync(filePath);
+    const blob = new Blob([fileBuffer], { type: 'application/vnd.android.package-archive' });
+    
+    const formData = new FormData();
+    formData.append('file', blob, fileName);
+    
+    // Upload to Bubble file manager via workflow
+    const res = await fetch(`${BUBBLE_API_URL.replace('/obj', '/wf')}/upload_apk`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${BUBBLE_API_TOKEN}`,
+        },
+        body: formData
+    });
+    
+    if (!res.ok) {
+        console.error('Bubble file upload failed:', await res.text());
+        return null;
+    }
+    
+    const data = await res.json();
+    return data;
+}
+
 async function run() {
     const buildId = process.env.BUILD_ID;
     const appName = process.env.APP_NAME || 'MonApp';
@@ -69,16 +94,22 @@ async function run() {
         console.log(`[CI] Build complete: ${result.fileName} (${result.size} bytes)`);
         console.log(`[CI] APK path: ${result.apkPath}`);
         
-        // Read the APK file and convert to base64
-        const apkBuffer = fs.readFileSync(result.apkPath);
-        const apkBase64 = apkBuffer.toString('base64');
-        const fileUploadString = `${result.fileName}|data:application/vnd.android.package-archive;base64,${apkBase64}`;
+        console.log(`[CI] Uploading file to Bubble...`);
+        const uploadRes = await uploadFileToBubble(result.apkPath, result.fileName);
+        let finalApkUrl = uploadRes?.response?.file || uploadRes?.file;
+        if (!finalApkUrl && uploadRes && typeof uploadRes === 'string') finalApkUrl = uploadRes;
+        
+        if (finalApkUrl && finalApkUrl.startsWith('//')) {
+            finalApkUrl = 'https:' + finalApkUrl;
+        }
+
+        console.log(`[CI] File uploaded successfully to Bubble! URL: ${finalApkUrl}`);
         
         // Update Bubble with completed status, file size, and the actual APK file
         await updateBubbleApp(buildId, {
             status: 'completed',
             fileSize: result.size,
-            apkFile: fileUploadString
+            ...(finalApkUrl ? { apkFile: finalApkUrl } : {})
         });
 
         console.log('[CI] Bubble app record updated with APK file!');
