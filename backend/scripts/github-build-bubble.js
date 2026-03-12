@@ -9,16 +9,38 @@ const __dirname = path.dirname(__filename);
 const BUBBLE_API_URL = process.env.BUBBLE_API_URL || 'https://site2app.online/api/1.1/obj';
 const BUBBLE_API_TOKEN = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
 
-async function updateBubbleApp(appId, data) {
-    const res = await fetch(`${BUBBLE_API_URL}/app/${appId}`, {
-        method: 'PATCH',
-        headers: {
-            'Authorization': `Bearer ${BUBBLE_API_TOKEN}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    });
-    if (!res.ok) console.error('Failed to update Bubble app:', await res.text());
+async function updateBubbleApp(appId, data, retries = 3) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            console.log(`[CI] Updating Bubble app ${appId} (attempt ${attempt}/${retries})...`);
+            console.log(`[CI] Using BUBBLE_API_URL: ${BUBBLE_API_URL}`);
+            const res = await fetch(`${BUBBLE_API_URL}/app/${appId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${BUBBLE_API_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                console.log(`[CI] Bubble app ${appId} updated successfully.`);
+                return;
+            }
+            const errText = await res.text();
+            console.error(`[CI] Failed to update Bubble app (${res.status}):`, errText);
+            if (attempt < retries) {
+                console.log(`[CI] Retrying in 2s...`);
+                await new Promise(r => setTimeout(r, 2000));
+            }
+        } catch (e) {
+            console.error(`[CI] Network error updating Bubble app:`, e);
+            if (attempt < retries) {
+                console.log(`[CI] Retrying in 2s...`);
+                await new Promise(r => setTimeout(r, 2000));
+            }
+        }
+    }
+    console.error(`[CI] CRITICAL: Failed to update Bubble app ${appId} after ${retries} attempts!`);
 }
 
 

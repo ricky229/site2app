@@ -35,5 +35,5 @@ jobs:
       run: node scripts/github-build-bubble.js
       env:
         BUILD_DATA: ${{ github.event.client_payload.buildData }}
-        BUBBLE_API_URL: ${{ secrets.BUBBLE_API_URL }}
+        BUBBLE_API_URL: 'https://site2app.online/api/1.1/obj'
         BUBBLE_API_TOKEN: ${{ secrets.BUBBLE_API_TOKEN }}
