@@ -14,14 +14,18 @@ import { formatRelativeTime, formatNumber, platformLabel } from '../../lib/utils
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import api from '../../lib/api'
+import { useAuthStore } from '../../store/authStore'
 import type { App, DashboardStats } from '../../types'
 
-async function fetchBuilds(): Promise<App[]> {
+import { getAppsByUser } from '../../lib/api'
+
+async function fetchBuilds(userId: string): Promise<App[]> {
+    if (!userId) return [];
     try {
-        const { data } = await api.get('/builds')
+        const data = await getAppsByUser(userId);
         return (Array.isArray(data) ? data : []).map((b: any) => ({
             ...b,
-            id: b.id || b.buildId || String(Math.random()),
+            id: b._id || b.id || String(Math.random()),
             name: b.appName || b.name || 'App',
             url: b.url || '',
             status: b.status || 'pending',
@@ -29,8 +33,8 @@ async function fetchBuilds(): Promise<App[]> {
             version: b.version || '1.0',
             downloadCount: b.downloadCount || 0,
             activeUsers: b.activeUsers || 0,
-            lastBuiltAt: b.startedAt || b.lastBuiltAt,
-            apkUrl: b.status === 'completed' ? `/api/download/${b.id}` : undefined
+            lastBuiltAt: b['Created Date'] || b.startedAt || b.lastBuiltAt,
+            apkUrl: b.apkFile || (b.status === 'completed' ? `/api/download/${b._id}` : undefined)
         }))
     } catch {
         return []
@@ -43,12 +47,15 @@ export default function AppsPage() {
     const [statusFilter, setStatusFilter] = useState('all')
     const queryClient = useQueryClient()
     const [view, setView] = useState<'grid' | 'list'>('grid')
+    
+    // Assuming useAuthStore gives you the logged in user
+    const { user } = useAuthStore()
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation()
         if (!confirm('Êtes-vous sûr de vouloir supprimer cette application ?')) return
         try {
-            await api.delete(`/build/${id}`)
+            await api.delete(`/app/${id}`)
             toast.success('Application supprimée')
             queryClient.invalidateQueries({ queryKey: ['builds'] })
         } catch (e) {
@@ -56,7 +63,12 @@ export default function AppsPage() {
         }
     }
 
-    const { data: apps, isLoading } = useQuery({ queryKey: ['builds'], queryFn: fetchBuilds, refetchInterval: 5000 })
+    const { data: apps, isLoading } = useQuery({ 
+        queryKey: ['builds', user?.id], 
+        queryFn: () => fetchBuilds(user?.id || ''), 
+        refetchInterval: 5000,
+        enabled: !!user?.id
+    })
 
     if (isLoading) {
         return <div className="p-20 text-center">Chargement...</div>

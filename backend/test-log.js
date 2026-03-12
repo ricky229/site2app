@@ -1,0 +1,1 @@
+const { fetch } = require('undici'); fetch('https://api.github.com/repos/ricky229/site2app/actions/jobs/66721431733/logs', {headers: {'Authorization': 'Bearer ghp_YaYXxs1arjlHfpQ6ha5Up22vVk', 'Accept': 'application/vnd.github.v3+json'}}).then(r => r.text()).then(t => console.log(t.slice(-1500)));

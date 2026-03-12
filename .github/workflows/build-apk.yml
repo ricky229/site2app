@@ -45,5 +45,9 @@ jobs:
         PLATFORM: ${{ github.event.client_payload.platform }}
         VERSION_CODE: ${{ github.event.client_payload.versionCode }}
         VERSION_NAME: ${{ github.event.client_payload.versionName }}
+        FEATURES_JSON: ${{ toJSON(github.event.client_payload.features) }}
+        ICON_BASE64: ${{ github.event.client_payload.icon }}
+        SPLASH_BASE64: ${{ github.event.client_payload.splashScreen }}
+        GOOGLE_SERVICES_JSON: ${{ toJSON(github.event.client_payload.googleServices) }}
         BUBBLE_API_URL: ${{ secrets.BUBBLE_API_URL }}
         BUBBLE_API_TOKEN: ${{ secrets.BUBBLE_API_TOKEN }}

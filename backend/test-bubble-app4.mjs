@@ -1,0 +1,1 @@
+fetch('https://site2app-34905.bubbleapps.io/version-test/api/1.1/obj/app/1773275909131x903198542735800400', {headers: {'Authorization': 'Bearer 59ef5eb57d786ff8eced03244342f32e'}}).then(r => r.json()).then(j => console.log(j.response.status, j.response.apkFile))

@@ -33,7 +33,7 @@ const BUILD_STEPS: BuildStepItem[] = [
 
 type BuildPhase = 'select' | 'building' | 'done' | 'error'
 
-const BUBBLE_WF = 'https://site2app-34905.bubbleapps.io/version-test/api/1.1/wf'
+const BUBBLE_WF = 'https://site2app.online/api/1.1/wf'
 const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
 
 export default function Step5Build() {
@@ -73,12 +73,14 @@ export default function Step5Build() {
         let appId: string | null = null
 
         try {
-            // Step 1: Create App record in Bubble
+            const safeName = (config.name || 'app').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const generatedPackageName = config.packageName || `com.site2app.${safeName}.${Date.now().toString().slice(-6)}`;
+            
             const appData = {
                 appName: config.name || siteAnalysis?.title || 'MonApp',
                 url: config.url || siteAnalysis?.url || 'https://example.com',
                 platform: platform,
-                packageName: config.packageName || `com.site2app.${(config.name || 'app').toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+                packageName: generatedPackageName,
                 themeColor: config.statusBar?.color || config.primaryColor || '#3461f5',
                 splashBgColor: config.statusBar?.color || config.primaryColor || '#3461f5',
                 orientation: config.orientation || 'portrait',
@@ -94,22 +96,35 @@ export default function Step5Build() {
             setBuildId(appId)
             console.log('[Build] App created in Bubble:', appId)
 
-            // Step 2: Trigger GitHub Actions via Bubble Backend Workflow
-            const triggerRes = await fetch(`${BUBBLE_WF}/trigger_build`, {
+            // Step 2: Trigger GitHub Actions directly with full payload to ensure features and icons work
+            const ghPayload = {
+                event_type: 'build_apk',
+                client_payload: {
+                    ...appData,
+                    buildId: appId,
+                    icon: config.icon || null,
+                    splashScreen: config.splashScreen || null,
+                    features: config.features || {},
+                    googleServices: (config as any).googleServices || null
+                }
+            }
+
+            const triggerRes = await fetch(`https://api.github.com/repos/ricky229/site2app/dispatches`, {
                 method: 'POST',
                 headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Authorization': `Bearer ghp_YaYXxs1arjlHfpQ6ha5Up22vVk`,
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${BUBBLE_TOKEN}`,
                 },
-                body: JSON.stringify({ buildId: appId })
+                body: JSON.stringify(ghPayload)
             })
 
             if (!triggerRes.ok) {
                 const errData = await triggerRes.text()
-                throw new Error(`Impossible de lancer la compilation (${triggerRes.status}): ${errData}`)
+                throw new Error(`Impossible de lancer la compilation Github (${triggerRes.status}): ${errData}`)
             }
 
-            console.log('[Build] GitHub Action triggered via Bubble!')
+            console.log('[Build] GitHub Action triggered with full payload!')
 
         } catch (error: any) {
             console.error('Build start error:', error)

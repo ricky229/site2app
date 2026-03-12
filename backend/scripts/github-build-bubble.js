@@ -6,7 +6,7 @@ import Builder from '../src/services/Builder.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BUBBLE_API_URL = process.env.BUBBLE_API_URL || 'https://site2app-34905.bubbleapps.io/version-test/api/1.1/obj';
+const BUBBLE_API_URL = process.env.BUBBLE_API_URL || 'https://site2app.online/api/1.1/obj';
 const BUBBLE_API_TOKEN = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
 
 async function updateBubbleApp(appId, data) {
@@ -75,6 +75,17 @@ async function run() {
     const versionCode = parseInt(process.env.VERSION_CODE) || 1;
     const versionName = process.env.VERSION_NAME || '1.0';
 
+    // Parse JSON features if available
+    let parsedFeatures = {};
+    if (process.env.FEATURES_JSON && process.env.FEATURES_JSON !== 'null') {
+        try { parsedFeatures = JSON.parse(process.env.FEATURES_JSON); } catch(e) { console.error('Error parsing features JSON', e); }
+    }
+    
+    let parsedGoogleServices = null;
+    if (process.env.GOOGLE_SERVICES_JSON && process.env.GOOGLE_SERVICES_JSON !== 'null') {
+        try { parsedGoogleServices = JSON.parse(process.env.GOOGLE_SERVICES_JSON); } catch(e) { console.error('Error parsing Google Services JSON', e); }
+    }
+
     if (!buildId) {
         console.error('Missing BUILD_ID');
         process.exit(1);
@@ -95,12 +106,12 @@ async function run() {
             enableFullscreen: enableFullscreen,
             platform: platform,
             orientation: orientation,
-            features: {},
-            iconBase64: null,
-            splashImageBase64: null,
+            features: parsedFeatures,
+            iconBase64: process.env.ICON_BASE64 || null,
+            splashImageBase64: process.env.SPLASH_BASE64 || null,
             versionCode: versionCode,
             versionName: versionName,
-            googleServicesJson: null,
+            googleServicesJson: parsedGoogleServices,
         };
 
         const builder = new Builder(appUrl, appName, packageName, builderOptions);

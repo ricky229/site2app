@@ -2,7 +2,7 @@
 import axios from 'axios'
 
 // ─── Bubble.io API Configuration ─────────────────────
-const BUBBLE_BASE = 'https://site2app-34905.bubbleapps.io/version-test/api/1.1'
+const BUBBLE_BASE = 'https://site2app.online/api/1.1'
 const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
 
 // Workflow API (auth, actions)

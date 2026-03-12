@@ -33,11 +33,14 @@ async function fetchStats(): Promise<DashboardStats> {
     }
 }
 
-async function fetchBuilds(): Promise<any[]> {
+import { getAppsByUser } from '../lib/api'
+
+async function fetchBuilds(userId: string): Promise<any[]> {
+    if (!userId) return [];
     try {
-        const { data } = await api.get('/builds')
+        const data = await getAppsByUser(userId);
         return (Array.isArray(data) ? data : []).map((b: any) => ({
-            id: b.id || b.buildId || '0',
+            id: b._id || b.id || '0',
             name: b.appName || b.name || 'Sans nom',
             url: b.url || '',
             status: b.status || 'pending',
@@ -45,8 +48,8 @@ async function fetchBuilds(): Promise<any[]> {
             version: b.version || '1.0',
             downloadCount: b.downloadCount || 0,
             activeUsers: b.activeUsers || 0,
-            lastBuiltAt: b.startedAt || b.lastBuiltAt,
-            apkUrl: b.status === 'completed' ? `/api/download/${b.id}` : undefined,
+            lastBuiltAt: b['Created Date'] || b.startedAt || b.lastBuiltAt,
+            apkUrl: b.apkFile || (b.status === 'completed' ? `/api/download/${b._id}` : undefined),
         }))
     } catch {
         return []
@@ -130,7 +133,12 @@ export default function DashboardPage() {
     const { user } = useAuthStore()
     const navigate = useNavigate()
     const { data: stats, isLoading: statsLoading } = useQuery({ queryKey: ['stats'], queryFn: fetchStats, refetchInterval: 10000 })
-    const { data: apps, isLoading: appsLoading } = useQuery({ queryKey: ['builds'], queryFn: fetchBuilds, refetchInterval: 5000 })
+    const { data: apps, isLoading: appsLoading } = useQuery({
+        queryKey: ['builds', user?.id],
+        queryFn: () => fetchBuilds(user?.id || ''),
+        refetchInterval: 5000,
+        enabled: !!user?.id
+    })
 
     if (statsLoading || appsLoading) {
         return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto mb-4" /> Chargement...</div>
