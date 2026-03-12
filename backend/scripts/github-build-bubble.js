@@ -52,7 +52,8 @@ async function uploadFileToBubble(filePath, fileName) {
     }
     
     // The endpoint returns the URL directly as a string or a JSON
-    const text = await res.text();
+    let text = await res.text();
+    text = text.replace(/^"|"$/g, ''); // Remove surrounding quotes if any
     try {
         const json = JSON.parse(text);
         return json.response?.file || json.file || text;
