@@ -80,6 +80,17 @@ export class BubbleService {
         return true;
     }
 
+    async updateUser(userId: string, userData: any) {
+        const res = await fetch(`${this.baseUrl}/user/${userId}`, {
+            method: 'PATCH',
+            headers: this.headers,
+            body: JSON.stringify(userData)
+        });
+        const data = await res.json() as any;
+        if (!res.ok) throw new Error(data?.message || 'Error updating user');
+        return true;
+    }
+
     async deleteApp(appId: string) {
         const res = await fetch(`${this.baseUrl}/app/${appId}`, {
             method: 'DELETE',
@@ -87,6 +98,17 @@ export class BubbleService {
         });
         if (!res.ok) throw new Error('Error deleting app');
         return true;
+    }
+
+    async createNotification(notifData: any) {
+        const res = await fetch(`${this.baseUrl}/notification`, {
+            method: 'POST',
+            headers: this.headers,
+            body: JSON.stringify(notifData)
+        });
+        const data = await res.json() as any;
+        if (!res.ok) throw new Error(data?.message || 'Error creating notification');
+        return data;
     }
 }
 

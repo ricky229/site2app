@@ -61,7 +61,12 @@ const compressImageForPayload = (
                 canvas.height = size;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return resolve(null);
-                ctx.drawImage(img, 0, 0, size, size);
+                
+                // Add a small padding (10%) to prevent "too zoomed" look if it's an icon (192px)
+                const padding = size === 192 ? Math.round(size * 0.1) : 0;
+                const drawSize = size - (padding * 2);
+                
+                ctx.drawImage(img, padding, padding, drawSize, drawSize);
                 const dataUrl = canvas.toDataURL(format, quality);
                 const base64 = dataUrl.split(',')[1] || null;
                 console.log(`[Build] Image compressed to ${size}x${size} ${format}: ${base64 ? base64.length : 0} chars`);
@@ -182,7 +187,7 @@ export default function Step5Build() {
                 buildId: appId,
                 iconBase64: compressedIconBase64 || null,
                 iconUrl: iconIsUrl ? config.icon : null,
-                splashBase64: compressedSplashBase64 || null,
+                splashImageBase64: compressedSplashBase64 || null,
                 splashUrl: splashIsUrl ? config.splashScreen : null,
                 features: config.features || {},
                 googleServices: (config as any).googleServices || null
@@ -191,10 +196,10 @@ export default function Step5Build() {
             const buildDataStr = JSON.stringify(buildPayload);
             console.log(`[Build] Total payload size: ${buildDataStr.length} chars`);
 
-            // Safety check: if still too large, drop splashBase64
+            // Safety check: if still too large, drop splashImageBase64
             if (buildDataStr.length > 61000) {
-                console.warn('[Build] Payload still too large, dropping splashBase64 to ensure success');
-                (buildPayload as any).splashBase64 = null;
+                console.warn('[Build] Payload still too large, dropping splashImageBase64 to ensure success');
+                (buildPayload as any).splashImageBase64 = null;
             }
 
             const ghPayload = {

@@ -15,7 +15,7 @@ const wfApi = axios.create({
 })
 
 // Data API (CRUD on App, User, etc.)
-const dataApi = axios.create({
+export const dataApi = axios.create({
     baseURL: `${BUBBLE_BASE}/obj`,
     headers: {
         'Content-Type': 'application/json',
@@ -86,15 +86,25 @@ export async function getDevices(appId?: string) {
     }
 }
 
-// ─── Legacy default export for compatibility ─────────
-// Some pages might still import `api` and use api.post('/auth/...', ...)
-// We create a compatibility layer so nothing breaks
+// ─── Backend API Configuration ──────────────────────
+// Locally proxied via vite.config.ts to localhost:4000
+// In production, uses the same domain /api
+const BACKEND_URL = '/api'
+
 const api = axios.create({
-    baseURL: `${BUBBLE_BASE}/obj`,
+    baseURL: BACKEND_URL,
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${BUBBLE_TOKEN}`,
     },
+})
+
+// Add interceptor to include token
+api.interceptors.request.use(config => {
+    const token = localStorage.getItem('site2app_token')
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
 })
 
 export default api

@@ -188,7 +188,13 @@ const authMiddleware = async (req: any, res: any, next: any) => {
         const decoded = jwt.verify(token, secret) as any;
         const user = await bubble.getUserById(decoded.userId);
         if (!user) throw new Error('User not found in Bubble');
-        req.user = { id: user._id, ...user };
+        
+        // Sync to local users map so background polling works for this user
+        const userSafe = { id: user._id, ...user };
+        users.set(user._id, userSafe);
+        saveUsers(); // Keep users.json updated
+
+        req.user = userSafe;
         next()
     } catch (err: any) {
         console.error('[Auth] Token invalid:', err.message);
@@ -749,6 +755,25 @@ app.post('/api/notifications/send', authMiddleware, async (req: any, res) => {
     notifications.set(notif.id, notif)
     saveNotifications()
 
+    // Sync to Bubble for persistent history across sessions
+    try {
+        await bubble.createNotification({
+            title: notif.title,
+            body: notif.body,
+            image: notif.image,
+            targetUrl: notif.targetUrl,
+            targetApp: notif.targetApp,
+            targetOs: typeof notif.targetOs === 'string' ? notif.targetOs : JSON.stringify(notif.targetOs),
+            owner: req.user.id,
+            status: 'Sent',
+            sentCount: notif.stats?.sent || 0,
+            deliveredCount: notif.stats?.delivered || 0
+        });
+        console.log(`[Sync] Notification ${notif.id} saved to Bubble.`);
+    } catch (e: any) {
+        console.error(`[Sync] Failed to save notification to Bubble:`, e.message);
+    }
+
     res.json(notif)
 })
 
@@ -1049,6 +1074,10 @@ app.post('/api/auth/login', async (req, res) => {
         const { passwordHash: _, ...userSafe } = user
         userSafe.id = user._id;
 
+        // Sync to local storage
+        users.set(userSafe.id, userSafe);
+        saveUsers();
+
         res.json({
             user: userSafe,
             token: token
@@ -1089,6 +1118,10 @@ app.post('/api/auth/register', async (req, res) => {
         const { passwordHash: _, ...userSafe } = newUser
         userSafe.id = id;
 
+        // Sync to local storage
+        users.set(id, userSafe);
+        saveUsers();
+
         res.json({
             user: userSafe,
             token: token
@@ -1105,8 +1138,10 @@ app.get('/api/auth/me', authMiddleware, (req: any, res) => {
     res.json(user)
 })
 
-app.post('/api/auth/firebase-config', authMiddleware, (req: any, res) => {
+app.post('/api/auth/firebase-config', authMiddleware, async (req: any, res) => {
     const { adminSdkJson, googleServicesJson, bubbleApiUrl } = req.body
+    
+    // 1. Update LOCAL map (for immediate polling effect)
     const user = users.get(req.user.id)
     if (user) {
         if (adminSdkJson !== undefined) user.firebaseKey = adminSdkJson
@@ -1114,6 +1149,19 @@ app.post('/api/auth/firebase-config', authMiddleware, (req: any, res) => {
         if (bubbleApiUrl !== undefined) user.bubbleApiUrl = bubbleApiUrl
         saveUsers()
     }
+
+    // 2. Update BUBBLE (for persistence across server restarts)
+    try {
+        await bubble.updateUser(req.user.id, {
+            firebaseKey: adminSdkJson,
+            googleServicesJson: googleServicesJson,
+            bubbleApiUrl: bubbleApiUrl
+        })
+        console.log(`[Config] Sync successful for user ${req.user.id}`);
+    } catch (e: any) {
+        console.error(`[Config] Bubble sync failed:`, e.message);
+    }
+
     res.json({ success: true, user })
 })
 
@@ -1209,9 +1257,13 @@ async function pollExternalNotifications() {
 
                             // Tenter de l'acquitter aussi sur Bubble (mais sans bloquer si Bubble refuse par sécurité/règles)
                             try {
+                                const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
                                 await fetch(`${user.bubbleApiUrl}/${notif._id}`, {
                                     method: 'PATCH',
-                                    headers: { 'Content-Type': 'application/json' },
+                                    headers: { 
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${bubbleToken}`
+                                    },
                                     body: JSON.stringify({ status: 'Sent' })
                                 });
                                 console.log(`[Polling] Notification ${notif._id} marked as Sent on Bubble.`);

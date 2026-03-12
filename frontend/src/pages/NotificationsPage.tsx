@@ -14,7 +14,7 @@ import { StatCard } from '../components/ui/Card'
 import { formatRelativeTime, formatNumber } from '../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api, { getUserById, updateUser, getDevices, getAppsByUser } from '../lib/api'
+import api, { getUserById, updateUser, getDevices, getAppsByUser, dataApi } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import type { App } from '../types'
 
@@ -47,7 +47,7 @@ export default function NotificationsPage() {
         queryFn: async () => {
             if (!user?.id) return []
             const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
-            const res = await api.get(`/notification?constraints=${encodeURIComponent(constraints)}`)
+            const res = await dataApi.get(`/notification?constraints=${encodeURIComponent(constraints)}`)
             return res.data?.response?.results || []
         },
         enabled: !!user?.id
@@ -77,19 +77,15 @@ export default function NotificationsPage() {
 
     const firebaseMutation = useMutation({
         mutationFn: async (payload: any) => {
-            if (!user?.id) throw new Error("Non authentifié")
-            return await updateUser(user.id, { 
-                firebaseKey: payload.adminSdkJson,
-                googleServicesJson: payload.googleServicesJson,
-                bubbleApiUrl: payload.bubbleApiUrl
-            })
+            const res = await api.post('/auth/firebase-config', payload)
+            return res.data
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['userProfile'] })
-            if (data && data.response) {
-                updateAuthUser(data.response)
-            }
-            toast.success('Configuration sauvegardée !')
+            toast.success('Configuration sauvegardée et connectée au serveur !')
+        },
+        onError: (err: any) => {
+            toast.error(err?.response?.data?.error || 'Erreur lors de la sauvegarde')
         }
     })
 
