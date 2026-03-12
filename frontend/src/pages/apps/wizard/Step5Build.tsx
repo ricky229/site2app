@@ -37,16 +37,40 @@ const BUBBLE_WF = 'https://site2app.online/api/1.1/wf'
 const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
 
 /**
- * Extract raw base64 from a data URL (e.g. "data:image/png;base64,iVBOR...")
- * Returns just the base64 string without the prefix, or null.
+ * Compress an image (data URL or URL) to a small 192x192 PNG via Canvas.
+ * Returns a raw base64 string (no data: prefix) that is small enough
+ * to fit in the GitHub Actions client_payload (max ~65KB).
+ * Returns null on failure.
  */
-const extractBase64 = (dataUrl: string | undefined | null): string | null => {
-    if (!dataUrl) return null;
-    if (dataUrl.startsWith('data:')) {
-        const parts = dataUrl.split(',');
-        return parts.length > 1 ? parts[1] : null;
-    }
-    return null;
+const compressIconForPayload = (imageSource: string | undefined | null): Promise<string | null> => {
+    return new Promise((resolve) => {
+        if (!imageSource) return resolve(null);
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 192;
+                canvas.height = 192;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return resolve(null);
+                ctx.drawImage(img, 0, 0, 192, 192);
+                // Use PNG for quality, but at 192x192 it's small (~5-15KB base64)
+                const dataUrl = canvas.toDataURL('image/png');
+                const base64 = dataUrl.split(',')[1] || null;
+                console.log(`[Build] Icon compressed to ${base64 ? base64.length : 0} chars base64`);
+                resolve(base64);
+            } catch (e) {
+                console.warn('[Build] Failed to compress icon:', e);
+                resolve(null);
+            }
+        };
+        img.onerror = () => {
+            console.warn('[Build] Failed to load icon image for compression');
+            resolve(null);
+        };
+        img.src = imageSource;
+    });
 }
 
 export default function Step5Build() {
@@ -92,13 +116,11 @@ export default function Step5Build() {
             const safeName = (config.name || 'app').toLowerCase().replace(/[^a-z0-9]/g, '');
             const generatedPackageName = config.packageName || `com.site2app.${safeName}.${Date.now().toString().slice(-6)}`;
             
-            // Extract raw base64 from icon/splash data URLs.
-            // Bubble's /fileupload is blocked by CORS from the browser,
-            // so we pass the raw base64 directly to GitHub Actions instead.
-            const iconBase64Raw = extractBase64(config.icon);
-            const splashBase64Raw = extractBase64(config.splashScreen);
+            // Compress icon to 192x192 PNG via Canvas — small enough for GitHub payload
+            // This works for both data URLs and http URLs
+            const compressedIconBase64 = await compressIconForPayload(config.icon);
             
-            // If icon is already a URL (from a previous build), keep it
+            // If icon is already a URL (from a previous build), keep it for Bubble
             const iconIsUrl = config.icon && (config.icon.startsWith('http') || config.icon.startsWith('//'));
             const splashIsUrl = config.splashScreen && (config.splashScreen.startsWith('http') || config.splashScreen.startsWith('//'));
 
@@ -148,17 +170,16 @@ export default function Step5Build() {
             }
 
             // Step 2: Trigger GitHub Actions
-            // Pass icon/splash as raw base64 directly OR as URL to download
+            // Icon: send compressed base64 (small, ~5-15KB) directly in payload
+            // Splash: only send URL if available (too large for inline base64)
             const ghPayload = {
                 event_type: 'build_apk',
                 client_payload: {
                     buildData: JSON.stringify({
                         ...appData,
                         buildId: appId,
-                        // Send raw base64 directly if available, otherwise send URL
-                        iconBase64: iconBase64Raw || null,
+                        iconBase64: compressedIconBase64 || null,
                         iconUrl: iconIsUrl ? config.icon : null,
-                        splashBase64: splashBase64Raw || null,
                         splashUrl: splashIsUrl ? config.splashScreen : null,
                         features: config.features || {},
                         googleServices: (config as any).googleServices || null
