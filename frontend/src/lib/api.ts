@@ -87,9 +87,18 @@ export async function getDevices(appId?: string) {
 }
 
 // ─── Node Backend API Configuration ─────────────────
-// proxied via vite.config.ts /api -> localhost:4000
+// In development: proxied via vite.config.ts /api -> localhost:4000
+// In production: targets /api 
+const getBaseUrl = () => {
+    // If we're on site2app.online/site2app/, we want to hit site2app.online/api
+    if (window.location.hostname !== 'localhost') {
+        return window.location.origin + '/api';
+    }
+    return '/api';
+}
+
 export const nodeApi = axios.create({
-    baseURL: '/api',
+    baseURL: getBaseUrl(),
     headers: { 'Content-Type': 'application/json' },
 })
 

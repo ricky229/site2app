@@ -625,17 +625,12 @@ app.get('/api/devices', authMiddleware, (req: any, res) => {
     res.json(allDevices);
 })
 
-app.post('/api/notifications/send', authMiddleware, async (req: any, res) => {
-    const { title, body, buildId, target, image, actionUrl, scheduledAt } = req.body
+const sendNotificationCore = async (user: any, payload: any) => {
+    const { title, body, buildId, target, image, actionUrl, scheduledAt } = payload;
+    
+    console.log(`[CORE] Sending: title=${title}, user=${user.id}, target=${JSON.stringify(target)}`);
 
-    console.log(`[SEND] Requête reçue: title=${title}, buildId=${buildId}, target=${JSON.stringify(target)}, image=${image}, actionUrl=${actionUrl}`);
-    console.log(`[SEND] User has firebaseKey: ${!!req.user?.firebaseKey}, target is Array: ${Array.isArray(target)}`);
-
-    if (!title || !body) {
-        return res.status(400).json({ error: 'Title and body are required' })
-    }
-
-    const notif = {
+    const notif: any = {
         id: Date.now().toString(),
         title,
         body,
@@ -643,7 +638,7 @@ app.post('/api/notifications/send', authMiddleware, async (req: any, res) => {
         targetUrl: actionUrl || null,
         targetApp: buildId || 'all',
         targetOs: target || 'all',
-        userId: req.user.id,
+        userId: user.id,
         createdAt: new Date().toISOString(),
         status: scheduledAt ? 'scheduled' : 'sent',
         scheduledAt: scheduledAt || null,
@@ -657,105 +652,63 @@ app.post('/api/notifications/send', authMiddleware, async (req: any, res) => {
             openRate: 0,
             clickRate: 0
         }
-    }
-
-    // The Android native app (via PushJobService) and the Javascript bridge
-    // will continuously poll /api/notifications/latest locally to retrieve this.
-    // ADDITIONALLY, we will trigger Firebase Native Push if configured!
-    const userBuilds = Array.from(builds.values()).filter((b: any) => b.userId === req.user.id)
-    const mockActiveUsers = userBuilds.reduce((sum, b: any) => sum + (b.activeUsers || 0), 0) || 1;
+    };
 
     if (!scheduledAt) {
-        let sentCount = target === 'all' ? mockActiveUsers : 1;
-
-        // --- FIREBASE FCM BROADCAST ---
-        if (req.user?.firebaseKey) {
+        if (user.firebaseKey) {
             try {
-                const parsedKey = typeof req.user.firebaseKey === 'string' ? JSON.parse(req.user.firebaseKey) : req.user.firebaseKey;
-                const appName = `app_${req.user.id.replace(/[^a-zA-Z0-9]/g, '')}`;
+                const parsedKey = typeof user.firebaseKey === 'string' ? JSON.parse(user.firebaseKey) : user.firebaseKey;
+                const appName = `app_${user.id.replace(/[^a-zA-Z0-9]/g, '')}`;
                 let userApp;
 
                 if (!admin.apps.some((a: any) => a?.name === appName)) {
-                    userApp = admin.initializeApp({
-                        credential: admin.credential.cert(parsedKey)
-                    }, appName);
+                    userApp = admin.initializeApp({ credential: admin.credential.cert(parsedKey) }, appName);
                 } else {
                     userApp = admin.app(appName);
                 }
 
-                // Payload notification (Android l'affiche auto en arrière-plan)
                 const notificationPayload: any = { title, body };
                 if (image) notificationPayload.imageUrl = image;
 
-                // Payload data (pour onMessageReceived quand app en premier plan)
                 const dataPayload: any = { title, body };
                 if (image) dataPayload.image = image;
                 if (actionUrl) dataPayload.actionUrl = actionUrl;
 
-                // Construire la liste de tokens réels à cibler
                 let tokensToSend: string[] = [];
-
                 if (Array.isArray(target) && target.length > 0) {
-                    // Mode "appareils spécifiques" — les tokens sont directement dans target
                     tokensToSend = target;
                 } else {
-                    // Mode "tous les appareils" — récupérer tous les tokens enregistrés
                     const allDevices = Array.from(devices.values()) as any[];
-                    // Filtrer par buildId si spécifié, sinon prendre tous
                     const filteredDevices = buildId && buildId !== 'all'
                         ? allDevices.filter((d: any) => d.buildId === buildId)
                         : allDevices;
                     tokensToSend = filteredDevices
                         .map((d: any) => d.id)
-                        .filter((id: string) => id && !id.startsWith('android-') && id !== 'test_token'); // Exclure les anciens IDs non-FCM
+                        .filter((id: string) => id && !id.startsWith('android-') && id !== 'test_token');
                 }
 
-                console.log(`[FIREBASE] Envoi à ${tokensToSend.length} token(s) réel(s)`);
-
-                if (tokensToSend.length === 0) {
-                    notif.stats!.sent = 0;
-                    notif.stats!.delivered = 0;
-                    notif.stats!.deliveryRate = 0;
-                } else {
+                if (tokensToSend.length > 0) {
                     const response = await userApp.messaging().sendEachForMulticast({
                         notification: notificationPayload,
                         data: dataPayload,
                         android: { priority: 'high' as const },
                         tokens: tokensToSend
                     });
-
-                    console.log(`[Firebase] Résultat: Succès=${response.successCount}, Échecs=${response.failureCount}`);
-                    if (response.failureCount > 0) {
-                        response.responses.forEach((resp: any, idx: number) => {
-                            if (!resp.success) console.error(`[Firebase] Token[${idx}] erreur:`, resp.error?.code);
-                        });
-                    }
-
-                    // Stats RÉELLES basées sur la réponse Firebase
-                    notif.stats!.sent = tokensToSend.length;
-                    notif.stats!.delivered = response.successCount;
-                    notif.stats!.deliveryRate = tokensToSend.length > 0 ? Math.round((response.successCount / tokensToSend.length) * 100) : 0;
-
-                    if (response.successCount === 0 && tokensToSend.length > 0) {
-                        return res.status(500).json({ error: `Firebase a refusé ${response.failureCount} token(s). Vérifiez que les appareils sont actifs.` });
-                    }
+                    notif.stats.sent = tokensToSend.length;
+                    notif.stats.delivered = response.successCount;
+                    notif.stats.deliveryRate = Math.round((response.successCount / tokensToSend.length) * 100);
                 }
             } catch (err: any) {
-                console.error('[Firebase] Erreur:', err.message);
-                return res.status(500).json({ error: "Erreur Firebase : " + err.message });
+                console.error('[CORE] Firebase Error:', err.message);
+                throw err;
             }
-        } else {
-            notif.stats!.sent = 0;
-            notif.stats!.delivered = 0;
-            notif.stats!.deliveryRate = 0;
-            console.log(`[Push] Aucune clé Firebase configurée. Notification ${notif.id} enregistrée localement uniquement.`)
         }
     }
 
-    notifications.set(notif.id, notif)
-    saveNotifications()
+    notifications.set(notif.id, notif);
+    saveNotifications();
 
-    // Sync to Bubble for persistent history across sessions
+    // Sync to Bubble (History)
     try {
         await bubble.createNotification({
             title: notif.title,
@@ -764,17 +717,25 @@ app.post('/api/notifications/send', authMiddleware, async (req: any, res) => {
             targetUrl: notif.targetUrl,
             targetApp: notif.targetApp,
             targetOs: typeof notif.targetOs === 'string' ? notif.targetOs : JSON.stringify(notif.targetOs),
-            owner: req.user.id,
+            owner: user.id,
             status: 'Sent',
             sentCount: notif.stats?.sent || 0,
             deliveredCount: notif.stats?.delivered || 0
         });
-        console.log(`[Sync] Notification ${notif.id} saved to Bubble.`);
     } catch (e: any) {
-        console.error(`[Sync] Failed to save notification to Bubble:`, e.message);
+        console.error(`[CORE] Bubble History Sync Failed:`, e.message);
     }
 
-    res.json(notif)
+    return notif;
+};
+
+app.post('/api/notifications/send', authMiddleware, async (req: any, res) => {
+    try {
+        const notif = await sendNotificationCore(req.user, req.body);
+        res.json(notif);
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
 })
 
 // ─── Analytics API (données réelles) ────────────────────────────────────
@@ -1227,57 +1188,36 @@ async function pollExternalNotifications() {
                     actionUrl: notif.actionUrl || null,
                 };
 
-                // Simuler une requête interne Firebase (réutilisation route /send)
-                // En appelant directement notre contrôleur (simulation sans repasser par le réseau)
                 try {
-                    console.log(`[Polling] Sending: "${notif.title}" to ${reqBody.target}`);
+                    console.log(`[Polling] Sending via CORE: "${notif.title}" for user ${user.id}`);
+                    const sentNotif = await sendNotificationCore(user, reqBody);
 
-                    // Appel HTTP interne pour profiter de la même logique `/send` existante
-                    const port = process.env.PORT || 4000;
-                    // Récupération token user
-                    let userToken = '';
-                    for (const [token, uid] of Array.from(sessions.entries())) {
-                        if (uid === user.id) { userToken = token; break; }
-                    }
+                    if (sentNotif) {
+                        processedBubbleNotifs.add(notif._id);
+                        saveProcessedBubble();
 
-                    if (userToken) {
-                        const sendRes = await fetch(`http://127.0.0.1:${port}/api/notifications/send`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${userToken}`
-                            },
-                            body: JSON.stringify(reqBody)
-                        });
-
-                        // Si envoi réussi, mémoriser localement l'ID quoiqu'il arrive pour ne jamais le renvoyer.
-                        if (sendRes.ok) {
-                            processedBubbleNotifs.add(notif._id);
-                            saveProcessedBubble();
-
-                            // Tenter de l'acquitter aussi sur Bubble (mais sans bloquer si Bubble refuse par sécurité/règles)
-                            try {
-                                const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
-                                await fetch(`${user.bubbleApiUrl}/${notif._id}`, {
-                                    method: 'PATCH',
-                                    headers: { 
-                                        'Content-Type': 'application/json',
-                                        'Authorization': `Bearer ${bubbleToken}`
-                                    },
-                                    body: JSON.stringify({ status: 'Sent' })
-                                });
-                                console.log(`[Polling] Notification ${notif._id} marked as Sent on Bubble.`);
-                            } catch (errBubble) {
-                                console.log(`[Polling] Local deduplication protected us (Bubble PATCH failed).`);
-                            }
+                        // Mark as Sent on Bubble (using the provided absolute polling API URL to find the correct item)
+                        try {
+                            const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+                            await fetch(`${user.bubbleApiUrl}/${notif._id}`, {
+                                method: 'PATCH',
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${bubbleToken}`
+                                },
+                                body: JSON.stringify({ status: 'Sent' })
+                            });
+                            console.log(`[Polling] Notification ${notif._id} marked as Sent on Bubble.`);
+                        } catch (errBubble) {
+                            console.warn(`[Polling] Bubble status update failed for ${notif._id}, but notif was sent.`);
                         }
                     }
                 } catch (e: any) {
-                    console.error(`[Polling] Failed to send notif ${notif._id}:`, e.message);
+                    console.error(`[Polling] Core Send Failed for ${notif._id}:`, e.message);
                 }
             }
         } catch (err: any) {
-            console.error(`[Polling] Erreur récupération Bubble API pour user ${user.id}:`, err.message);
+            console.error(`[Polling] Error for user ${user.id}:`, err.message);
         }
     }
 }

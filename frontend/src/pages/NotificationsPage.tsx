@@ -78,20 +78,21 @@ export default function NotificationsPage() {
     const firebaseMutation = useMutation({
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
-            // Update Bubble directly (source of truth)
-            // Backend will sync from Bubble on next request
-            return await updateUser(user.id, { 
-                firebaseKey: payload.adminSdkJson,
-                googleServicesJson: payload.googleServicesJson,
-                bubbleApiUrl: payload.bubbleApiUrl
-            })
+            // Send to our Node Backend (it handles both local and Bubble sync)
+            const res = await nodeApi.post('/auth/firebase-config', payload)
+            return res.data
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+            // IMPORTANT: Update the store so the keys survive a refresh!
+            if (data?.user) {
+                updateAuthUser(data.user)
+            }
             toast.success('Configuration sauvegardée !')
         },
         onError: (err: any) => {
-            toast.error(err?.message || 'Erreur lors de la sauvegarde')
+            const msg = err?.response?.data?.error || err?.message || 'Erreur lors de la sauvegarde'
+            toast.error(msg)
         }
     })
 
