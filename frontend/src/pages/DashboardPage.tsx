@@ -73,6 +73,7 @@ async function fetchBuilds(userId: string): Promise<any[]> {
             activeUsers: b.activeUsers || 0,
             lastBuiltAt: b['Created Date'] || b.startedAt || b.lastBuiltAt,
             apkUrl: b.apkFile || (b.status === 'completed' ? `/api/download/${b._id}` : undefined),
+            icon: b.icon || null,
         }))
     } catch {
         return []
@@ -101,9 +102,13 @@ const AppCard = ({ app }: { app: App }) => {
         >
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center font-bold text-white text-xs sm:text-sm flex-shrink-0"
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center font-bold text-white text-xs sm:text-sm flex-shrink-0 overflow-hidden"
                         style={{ background: `linear-gradient(135deg, ${color}, ${color}aa)` }}>
-                        {(app.name || 'A').slice(0, 2).toUpperCase()}
+                        {app.icon ? (
+                            <img src={app.icon.startsWith('//') ? 'https:' + app.icon : app.icon} alt="App icon" className="w-full h-full object-cover" />
+                        ) : (
+                            (app.name || 'A').slice(0, 2).toUpperCase()
+                        )}
                     </div>
                     <div>
                         <h3 className="font-bold text-sm sm:text-base">{app.name}</h3>

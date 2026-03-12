@@ -37,7 +37,7 @@ const BUBBLE_WF = 'https://site2app.online/api/1.1/wf'
 const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
 
 const uploadImageToBubble = async (dataUrl: string | undefined | null, fileName: string) => {
-    if (!dataUrl || !dataUrl.startsWith('data:image/')) return null;
+    if (!dataUrl || !dataUrl.startsWith('data:')) return null;
     try {
         const base64Data = dataUrl.split(',')[1];
         const res = await fetch(`https://site2app.online/api/1.1/fileupload`, {
@@ -54,10 +54,12 @@ const uploadImageToBubble = async (dataUrl: string | undefined | null, fileName:
         try {
             const json = JSON.parse(text);
             let finalUrl = json?.response?.file || json?.file || text;
-            if (finalUrl && finalUrl.startsWith('//')) finalUrl = 'https:' + finalUrl;
+            if (finalUrl && typeof finalUrl === 'string' && finalUrl.startsWith('//')) finalUrl = 'https:' + finalUrl;
             return finalUrl;
         } catch {
-            return text;
+            let finalUrl = text;
+            if (finalUrl && typeof finalUrl === 'string' && finalUrl.startsWith('//')) finalUrl = 'https:' + finalUrl;
+            return finalUrl;
         }
     } catch(e) {
         console.error('Failed to upload image to bubble:', e);
@@ -142,11 +144,16 @@ export default function Step5Build() {
                 status: 'building',
                 versionCode: currentVersionCode,
                 versionName: appId ? `1.${currentVersionCode - 1}` : '1.0',
-                // Save logo to bubble
-                icon: finalIconUrl || ""
             }
-            if (user?.id) {
-                appData.owner = user.id;
+            if (user?.id) appData.owner = user.id;
+
+            // Saving icon/splash in Bubble Database safely
+            if (finalIconUrl) {
+                appData.icon = finalIconUrl;
+            }
+            if (finalSplashUrl) {
+                appData.splashScreen = finalSplashUrl;
+                appData.splashUrl = finalSplashUrl; // Fallback field names for bubble stability
             }
 
             if (appId) {
