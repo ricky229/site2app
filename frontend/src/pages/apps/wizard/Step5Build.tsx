@@ -190,7 +190,7 @@ export default function Step5Build() {
                 splashImageBase64: compressedSplashBase64 || null,
                 splashUrl: splashIsUrl ? config.splashScreen : null,
                 features: config.features || {},
-                googleServices: (config as any).googleServices || null
+                googleServices: (config as any).googleServices || user?.googleServicesJson || null
             };
 
             const buildDataStr = JSON.stringify(buildPayload);

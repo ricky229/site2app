@@ -173,7 +173,7 @@ app.use(morgan('dev'))
 app.use(express.json({ limit: '50mb' }))
 
 // ─── Health Check ────────────────────────────────────
-app.get('/api/health', (req, res) => {
+app.get('/node/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
@@ -192,8 +192,8 @@ const authMiddleware = async (req: any, res: any, next: any) => {
         // Merge Bubble data with local config data (sensitive keys are ONLY local)
         const localUser = users.get(user._id) || {};
         const userSafe = { 
-            ...localUser,
-            ...user, 
+            ...user, // Bubble data (name, email)
+            ...localUser, // Local data WINS (firebaseKey, googleServicesJson)
             id: user._id 
         };
         
@@ -209,7 +209,7 @@ const authMiddleware = async (req: any, res: any, next: any) => {
 }
 
 // ─── Site Analysis (server-side to avoid CORS) ───────
-app.get('/api/analyze', async (req, res) => {
+app.get('/node/analyze', async (req, res) => {
     const targetUrl = req.query.url as string
     if (!targetUrl) return res.status(400).json({ error: 'url parameter required' })
 
@@ -287,7 +287,7 @@ app.get('/api/analyze', async (req, res) => {
 })
 
 // ─── Build Request ─────────────────────────────────
-app.post('/api/build', authMiddleware, (req: any, res) => {
+app.post('/node/build', authMiddleware, (req: any, res) => {
     const {
         appName,
         url,
@@ -443,13 +443,13 @@ const internalAuth = (req: any, res: any, next: any) => {
     next();
 };
 
-app.get('/api/internal/build/:buildId/config', internalAuth, (req, res) => {
+app.get('/node/internal/build/:buildId/config', internalAuth, (req, res) => {
     const build = builds.get(req.params.buildId);
     if (!build || !build.builderConfig) return res.status(404).json({ error: 'Config not found' });
     res.json(build.builderConfig);
 });
 
-app.post('/api/internal/build/:buildId/upload', internalAuth, express.raw({ type: '*/*', limit: '100mb' }), async (req: any, res) => {
+app.post('/node/internal/build/:buildId/upload', internalAuth, express.raw({ type: '*/*', limit: '100mb' }), async (req: any, res) => {
     const buildId = req.params.buildId;
     const build = builds.get(buildId);
     if (!build) return res.status(404).json({ error: 'Build not found' });
@@ -478,7 +478,7 @@ app.post('/api/internal/build/:buildId/upload', internalAuth, express.raw({ type
     }
 });
 
-app.post('/api/internal/build/:buildId/fail', internalAuth, (req, res) => {
+app.post('/node/internal/build/:buildId/fail', internalAuth, (req, res) => {
     const buildId = req.params.buildId;
     const build = builds.get(buildId);
     if (build) {
@@ -492,13 +492,13 @@ app.post('/api/internal/build/:buildId/fail', internalAuth, (req, res) => {
 });
 
 // ─── Build Status & List ───────────────────────────
-app.get('/api/build/:buildId/status', authMiddleware, (req: any, res) => {
+app.get('/node/build/:buildId/status', authMiddleware, (req: any, res) => {
     const build = builds.get(req.params.buildId)
     if (!build || build.userId !== req.user.id) return res.status(404).json({ error: 'Build not found' })
     res.json(build)
 })
 
-app.delete('/api/build/:buildId', authMiddleware, async (req: any, res) => {
+app.delete('/node/build/:buildId', authMiddleware, async (req: any, res) => {
     const buildId = req.params.buildId;
     const targetBuild = builds.get(buildId);
 
@@ -528,7 +528,7 @@ app.delete('/api/build/:buildId', authMiddleware, async (req: any, res) => {
 })
 
 // ─── List Builds ─────────────────────────────────────
-app.get('/api/builds', authMiddleware, (req: any, res) => {
+app.get('/node/builds', authMiddleware, (req: any, res) => {
     // Return all builds if no user id present yet (migration) or belonging to user
     const allBuilds = Array.from(builds.values()).filter(b => !b.userId || b.userId === req.user.id).sort(
         (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
@@ -547,14 +547,14 @@ app.get('/api/builds', authMiddleware, (req: any, res) => {
 })
 
 // ─── Push Notifications ──────────────────────────────
-app.get('/api/notifications', authMiddleware, (req: any, res) => {
+app.get('/node/notifications', authMiddleware, (req: any, res) => {
     const allNotifs = Array.from(notifications.values())
         .filter(n => !n.userId || n.userId === req.user.id)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     res.json(allNotifs)
 })
 
-app.delete('/api/notifications', authMiddleware, (req: any, res) => {
+app.delete('/node/notifications', authMiddleware, (req: any, res) => {
     const notifsToDelete = Array.from(notifications.values()).filter(n => n.userId === req.user.id);
     for (const n of notifsToDelete) {
         notifications.delete(n.id);
@@ -563,7 +563,7 @@ app.delete('/api/notifications', authMiddleware, (req: any, res) => {
     res.json({ success: true, message: 'All notifications cleared' });
 })
 
-app.delete('/api/notifications/:id', authMiddleware, (req: any, res) => {
+app.delete('/node/notifications/:id', authMiddleware, (req: any, res) => {
     const id = req.params.id;
     const notif = notifications.get(id);
     if (!notif || notif.userId !== req.user.id) {
@@ -574,7 +574,7 @@ app.delete('/api/notifications/:id', authMiddleware, (req: any, res) => {
     res.json({ success: true, message: 'Notification deleted' });
 })
 
-app.get('/api/notifications/latest', (req: any, res) => {
+app.get('/node/notifications/latest', (req: any, res) => {
     const { appId } = req.query;
 
     // Safety check - we isolate only push payloads belonging to that specific Application explicitly or 'all' broadcasts for that User
@@ -599,7 +599,7 @@ app.get('/api/notifications/latest', (req: any, res) => {
 })
 
 // ─── Device Registration ─────────────────────────────
-app.post('/api/devices/register', (req: any, res) => {
+app.post('/node/devices/register', (req: any, res) => {
     const { deviceId, buildId, os } = req.body;
     console.log(`[API] Device registration attempt: deviceId=${deviceId}, buildId=${buildId}, os=${os}`);
     if (!deviceId || !buildId) return res.status(400).json({ error: 'Missing deviceId or buildId' });
@@ -619,7 +619,7 @@ app.post('/api/devices/register', (req: any, res) => {
     res.json({ success: true });
 })
 
-app.get('/api/devices', authMiddleware, (req: any, res) => {
+app.get('/node/devices', authMiddleware, (req: any, res) => {
     const userBuilds = Array.from(builds.values())
         .filter((b: any) => !b.userId || b.userId === req.user.id)
         .map(b => b.id);
@@ -664,10 +664,19 @@ const sendNotificationCore = async (user: any, payload: any) => {
         if (user.firebaseKey) {
             try {
                 const parsedKey = typeof user.firebaseKey === 'string' ? JSON.parse(user.firebaseKey) : user.firebaseKey;
-                const appName = `app_${user.id.replace(/[^a-zA-Z0-9]/g, '')}`;
+                // Use a hash of the key to differentiate apps and force re-init if key changes
+                const keyStr = typeof user.firebaseKey === 'string' ? user.firebaseKey : JSON.stringify(user.firebaseKey);
+                const keyHash = Buffer.from(keyStr).toString('hex').substring(0, 8);
+                const appName = `app_${user.id.replace(/[^a-zA-Z0-9]/g, '')}_${keyHash}`;
                 let userApp;
 
                 if (!admin.apps.some((a: any) => a?.name === appName)) {
+                    // Cleanup old apps for this user to save memory
+                    admin.apps.forEach(a => {
+                        if (a?.name.startsWith(`app_${user.id.replace(/[^a-zA-Z0-9]/g, '')}`)) {
+                            try { (a as any).delete(); } catch(e) {}
+                        }
+                    });
                     userApp = admin.initializeApp({ credential: admin.credential.cert(parsedKey) }, appName);
                 } else {
                     userApp = admin.app(appName);
@@ -735,7 +744,7 @@ const sendNotificationCore = async (user: any, payload: any) => {
     return notif;
 };
 
-app.post('/api/notifications/send', authMiddleware, async (req: any, res) => {
+app.post('/node/notifications/send', authMiddleware, async (req: any, res) => {
     try {
         const notif = await sendNotificationCore(req.user, req.body);
         res.json(notif);
@@ -745,7 +754,7 @@ app.post('/api/notifications/send', authMiddleware, async (req: any, res) => {
 })
 
 // ─── Analytics API (données réelles) ────────────────────────────────────
-app.get('/api/analytics', authMiddleware, async (req: any, res) => {
+app.get('/node/analytics', authMiddleware, async (req: any, res) => {
     const userId = req.user.id
     const periodDays = parseInt(req.query.period as string) || 30
 
@@ -882,7 +891,7 @@ app.get('/api/analytics', authMiddleware, async (req: any, res) => {
 })
 
 // ─── Download APK ────────────────────────────────────
-app.get('/api/download/:buildId', async (req, res) => {
+app.get('/node/download/:buildId', async (req, res) => {
     const { buildId } = req.params;
     const build = builds.get(buildId);
 
@@ -930,7 +939,7 @@ app.get('/api/download/:buildId', async (req, res) => {
 })
 
 // ─── Download Latest ─────────────────────────────────
-app.get('/api/download-latest', async (req, res) => {
+app.get('/node/download-latest', async (req, res) => {
     // Find the most recent completed build
     const completedBuilds = Array.from(builds.values())
         .filter(b => b.status === 'completed' && b.fileName)
@@ -974,7 +983,7 @@ app.get('/api/download-latest', async (req, res) => {
 })
 
 // ─── App Updates (Called from Android device) ────────
-app.get('/api/apps/check-update', (req: any, res) => {
+app.get('/node/apps/check-update', (req: any, res) => {
     const pkg = req.query.package as string;
     const currentVersionCode = parseInt(req.query.versionCode as string) || 1;
 
@@ -992,7 +1001,7 @@ app.get('/api/apps/check-update', (req: any, res) => {
             const latestVersionCode = latest.versionCode || 1;
 
             if (latestVersionCode > currentVersionCode) {
-                const downloadUrl = `${req.protocol}://${req.get('host')}/api/download/${latest.id}`;
+                const downloadUrl = `${req.protocol}://${req.get('host')}/node/download/${latest.id}`;
                 return res.json({
                     updateAvailable: true,
                     versionCode: latestVersionCode,
@@ -1007,7 +1016,7 @@ app.get('/api/apps/check-update', (req: any, res) => {
 });
 
 // ─── App Statistics ─────────────────────────────────
-app.get('/api/stats', authMiddleware, (req: any, res) => {
+app.get('/node/stats', authMiddleware, (req: any, res) => {
     const allBuilds = Array.from(builds.values()).filter(b => !b.userId || b.userId === req.user.id)
     const totalApps = new Set(allBuilds.map(b => b.packageName)).size
     const totalDownloads = allBuilds.reduce((sum, b) => sum + (b.status === 'completed' ? 1 : 0), 0) // Simulé
@@ -1026,7 +1035,7 @@ app.get('/api/stats', authMiddleware, (req: any, res) => {
 })
 
 // ─── Auth routes ─────────────────────────
-app.post('/api/auth/login', async (req, res) => {
+app.post('/node/auth/login', async (req, res) => {
     try {
         const { email, password } = req.body
         const user = await bubble.getUserByEmail(email);
@@ -1055,7 +1064,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 })
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/node/auth/register', async (req, res) => {
     try {
         const { name, email, password } = req.body
 
@@ -1099,13 +1108,13 @@ app.post('/api/auth/register', async (req, res) => {
     }
 })
 
-app.get('/api/auth/me', authMiddleware, (req: any, res) => {
+app.get('/node/auth/me', authMiddleware, (req: any, res) => {
     const user = { ...req.user }
     delete user.passwordHash // safety
     res.json(user)
 })
 
-app.post('/api/auth/firebase-config', authMiddleware, async (req: any, res) => {
+app.post('/node/auth/firebase-config', authMiddleware, async (req: any, res) => {
     const { adminSdkJson, googleServicesJson, bubbleApiUrl } = req.body
     
     // 1. Update LOCAL map (for immediate polling effect)
@@ -1121,7 +1130,7 @@ app.post('/api/auth/firebase-config', authMiddleware, async (req: any, res) => {
     res.json({ success: true, user: users.get(req.user.id) })
 })
 
-app.delete('/api/user', authMiddleware, (req: any, res) => {
+app.delete('/node/user', authMiddleware, (req: any, res) => {
     const userId = req.user.id;
 
     // Revoke all sessions for this user

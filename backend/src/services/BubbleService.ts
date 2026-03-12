@@ -111,6 +111,33 @@ export class BubbleService {
         return true;
     }
 
+    async getDevicesByApp(appId?: string) {
+        let url = `${this.baseUrl}/device`;
+        if (appId && appId !== 'all') {
+            const constraints = JSON.stringify([{ key: 'buildId', constraint_type: 'equals', value: appId }]);
+            url += `?constraints=${encodeURIComponent(constraints)}`;
+        }
+        const res = await fetch(url, { headers: this.headers });
+        const data = await res.json() as any;
+        return data?.response?.results || [];
+    }
+
+    async registerDevice(deviceData: any) {
+        const res = await fetch(`${this.baseUrl}/device`, {
+            method: 'POST',
+            headers: this.headers,
+            body: JSON.stringify(deviceData)
+        });
+        return res.ok;
+    }
+
+    async getPendingNotifications() {
+        const constraints = JSON.stringify([{ key: 'status', constraint_type: 'equals', value: 'Pending' }]);
+        const res = await fetch(`${this.baseUrl}/notification?constraints=${encodeURIComponent(constraints)}`, { headers: this.headers });
+        const data = await res.json() as any;
+        return data?.response?.results || [];
+    }
+
     async createNotification(notifData: any) {
         const res = await fetch(`${this.baseUrl}/notification`, {
             method: 'POST',
@@ -120,6 +147,19 @@ export class BubbleService {
         const data = await res.json() as any;
         if (!res.ok) throw new Error(data?.message || 'Error creating notification');
         return data;
+    }
+
+    async updateNotificationStatus(notifId: string, status: string, sentCount: number, deliveredCount: number) {
+        const res = await fetch(`${this.baseUrl}/notification/${notifId}`, {
+            method: 'PATCH',
+            headers: this.headers,
+            body: JSON.stringify({
+                status,
+                sentCount,
+                deliveredCount
+            })
+        });
+        return res.ok;
     }
 }
 

@@ -43,7 +43,7 @@ export default function LoginPage() {
 
     const handleOAuth = (provider: string) => {
         toast.error(`La connexion par ${provider} n'est pas encore activée en production.`)
-        // In production: window.location.href = `/api/auth/${provider}`
+        // In production: window.location.href = `/node/auth/${provider}`
     }
 
     return (

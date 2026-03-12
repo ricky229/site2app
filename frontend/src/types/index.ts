@@ -10,6 +10,9 @@ export interface User {
     createdAt: string;
     appsCount: number;
     downloadsCount: number;
+    firebaseKey?: string;
+    googleServicesJson?: string;
+    bubbleApiUrl?: string;
 }
 
 export interface AuthState {
