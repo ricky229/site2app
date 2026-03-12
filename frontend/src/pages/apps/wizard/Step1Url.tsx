@@ -9,7 +9,6 @@ import { isValidUrl, generatePackageName } from '../../../lib/utils'
 import Input from '../../../components/ui/Input'
 import Button from '../../../components/ui/Button'
 import type { SiteAnalysis } from '../../../types'
-import api from '../../../lib/api'
 import toast from 'react-hot-toast'
 
 // Hash a string to a consistent number
@@ -34,26 +33,73 @@ function hslToHex(h: number, s: number, l: number): string {
     return `#${f(0)}${f(8)}${f(4)}`
 }
 
-// Analyse site via backend proxy (avoids CORS)
+// Analyse site directly from frontend via CORS proxy
 async function analyzeSite(url: string): Promise<SiteAnalysis> {
     const domain = new URL(url).hostname.replace('www.', '')
     const words = domain.split('.')
     const fallbackTitle = words[0].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
-    // Call backend to fetch and analyze the site
     let serverColors: string[] = []
     let serverTitle = ''
     let serverFavicon = ''
     let serverDescription = ''
 
     try {
-        const { data } = await api.get(`/analyze?url=${encodeURIComponent(url)}`)
-        serverColors = data.colors || []
-        serverTitle = data.title || ''
-        serverFavicon = data.favicon || ''
-        serverDescription = data.description || ''
-    } catch {
-        // Backend analysis failed, continue with fallbacks
+        // Use allorigins as CORS proxy to fetch HTML
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 10000)
+        const response = await fetch(proxyUrl, { signal: controller.signal })
+        clearTimeout(timeout)
+        const html = await response.text()
+
+        // Extract title
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
+        serverTitle = titleMatch?.[1]?.trim() || ''
+
+        // Extract meta description
+        const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i)
+        serverDescription = descMatch?.[1]?.trim() || ''
+
+        // Extract meta theme-color
+        const themeMatch = html.match(/<meta[^>]*name=["']theme-color["'][^>]*content=["']([^"']+)["']/i)
+            || html.match(/<meta[^>]*content=["']([#][0-9a-fA-F]{3,8})["'][^>]*name=["']theme-color["']/i)
+        if (themeMatch?.[1]) serverColors.push(themeMatch[1])
+
+        // Extract msapplication-TileColor
+        const tileMatch = html.match(/<meta[^>]*name=["']msapplication-TileColor["'][^>]*content=["']([^"']+)["']/i)
+        if (tileMatch?.[1]) serverColors.push(tileMatch[1])
+
+        // Extract CSS hex colors from inline styles and CSS
+        const hexRegex = /#([0-9a-fA-F]{6})\b/g
+        const allHex = new Set<string>()
+        let m
+        while ((m = hexRegex.exec(html)) !== null) {
+            const hex = '#' + (m[1] || '').toLowerCase()
+            // Filter out generic grays/whites/blacks
+            if (!['#000000', '#ffffff', '#333333', '#666666', '#999999', '#cccccc', '#f5f5f5',
+                   '#eeeeee', '#e5e5e5', '#f8f9fa', '#212529', '#111111', '#222222', '#444444',
+                   '#555555', '#777777', '#888888', '#aaaaaa', '#bbbbbb', '#dddddd'].includes(hex)) {
+                allHex.add(hex)
+            }
+        }
+        for (const c of allHex) {
+            if (serverColors.length >= 6) break
+            if (!serverColors.includes(c)) serverColors.push(c)
+        }
+
+        // Extract favicon
+        const faviconMatch = html.match(/<link[^>]*rel=["'](?:icon|shortcut icon|apple-touch-icon)["'][^>]*href=["']([^"']+)["']/i)
+            || html.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["'](?:icon|shortcut icon|apple-touch-icon)["']/i)
+        if (faviconMatch?.[1]) {
+            try {
+                serverFavicon = new URL(faviconMatch[1], url).href
+            } catch {
+                serverFavicon = faviconMatch[1]
+            }
+        }
+    } catch (err) {
+        console.warn('[Analysis] CORS proxy fetch failed, using fallbacks:', err)
     }
 
     const title = serverTitle || fallbackTitle
@@ -77,13 +123,18 @@ async function analyzeSite(url: string): Promise<SiteAnalysis> {
         colors.push(colors.length === 2 ? '#ffffff' : '#f1f5f9')
     }
 
-    const favicon = serverFavicon || `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+    // Use Google favicons API as reliable proxy (handles CORS for favicons)
+    const favicon = serverFavicon
+        ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+        : `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
+    // Also store the real favicon URL for later use
+    const realFavicon = serverFavicon || `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
 
     return {
         url,
         title,
         description: serverDescription || `Application mobile de ${title} — votre boutique/service en ligne`,
-        favicon,
+        favicon: realFavicon,
         screenshot: `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`,
         colors,
         pages: [

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { useWizardStore } from '../../store/wizardStore'
-import api from '../../lib/api'
+import { getAppById } from '../../lib/api'
 
 // Steps
 import Step1Url from './wizard/Step1Url'
@@ -34,34 +34,42 @@ export default function CreateAppPage() {
             return
         }
 
-        api.get(`/build/${id}/status`).then(({ data }) => {
+        // Fetch app from Bubble Data API
+        getAppById(id).then((data: any) => {
             if (data) {
-                // Safeguard against missing nested configs from old builds
-                const safeConfig = { ...state.config, ...(data.config || {}) }
+                const safeFeatures = data.features || state.config.features || {}
                 setState({
                     currentStep: 2, // Start at customization
                     platform: data.platform || 'android',
                     siteAnalysis: {
-                        url: data.url,
-                        title: data.appName,
+                        url: data.url || '',
+                        title: data.appName || data.name || '',
                         description: '',
-                        colors: [safeConfig.primaryColor || '', safeConfig.secondaryColor || ''],
+                        colors: [data.themeColor || '', data.splashBgColor || ''],
                         pages: [],
-                        ssl: true,
+                        ssl: (data.url || '').startsWith('https'),
                         responsive: true,
                         performanceScore: 100,
                         loadTime: 1,
                     },
                     config: {
-                        ...safeConfig,
-                        name: data.appName,
-                        url: data.url,
-                        packageName: data.packageName,
+                        ...state.config,
+                        name: data.appName || data.name || '',
+                        url: data.url || '',
+                        packageName: data.packageName || '',
+                        primaryColor: data.themeColor || '#3461f5',
+                        secondaryColor: data.splashBgColor || '#7c3aed',
+                        orientation: data.orientation || 'portrait',
+                        features: safeFeatures,
+                        statusBar: {
+                            color: data.themeColor || '#ffffff',
+                            style: 'dark' as const,
+                        },
                     }
                 })
             }
         }).catch(err => {
-            console.error('Failed to load build', err)
+            console.error('Failed to load app from Bubble', err)
             navigate('/apps')
         }).finally(() => {
             setIsFetching(false)

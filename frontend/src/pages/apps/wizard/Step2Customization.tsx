@@ -143,28 +143,34 @@ export default function Step2Customization() {
                                         {siteAnalysis?.favicon && (
                                             <button
                                                 className="mt-2 text-xs btn btn-ghost btn-sm w-full"
-                                                onClick={() => {
-                                                    // Convert remote favicon URL to base64 via canvas
-                                                    const img = new window.Image()
-                                                    img.crossOrigin = 'anonymous'
-                                                    img.onload = () => {
-                                                        const canvas = document.createElement('canvas')
-                                                        canvas.width = img.width || 128
-                                                        canvas.height = img.height || 128
-                                                        const ctx = canvas.getContext('2d')
-                                                        if (ctx) {
-                                                            ctx.drawImage(img, 0, 0)
-                                                            const base64 = canvas.toDataURL('image/png')
-                                                            setIconPreview(base64)
-                                                            updateConfig({ icon: base64 })
+                                                onClick={async () => {
+                                                    try {
+                                                        // Use CORS proxy to fetch the favicon as blob
+                                                        const faviconUrl = siteAnalysis.favicon!
+                                                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(faviconUrl)}`
+                                                        const res = await fetch(proxyUrl)
+                                                        const blob = await res.blob()
+                                                        
+                                                        // Convert blob to base64 data URL
+                                                        const reader = new FileReader()
+                                                        reader.onloadend = () => {
+                                                            const base64 = reader.result as string
+                                                            if (base64 && base64.startsWith('data:')) {
+                                                                setIconPreview(base64)
+                                                                updateConfig({ icon: base64 })
+                                                            } else {
+                                                                // Fallback: use URL directly
+                                                                setIconPreview(faviconUrl)
+                                                                updateConfig({ icon: faviconUrl })
+                                                            }
                                                         }
-                                                    }
-                                                    img.onerror = () => {
-                                                        // Fallback: just use the URL directly
+                                                        reader.readAsDataURL(blob)
+                                                    } catch (e) {
+                                                        console.warn('Failed to convert favicon to base64:', e)
+                                                        // Fallback: use URL directly
                                                         setIconPreview(siteAnalysis.favicon!)
                                                         updateConfig({ icon: siteAnalysis.favicon })
                                                     }
-                                                    img.src = siteAnalysis.favicon!
                                                 }}
                                             >
                                                 Utiliser la favicon détectée
