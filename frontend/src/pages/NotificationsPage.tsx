@@ -14,7 +14,7 @@ import { StatCard } from '../components/ui/Card'
 import { formatRelativeTime, formatNumber } from '../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api, { getUserById, updateUser, getDevices, getAppsByUser, dataApi } from '../lib/api'
+import api, { getUserById, updateUser, getDevices, getAppsByUser, dataApi, nodeApi } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import type { App } from '../types'
 
@@ -77,21 +77,26 @@ export default function NotificationsPage() {
 
     const firebaseMutation = useMutation({
         mutationFn: async (payload: any) => {
-            const res = await api.post('/auth/firebase-config', payload)
-            return res.data
+            if (!user?.id) throw new Error("Non authentifié")
+            // Update Bubble directly (source of truth)
+            // Backend will sync from Bubble on next request
+            return await updateUser(user.id, { 
+                firebaseKey: payload.adminSdkJson,
+                googleServicesJson: payload.googleServicesJson,
+                bubbleApiUrl: payload.bubbleApiUrl
+            })
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['userProfile'] })
-            toast.success('Configuration sauvegardée et connectée au serveur !')
+            toast.success('Configuration sauvegardée !')
         },
         onError: (err: any) => {
-            const msg = err?.response?.data?.error || err?.message || 'Erreur lors de la sauvegarde'
-            toast.error(msg, { duration: 5000 })
+            toast.error(err?.message || 'Erreur lors de la sauvegarde')
         }
     })
 
     const sendMutation = useMutation({
-        mutationFn: async (payload: any) => await api.post('/notifications/send', payload),
+        mutationFn: async (payload: any) => await nodeApi.post('/notifications/send', payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
             toast.success(form.scheduled ? '📅 Notification programmée !' : '🚀 Notification envoyée avec succès !')
@@ -99,7 +104,7 @@ export default function NotificationsPage() {
             if (!form.scheduled) setTab('history')
         },
         onError: (err: any) => {
-            toast.error(err?.error || 'Erreur lors de la communication avec le serveur FCM')
+            toast.error(err?.response?.data?.error || 'Erreur lors de l\'envoi')
         }
     })
 

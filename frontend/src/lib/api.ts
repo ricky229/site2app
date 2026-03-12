@@ -86,25 +86,20 @@ export async function getDevices(appId?: string) {
     }
 }
 
-// ─── Backend API Configuration ──────────────────────
-// Locally proxied via vite.config.ts to localhost:4000
-// In production, uses the same domain /api
-const BACKEND_URL = '/api'
-
-const api = axios.create({
-    baseURL: BACKEND_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+// ─── Node Backend API Configuration ─────────────────
+// proxied via vite.config.ts /api -> localhost:4000
+export const nodeApi = axios.create({
+    baseURL: '/api',
+    headers: { 'Content-Type': 'application/json' },
 })
 
-// Add interceptor to include token
-api.interceptors.request.use(config => {
+nodeApi.interceptors.request.use(config => {
     const token = localStorage.getItem('site2app_token')
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`
     return config
 })
 
+// ─── Default Export: Bubble.io (Compatibility) ───────
+// Keep this targeting Bubble to avoid breaking other pages
+const api = dataApi;
 export default api
