@@ -85,7 +85,8 @@ export default function NotificationsPage() {
             toast.success('Configuration sauvegardée et connectée au serveur !')
         },
         onError: (err: any) => {
-            toast.error(err?.response?.data?.error || 'Erreur lors de la sauvegarde')
+            const msg = err?.response?.data?.error || err?.message || 'Erreur lors de la sauvegarde'
+            toast.error(msg, { duration: 5000 })
         }
     })
 
@@ -565,7 +566,13 @@ export default function NotificationsPage() {
                             label="URL de l'API (Bubble Data API)"
                             placeholder="https://votre-site.com/api/1.1/obj/notification_queue"
                             value={firebaseConfig.bubbleApiUrl}
-                            onChange={e => setFirebaseConfig(c => ({ ...c, bubbleApiUrl: e.target.value }))}
+                            onChange={e => {
+                                let val = e.target.value;
+                                if (val.includes('https://https://')) {
+                                    val = val.replace('https://https://', 'https://');
+                                }
+                                setFirebaseConfig(c => ({ ...c, bubbleApiUrl: val }))
+                            }}
                             icon={<Link size={16} />}
                         />
 

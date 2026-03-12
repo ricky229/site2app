@@ -1158,11 +1158,11 @@ app.post('/api/auth/firebase-config', authMiddleware, async (req: any, res) => {
             bubbleApiUrl: bubbleApiUrl
         })
         console.log(`[Config] Sync successful for user ${req.user.id}`);
+        res.json({ success: true, user: users.get(req.user.id) })
     } catch (e: any) {
         console.error(`[Config] Bubble sync failed:`, e.message);
+        res.status(500).json({ error: `Échec de la synchronisation Bubble: ${e.message}` })
     }
-
-    res.json({ success: true, user })
 })
 
 app.delete('/api/user', authMiddleware, (req: any, res) => {

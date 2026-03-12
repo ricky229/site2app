@@ -5,7 +5,7 @@ export class BubbleService {
     private token: string;
 
     constructor() {
-        this.baseUrl = process.env.BUBBLE_API_URL || 'https://site2app-34905.bubbleapps.io/api/1.1/obj';
+        this.baseUrl = process.env.BUBBLE_API_URL || 'https://site2app.online/api/1.1/obj';
         this.token = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
     }
 
@@ -81,13 +81,24 @@ export class BubbleService {
     }
 
     async updateUser(userId: string, userData: any) {
+        // Sanitize URLs in userData if they start with double https
+        if (userData.bubbleApiUrl && typeof userData.bubbleApiUrl === 'string') {
+            userData.bubbleApiUrl = userData.bubbleApiUrl.replace(/https?:\/\/https?:\/\//g, 'https://');
+        }
+
         const res = await fetch(`${this.baseUrl}/user/${userId}`, {
             method: 'PATCH',
             headers: this.headers,
             body: JSON.stringify(userData)
         });
+
+        if (res.status === 404) throw new Error(`User ${userId} not found in Bubble`);
+        
         const data = await res.json() as any;
-        if (!res.ok) throw new Error(data?.message || 'Error updating user');
+        if (!res.ok) {
+            console.error('[Bubble] PATCH Error:', JSON.stringify(data));
+            throw new Error(data?.message || data?.error || 'Error updating user');
+        }
         return true;
     }
 
