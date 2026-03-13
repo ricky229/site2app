@@ -1345,8 +1345,8 @@ app.delete('/node/user', authMiddleware, (req: any, res) => {
     res.json({ success: true, message: 'Account deleted' });
 })
 
-// Trigger polling manually from UI
-app.post('/node/notifications/poll', authMiddleware, async (req: any, res) => {
+// Trigger polling manually from UI (GET to avoid 405)
+app.get('/node/notifications/poll', authMiddleware, async (req: any, res) => {
     console.log(`[API] Manual poll requested by user ${req.user?.id}`);
     try {
         await pollExternalNotifications();

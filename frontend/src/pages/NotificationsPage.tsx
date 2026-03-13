@@ -115,7 +115,7 @@ export default function NotificationsPage() {
     })
 
     const pollMutation = useMutation({
-        mutationFn: async () => await nodeApi.post('/notifications/poll'),
+        mutationFn: async () => await nodeApi.get('/notifications/poll'),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
             toast.success('Worker activé ! Les messages arrivent...')
