@@ -1347,10 +1347,13 @@ app.delete('/node/user', authMiddleware, (req: any, res) => {
 
 // Trigger polling manually from UI
 app.post('/node/notifications/poll', authMiddleware, async (req: any, res) => {
+    console.log(`[API] Manual poll requested by user ${req.user?.id}`);
     try {
         await pollExternalNotifications();
+        console.log(`[API] Manual poll completed`);
         res.json({ success: true, message: 'Polling cycle executed' });
     } catch (err: any) {
+        console.error(`[API] Manual poll failed:`, err.message);
         res.status(500).json({ error: err.message });
     }
 })

@@ -120,7 +120,10 @@ export default function NotificationsPage() {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
             toast.success('Worker activé ! Les messages arrivent...')
         },
-        onError: () => toast.error('Le serveur ne répond pas')
+        onError: (err: any) => {
+            const msg = err?.response?.data?.error || err?.message || 'Le serveur ne répond pas';
+            toast.error(`Erreur: ${msg}`);
+        }
     })
 
     const sendMutation = useMutation({
