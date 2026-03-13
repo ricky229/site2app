@@ -1351,9 +1351,13 @@ async function pollExternalNotifications() {
         if (!user.bubbleApiUrl) continue;
 
         try {
+            const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
             // Demander les notifications "en attente" à Bubble
             const response = await fetch(user.bubbleApiUrl, {
-                headers: { 'Accept': 'application/json' }
+                headers: { 
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${bubbleToken}`
+                }
             });
 
             if (!response.ok) continue;
@@ -1370,18 +1374,18 @@ async function pollExternalNotifications() {
                 // Ignore si déjà envoyé côté Bubble OU DÉJÀ envoyé par nous (sécurité locale très stricte)
                 if (!notif._id || !notif.title || notif.status === 'Sent' || processedBubbleNotifs.has(notif._id)) continue;
 
-                // Préparer le payload interne
+                // Préparer le payload interne (compatible avec les champs Bubble historiques)
                 const reqBody = {
-                    title: notif.title,
-                    body: notif.body,
-                    buildId: notif.buildId || 'all',
-                    target: notif.targetToken ? [decodeURIComponent(notif.targetToken)] : 'all',
-                    image: notif.image || null,
-                    actionUrl: notif.actionUrl || null,
+                    title: notif.title || notif.Title || 'Sans titre',
+                    body: notif.body || notif.Body || (notif.title ? '' : 'Notification reçue'),
+                    buildId: notif.targetApp || notif.buildId || notif.target_app || 'all',
+                    target: notif.targetToken ? [decodeURIComponent(notif.targetToken)] : (notif.targetOs || notif.target_os || 'all'),
+                    image: notif.image || notif.Image || null,
+                    actionUrl: notif.targetUrl || notif.actionUrl || notif.url || null,
                 };
 
                 try {
-                    console.log(`[Polling] Sending via CORE: "${notif.title}" for user ${user.id}`);
+                    console.log(`[Polling] Processing notification: "${reqBody.title}" for user ${user.email}`);
                     const sentNotif = await sendNotificationCore(user, reqBody);
 
                     if (sentNotif) {

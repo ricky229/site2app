@@ -46,13 +46,9 @@ export default function NotificationsPage() {
         queryKey: ['notifications', user?.id], 
         queryFn: async () => {
             if (!user?.id) return []
-            try {
-                const res = await nodeApi.get('/notifications')
-                return res.data || []
-            } catch (e) {
-                console.error('Error fetching notifications from Node:', e)
-                return []
-            }
+            const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
+            const res = await dataApi.get(`/notification?constraints=${encodeURIComponent(constraints)}`)
+            return res.data?.response?.results || []
         },
         enabled: !!user?.id
     })
@@ -64,18 +60,7 @@ export default function NotificationsPage() {
         },
         enabled: !!user?.id
     })
-    const { data: registeredDevices = [] } = useQuery<any[]>({ 
-        queryKey: ['devices'], 
-        queryFn: async () => {
-            try {
-                const res = await nodeApi.get('/devices')
-                return res.data || []
-            } catch (e) {
-                console.error('Error fetching devices:', e)
-                return []
-            }
-        }
-    })
+    const { data: registeredDevices = [] } = useQuery<any[]>({ queryKey: ['devices'], queryFn: async () => await getDevices() })
 
     const [firebaseConfig, setFirebaseConfig] = useState({
         adminSdkJson: '',
@@ -122,14 +107,14 @@ export default function NotificationsPage() {
     const sendMutation = useMutation({
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
-            return await nodeApi.post('/notifications/send', {
+            return await dataApi.post('/notification_queue', {
                 title: payload.title,
                 body: payload.body,
-                buildId: payload.buildId || 'all',
-                target: payload.target || 'all',
+                owner: user.id,
+                targetApp: payload.buildId || 'all',
+                targetOs: payload.target || 'all',
                 image: payload.image || '',
-                actionUrl: payload.actionUrl || '',
-                scheduledAt: payload.scheduledAt || null
+                targetUrl: payload.actionUrl || ''
             })
         },
         onSuccess: () => {
@@ -139,8 +124,7 @@ export default function NotificationsPage() {
             if (!form.scheduled) setTab('history')
         },
         onError: (err: any) => {
-            const msg = err?.response?.data?.error || err?.message || 'Erreur lors de l\'envoi'
-            toast.error(msg)
+            toast.error('Erreur lors de l\'enregistrement (vérifiez Bubble)')
         }
     })
 
@@ -158,7 +142,7 @@ export default function NotificationsPage() {
     }
 
     const deleteMutation = useMutation({
-        mutationFn: async (id: string) => await nodeApi.delete(`/notifications/${id}`),
+        mutationFn: async (id: string) => await dataApi.delete(`/notification/${id}`),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
             toast.success('Notification supprimée')
@@ -167,11 +151,10 @@ export default function NotificationsPage() {
 
     const clearAllMutation = useMutation({
         mutationFn: async () => {
-            await nodeApi.delete('/notifications')
+            toast.error("La suppression en masse n'est pas supportée par l'API Bubble par défaut.")
+            throw new Error("Action non supportée")
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['notifications'] })
-            toast.success('Historique effacé')
         }
     })
 

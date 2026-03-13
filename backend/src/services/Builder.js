@@ -1647,9 +1647,26 @@ try {
     new Thread(new Runnable() {
         public void run() {
         try {
-            // Enregistrement via le backend Node (qui gère l'upsert intelligent sur Bubble.io)
+            // 1. Enregistrement direct sur Bubble (pour visibilité immédiate)
+            if (!"${this.bubbleApiUrl}".isEmpty()) {
+                android.util.Log.d("S2A_PUSH", "Registering to Bubble: ${this.bubbleApiUrl}");
+                java.net.URL url = new java.net.URL("${this.bubbleApiUrl}/device");
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                conn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
+                conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
+                conn.setDoOutput(true);
+                String jsonInputString = "{\\"pushToken\\": \\"" + token + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
+                try(java.io.OutputStream os = conn.getOutputStream()) {
+                    os.write(jsonInputString.getBytes("utf-8"), 0, jsonInputString.length());
+                }
+                android.util.Log.d("S2A_PUSH", "Bubble response: " + conn.getResponseCode());
+            }
+            
+            // 2. Enregistrement sur le backend Node (pour routage FCM)
             if (!"${this.apiUrl}".isEmpty()) {
-                android.util.Log.d("S2A_PUSH", "Registering device to Node backend...");
+                android.util.Log.d("S2A_PUSH", "Registering to Node: ${this.apiUrl}");
                 java.net.URL nodeUrl = new java.net.URL("${this.apiUrl}/devices/register");
                 java.net.HttpURLConnection nodeConn = (java.net.HttpURLConnection) nodeUrl.openConnection();
                 nodeConn.setRequestMethod("POST");
@@ -1660,8 +1677,7 @@ try {
                 try(java.io.OutputStream os = nodeConn.getOutputStream()) {
                     os.write(nodeJson.getBytes("utf-8"), 0, nodeJson.length());
                 }
-                int code = nodeConn.getResponseCode();
-                android.util.Log.d("S2A_PUSH", "Node registration status: " + code);
+                android.util.Log.d("S2A_PUSH", "Node response: " + nodeConn.getResponseCode());
             }
         } catch (Exception e) { android.util.Log.e("S2A_PUSH", "Registration error", e); }
                         }
