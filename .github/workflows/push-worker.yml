@@ -1,0 +1,26 @@
+name: Push Notification Worker
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # S'exécute toutes les 5 minutes 24h/24
+  workflow_dispatch: # Permet de lancer à la main le script au besoin depuis la page "Actions" de GitHub
+
+jobs:
+  send-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm install firebase-admin axios
+
+      - name: Run Push Worker
+        working-directory: ./backend
+        run: node scripts/push-worker.js
