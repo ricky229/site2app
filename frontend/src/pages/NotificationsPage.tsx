@@ -107,14 +107,20 @@ export default function NotificationsPage() {
     const sendMutation = useMutation({
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
+            // Prépare le payload pour Bubble (en s'assurant que ce sont des chaînes de caractères)
+            const isSpecific = Array.isArray(payload.target);
+            const targetStr = isSpecific ? 'specific' : String(payload.target || 'all');
+            const tokenStr = isSpecific ? payload.target.join(',') : '';
+
             return await dataApi.post('/notification_queue', {
-                title: payload.title,
-                body: payload.body,
-                owner: user.id,
-                targetApp: payload.buildId || 'all',
-                targetOs: payload.target || 'all',
-                image: payload.image || '',
-                targetUrl: payload.actionUrl || ''
+                title: String(payload.title || ''),
+                body: String(payload.body || ''),
+                owner: String(user.id || ''),
+                targetApp: String(payload.buildId || 'all'),
+                targetOs: targetStr,
+                targetToken: tokenStr,
+                image: String(payload.image || ''),
+                targetUrl: String(payload.actionUrl || '')
             })
         },
         onSuccess: () => {
