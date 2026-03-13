@@ -39,25 +39,36 @@ async function analyzeSite(url: string): Promise<SiteAnalysis> {
     const words = domain.split('.')
     const fallbackTitle = words[0].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
+    // Deterministic fallback colors based on domain (what worked before)
+    const generateFallbackColors = () => {
+        const h = hashStr(domain)
+        const hue1 = h % 360
+        const hue2 = (hue1 + 40) % 360
+        return [
+            hslToHex(hue1, 65, 50),
+            hslToHex(hue2, 55, 45),
+            '#ffffff',
+            hslToHex(hue1, 10, 96)
+        ]
+    }
+
     try {
-        // Construct the correct node API URL (handles production/development)
         const baseUrl = window.location.hostname !== 'localhost' 
             ? window.location.origin + '/node'
             : '/node';
             
         const response = await fetch(`${baseUrl}/analyze?url=${encodeURIComponent(url)}`);
-        if (!response.ok) throw new Error('Backend analysis failed');
-        
         const data = await response.json();
         
-        // Final object with backend-provided deep scan results
+        const colors = (data.colors && data.colors.length >= 2) ? data.colors : generateFallbackColors();
+
         return {
             url,
             title: data.title || fallbackTitle,
             description: data.description || `Application mobile de ${data.title || fallbackTitle}`,
             favicon: data.favicon || `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
             screenshot: `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`,
-            colors: data.colors && data.colors.length >= 2 ? data.colors : ['#3461f5', '#7c3aed', '#ffffff', '#f1f5f9'],
+            colors: colors,
             pages: [
                 { url, title: 'Accueil' },
                 { url: url + '/about', title: 'À propos' },
@@ -69,14 +80,14 @@ async function analyzeSite(url: string): Promise<SiteAnalysis> {
             loadTime: Math.round((0.8 + Math.random() * 2) * 10) / 10,
         }
     } catch (err) {
-        console.warn('[Analysis] Node backend failed, falling back to basic details:', err)
+        console.warn('[Analysis] Node backend failed, using deterministic fallbacks:', err)
         return {
             url,
             title: fallbackTitle,
             description: `Application mobile de ${fallbackTitle}`,
             favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
             screenshot: `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`,
-            colors: ['#3461f5', '#7c3aed', '#ffffff', '#f1f5f9'],
+            colors: generateFallbackColors(),
             pages: [{ url, title: 'Accueil' }],
             ssl: url.startsWith('https'),
             responsive: true,

@@ -234,9 +234,81 @@ const handleGetFcmToken = async (req: any, res: any) => {
 };
 
 // Registered routes both with and without /node prefix
+const handleAnalyze = async (req: any, res: any) => {
+    const targetUrl = req.query.url as string;
+    if (!targetUrl) return res.status(400).json({ error: 'url parameter required' });
+
+    console.log(`[API] Analyzing: ${targetUrl}`);
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000); // 12s timeout
+
+        const response = await fetch(targetUrl, {
+            signal: controller.signal,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
+            },
+        });
+        clearTimeout(timeout);
+
+        const html = await response.text();
+        const colors: string[] = [];
+
+        // 1. Primary Colors (Meta Tags)
+        const themeMatch = html.match(/<meta[^>]*name=["'](?:theme-color|msapplication-TileColor)["'][^>]*content=["']([^"']+)["']/i)
+                        || html.match(/<meta[^>]*content=["']([#][0-9a-fA-F]{3,8})["'][^>]*name=["'](?:theme-color|msapplication-TileColor)["']/i);
+        if (themeMatch?.[1] && /^#([0-9a-fA-F]{3,6})$/.test(themeMatch[1])) colors.push(themeMatch[1].toLowerCase());
+
+        // 2. Frequency Heuristic (exclude common UI grays)
+        const hexRegex = /#([0-9a-fA-F]{6})\b/g;
+        const freq: Record<string, number> = {};
+        const skip = ['#000000', '#ffffff', '#333333', '#666666', '#999999', '#cccccc', '#f5f5f5', '#eeeeee', '#e5e5e5', '#f8f9fa', '#212529', '#adb5bd', '#dee2e6'];
+        let m;
+        while ((m = hexRegex.exec(html)) !== null) {
+            const hex = '#' + m[1].toLowerCase();
+            if (!skip.includes(hex)) freq[hex] = (freq[hex] || 0) + 1;
+        }
+        
+        const sorted = Object.entries(freq).sort((a,b) => b[1] - a[1]).map(p => p[0]);
+        for (const c of sorted) {
+            if (colors.length >= 8) break;
+            if (!colors.includes(c)) colors.push(c);
+        }
+
+        // 3. Metadata (OG > Tag)
+        const titleMatch = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i) || html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        const title = titleMatch?.[1]?.trim() || '';
+
+        const descMatch = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i) || html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+        const description = (descMatch?.[1] || '').trim();
+
+        const appleIcon = html.match(/<link[^>]*rel=["']apple-touch-icon["'][^>]*href=["']([^"']+)["']/i);
+        const mainIcon = html.match(/<link[^>]*rel=["'](?:icon|shortcut icon)["'][^>]*href=["']([^"']+)["']/i);
+        const ogImg = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i);
+        
+        let favicon = '';
+        const rawFav = appleIcon?.[1] || mainIcon?.[1] || ogImg?.[1];
+        if (rawFav) {
+            try { favicon = new URL(rawFav, targetUrl).href; } catch { favicon = rawFav; }
+        }
+        if (!favicon) {
+            try { favicon = `https://www.google.com/s2/favicons?domain=${new URL(targetUrl).hostname}&sz=256`; } catch {}
+        }
+
+        console.log(`[API] Analysis done for ${targetUrl}: ${colors.length} colors found`);
+        res.json({ colors, title, favicon, description });
+    } catch (err: any) {
+        console.error(`[API] Analysis error:`, err.message);
+        res.status(200).json({ colors: [], title: '', favicon: '', description: '', error: err.message });
+    }
+}
+
 app.all(['/node/notifications/webhook', '/notifications/webhook'], handleWebhook);
 app.all(['/node/notifications/get-fcm-token', '/notifications/get-fcm-token'], handleGetFcmToken);
-app.get(['/node/health', '/health'], (req, res) => res.json({ status: 'ok', version: '1.0.7-final-webhook' }));
+app.get(['/node/analyze', '/analyze', '/api/analyze'], handleAnalyze);
+app.get(['/node/health', '/health', '/api/health'], (req, res) => res.json({ status: 'ok', version: '1.0.8-analysis-fix' }));
 
 // Middlewares
 app.use(cors({
@@ -298,102 +370,8 @@ const authMiddleware = async (req: any, res: any, next: any) => {
     }
 }
 
-// ─── Site Analysis (server-side to avoid CORS) ───────
-app.get('/node/analyze', async (req, res) => {
-    const targetUrl = req.query.url as string
-    if (!targetUrl) return res.status(400).json({ error: 'url parameter required' })
+// Analysis logic moved to top...
 
-    try {
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 8000)
-
-        const response = await fetch(targetUrl, {
-            signal: controller.signal,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (compatible; Site2App/1.0)',
-                'Accept': 'text/html',
-            },
-        })
-        clearTimeout(timeout)
-
-        const html = await response.text()
-        const colors: string[] = []
-
-        // 1. PRIMARY COLORS (Meta tags - highest accuracy)
-        const themeMatch = html.match(/<meta[^>]*name=["']theme-color["'][^>]*content=["']([^"']+)["']/i)
-            || html.match(/<meta[^>]*content=["']([#][0-9a-fA-F]{3,8})["'][^>]*name=["']theme-color["']/i)
-        if (themeMatch?.[1] && /^#([0-9a-fA-F]{3,6})$/.test(themeMatch[1])) colors.push(themeMatch[1].toLowerCase())
-
-        const tileMatch = html.match(/<meta[^>]*name=["']msapplication-TileColor["'][^>]*content=["']([^"']+)["']/i)
-        if (tileMatch?.[1] && /^#([0-9a-fA-F]{3,6})$/.test(tileMatch[1])) {
-            const c = tileMatch[1].toLowerCase()
-            if (!colors.includes(c)) colors.push(c)
-        }
-
-        // 2. BRAND COLOR HEURISTIC (Frequency Analysis of Hex codes)
-        const hexRegex = /#([0-9a-fA-F]{6})\b/g
-        const colorFrequency: Record<string, number> = {}
-        const excludeList = ['#000000', '#ffffff', '#333333', '#666666', '#999999', '#cccccc', '#f5f5f5', '#eeeeee', '#e5e5e5', '#f8f9fa', '#212529', '#343a40', '#adb5bd']
-        
-        let m
-        while ((m = hexRegex.exec(html)) !== null) {
-            if (m[1]) {
-                const hex = '#' + m[1].toLowerCase()
-                if (!excludeList.includes(hex)) {
-                    colorFrequency[hex] = (colorFrequency[hex] || 0) + 1
-                }
-            }
-        }
-        
-        // Sort by frequency and add top ones
-        const sortedBrandColors = Object.entries(colorFrequency)
-            .sort((a, b) => b[1] - a[1])
-            .map(pair => pair[0])
-        
-        for (const c of sortedBrandColors) {
-            if (colors.length >= 8) break
-            if (!colors.includes(c)) colors.push(c)
-        }
-
-        // 3. TITLE (OG > Meta > Title Tag)
-        const ogTitle = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i)
-        const metaTitle = html.match(/<meta[^>]*name=["']title["'][^>]*content=["']([^"']+)["']/i)
-        const tagTitle = html.match(/<title[^>]*>([^<]+)<\/title>/i)
-        const title = ogTitle?.[1] || metaTitle?.[1] || tagTitle?.[1]?.trim() || ''
-
-        // 4. ICON (Apple Touch > Favicon > OG Image)
-        const appleIcon = html.match(/<link[^>]*rel=["']apple-touch-icon["'][^>]*href=["']([^"']+)["']/i)
-        const faviconMatch = html.match(/<link[^>]*rel=["'](?:icon|shortcut icon)["'][^>]*href=["']([^"']+)["']/i)
-        const ogImage = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
-        
-        let favicon = ''
-        const rawIcon = appleIcon?.[1] || faviconMatch?.[1] || ogImage?.[1]
-        
-        if (rawIcon) {
-            try {
-                favicon = new URL(rawIcon, targetUrl).href
-            } catch { favicon = rawIcon }
-        }
-        
-        if (!favicon || favicon.length < 5) {
-            try {
-                const domain = new URL(targetUrl).hostname
-                favicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=256`
-            } catch { /* fallback */ }
-        }
-
-        // 5. DESCRIPTION (OG > Meta)
-        const ogDesc = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i)
-        const metaDesc = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i)
-        const description = (ogDesc?.[1] || metaDesc?.[1] || '').trim()
-
-        console.log(`[API] Deep Analysis: colors=${colors.length}, title="${title}", favicon=${!!favicon}`)
-        res.json({ colors, title, favicon, description })
-    } catch (err: any) {
-        console.error(`[API] Analysis failed for ${targetUrl}:`, err.message)
-        res.json({ colors: [], title: '', favicon: '', description: '', error: err.message })
-    }
-})
 
 // ─── Build Request ─────────────────────────────────
 app.post('/node/build', authMiddleware, (req: any, res) => {
