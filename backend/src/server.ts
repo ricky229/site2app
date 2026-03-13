@@ -778,52 +778,55 @@ const sendNotificationCore = async (user: any, payload: any) => {
                 // Resolve target tokens
                 let tokensToSend: string[] = [];
                 if (Array.isArray(target) && target.length > 0) {
+                    console.log(`[CORE] Targeting specific tokens: ${target.length}`);
                     tokensToSend = target;
                 } else {
-                    // Get all devices, optionally filtered by buildId
+                    console.log(`[CORE] Targeting group: buildId=${buildId}, os=${target}`);
+                    // Fetch from local memory
                     const allDevicesList = Array.from(devices.values()) as any[];
+                    const userBuildIds = Array.from(builds.values()).filter((b: any) => b.userId === user.id).map(b => b.id);
                     
-                    // If a specific app is selected, only send to that app's devices
-                    // Otherwise, only send to devices belonging to this user's builds
-                    const userBuildIds = Array.from(builds.values())
-                        .filter((b: any) => b.userId === user.id)
-                        .map(b => b.id);
-                    
-                    const filteredDevices = buildId && buildId !== 'all'
+                    let filteredLocal = buildId && buildId !== 'all'
                         ? allDevicesList.filter((d: any) => d.buildId === buildId)
                         : allDevicesList.filter((d: any) => userBuildIds.includes(d.buildId));
                     
-                    tokensToSend = filteredDevices
-                        .map((d: any) => d.id)
-                        .filter((id: string) => id && !id.startsWith('android-') && id !== 'test_token' && id.includes(':'));
-                }
-
-                console.log(`[CORE] Tokens to send: ${tokensToSend.length}`);
-                
-                // FALLBACK: If no tokens found locally, try to fetch from Bubble datasource
-                if (tokensToSend.length === 0 && user.bubbleApiUrl) {
-                    try {
-                        const deviceUrl = user.bubbleApiUrl.replace('/notification_queue', '/device').replace('/notification', '/device');
-                        const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
-                        
-                        let fetchUrl = deviceUrl;
-                        if (buildId && buildId !== 'all') {
-                            const constraints = JSON.stringify([{ key: 'buildId', constraint_type: 'equals', value: buildId }]);
-                            fetchUrl += `?constraints=${encodeURIComponent(constraints)}`;
-                        }
-                        
-                        const bubbleResp = await fetch(fetchUrl, {
-                            headers: { 'Authorization': `Bearer ${bubbleToken}`, 'Accept': 'application/json' }
-                        });
-                        
-                        if (bubbleResp.ok) {
-                            const bubbleData = await bubbleResp.json() as any;
-                            const results = bubbleData?.response?.results || bubbleData?.results || [];
-                            tokensToSend = results.map((d: any) => d.pushToken || d.push_token || d.id).filter((t: any) => typeof t === 'string' && t.includes(':'));
-                            console.log(`[CORE] Fallback: Found ${tokensToSend.length} tokens from Bubble (${fetchUrl})`);
-                        }
-                    } catch (errFallback: any) {
-                        console.error(`[CORE] Fallback fetch failed:`, errFallback.message);
+                    if (target && target !== 'all') {
+                        filteredLocal = filteredLocal.filter((d: any) => d.os === target);
+                    }
+                    
+                    tokensToSend = filteredLocal.map((d: any) => d.id).filter((id: string) => id && id.includes(':'));
+                    
+                    // ALWAYS also try to fetch from Bubble for group targets to ensure we don't miss anyone
+                    if (user.bubbleApiUrl) {
+                        try {
+                            const deviceUrl = user.bubbleApiUrl.replace('/notification_queue', '/device').replace('/notification', '/device');
+                            const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+                            let fetchUrl = deviceUrl;
+                            if (buildId && buildId !== 'all') {
+                                const constraints = JSON.stringify([{ key: 'buildId', constraint_type: 'equals', value: buildId }]);
+                                fetchUrl += `?constraints=${encodeURIComponent(constraints)}`;
+                            }
+                            
+                            const bubbleResp = await fetch(fetchUrl, {
+                                headers: { 'Authorization': `Bearer ${bubbleToken}`, 'Accept': 'application/json' }
+                            });
+                            
+                            if (bubbleResp.ok) {
+                                const bubbleData = await bubbleResp.json() as any;
+                                const bubbleResults = bubbleData?.response?.results || bubbleData?.results || [];
+                                const bubbleTokens = bubbleResults
+                                    .filter((d: any) => {
+                                        if (target && target !== 'all') return d.os === target;
+                                        return true;
+                                    })
+                                    .map((d: any) => d.pushToken || d.push_token || d.id || d._id)
+                                    .filter((t: any) => typeof t === 'string' && t.includes(':'));
+                                
+                                // Merge and deduplicate
+                                tokensToSend = Array.from(new Set([...tokensToSend, ...bubbleTokens]));
+                                console.log(`[CORE] Group discovery: ${tokensToSend.length} tokens found (Local + Bubble ${fetchUrl})`);
+                            }
+                        } catch (err: any) { console.error(`[CORE] Bubble token fetch failed:`, err.message); }
                     }
                 }
 
@@ -1392,9 +1395,10 @@ async function pollExternalNotifications() {
                         processedBubbleNotifs.add(notif._id);
                         saveProcessedBubble();
 
-                        // Mark as Sent on Bubble (using the provided absolute polling API URL to find the correct item)
+                        const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+                        
+                        // 1. Mark as Sent on Bubble Queue
                         try {
-                            const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
                             await fetch(`${user.bubbleApiUrl}/${notif._id}`, {
                                 method: 'PATCH',
                                 headers: { 
@@ -1403,10 +1407,32 @@ async function pollExternalNotifications() {
                                 },
                                 body: JSON.stringify({ status: 'Sent' })
                             });
-                            console.log(`[Polling] Notification ${notif._id} marked as Sent on Bubble.`);
-                        } catch (errBubble) {
-                            console.warn(`[Polling] Bubble status update failed for ${notif._id}, but notif was sent.`);
-                        }
+                            console.log(`[Polling] Notification ${notif._id} marked as Sent in queue.`);
+                        } catch (err) { console.warn(`[Polling] Could not update queue item ${notif._id}`); }
+
+                        // 2. Create entry in "notification" table for History
+                        try {
+                            const historyUrl = user.bubbleApiUrl.replace('/notification_queue', '/notification');
+                            await fetch(historyUrl, {
+                                method: 'POST',
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${bubbleToken}`
+                                },
+                                body: JSON.stringify({
+                                    title: reqBody.title,
+                                    body: reqBody.body,
+                                    image: reqBody.image,
+                                    targetUrl: reqBody.actionUrl,
+                                    targetApp: reqBody.buildId,
+                                    targetOs: Array.isArray(reqBody.target) ? 'specific' : reqBody.target,
+                                    status: 'Sent',
+                                    owner: user.id,
+                                    sentAt: new Date().toISOString()
+                                })
+                            });
+                            console.log(`[Polling] Notification record created on Bubble history table.`);
+                        } catch (err) { console.warn(`[Polling] Could not create history record on Bubble.`); }
                     }
                 } catch (e: any) {
                     console.error(`[Polling] Core Send Failed for ${notif._id}:`, e.message);
