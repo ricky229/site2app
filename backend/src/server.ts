@@ -1350,7 +1350,7 @@ app.get('/node/notifications/poll', authMiddleware, async (req: any, res) => {
     console.log(`[API] Manual poll requested by user ${req.user?.id}`);
     try {
         await pollExternalNotifications();
-        console.log(`[API] Manual poll completed`);
+        console.log(`[API] Manual poll completed successfully`);
         res.json({ success: true, message: 'Polling cycle executed' });
     } catch (err: any) {
         console.error(`[API] Manual poll failed:`, err.message);
@@ -1363,37 +1363,50 @@ const POLLING_INTERVAL_MS = 15000; // 15 seconds
 
 async function pollExternalNotifications() {
     const allUsers = Array.from(users.values());
-    if (allUsers.length === 0) return;
+    if (allUsers.length === 0) {
+        // Log locally if no users are in memory yet
+        return;
+    }
 
-    console.log(`[Polling] Starting cycle for ${allUsers.length} users...`);
+    console.log(`[Polling] 🕒 Starting cycle for ${allUsers.length} users...`);
     const defaultBubbleBase = 'https://site2app.online/api/1.1/obj';
     const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
 
     for (const user of allUsers) {
-        // Use user's custom URL if available, otherwise use default
-        let bubbleObjUrl = user.bubbleApiUrl;
-        
-        if (!bubbleObjUrl) {
-            bubbleObjUrl = `${defaultBubbleBase}/notification_queue`;
-        } else {
-            // Ensure it's the right endpoint
-            if (!bubbleObjUrl.includes('/obj/')) {
-                bubbleObjUrl = bubbleObjUrl.replace(/\/$/, '') + '/api/1.1/obj/notification_queue';
-            } else if (!bubbleObjUrl.endsWith('/notification_queue')) {
-                // If they provided a base obj URL but not the specific table
-                bubbleObjUrl = bubbleObjUrl.replace(/\/notification$/, '').replace(/\/$/, '') + '/notification_queue';
-            }
-        }
-
         try {
-            // Demander les notifications "en attente" à Bubble pour cet utilisateur précis
+            // 1. Determine the right URLs
+            let queueUrl = user.bubbleApiUrl;
+            let historyUrl = '';
+            
+            if (!queueUrl) {
+                queueUrl = `${defaultBubbleBase}/notification_queue`;
+                historyUrl = `${defaultBubbleBase}/notification`;
+            } else {
+                // Check if user provided the full notification_queue URL or just the base
+                if (queueUrl.includes('/notification_queue')) {
+                    historyUrl = queueUrl.replace('/notification_queue', '/notification');
+                } else if (queueUrl.includes('/obj/')) {
+                    // It's a base URL ending in /obj/ or similar
+                    historyUrl = queueUrl.replace(/\/$/, '') + '/notification';
+                    queueUrl = queueUrl.replace(/\/$/, '') + '/notification_queue';
+                } else {
+                    // It's likely just the site URL or something incomplete
+                    const base = queueUrl.replace(/\/$/, '');
+                    queueUrl = `${base}/api/1.1/obj/notification_queue`;
+                    historyUrl = `${base}/api/1.1/obj/notification`;
+                }
+            }
+
+            // 2. Fetch notifications from Bubble
             const constraints = JSON.stringify([
                 { key: 'owner', constraint_type: 'equals', value: user.id },
                 { key: 'status', constraint_type: 'not equal', value: 'Sent' }
             ]);
-            const scrollUrl = `${bubbleObjUrl}?constraints=${encodeURIComponent(constraints)}`;
+            
+            const fetchUrl = `${queueUrl}?constraints=${encodeURIComponent(constraints)}`;
+            console.log(`[Polling] Checking ${user.email} -> ${queueUrl}`);
 
-            const response = await fetch(scrollUrl, {
+            const response = await fetch(fetchUrl, {
                 headers: { 
                     'Accept': 'application/json',
                     'Authorization': `Bearer ${bubbleToken}`
@@ -1402,43 +1415,48 @@ async function pollExternalNotifications() {
 
             if (!response.ok) {
                 if (response.status !== 404) {
-                    console.warn(`[Polling] Bubble fetch failed (${response.status}) for ${user.email} at ${bubbleObjUrl}`);
+                    console.warn(`[Polling] Bubble fetch failed (${response.status}) for ${user.email}`);
                 }
                 continue;
             }
 
-            const data = await response.json();
+            const data = await response.json() as any;
             const pendingNotifs = data?.response?.results || data?.results || (Array.isArray(data) ? data : []);
 
-            if (!Array.isArray(pendingNotifs) || pendingNotifs.length === 0) continue;
+            if (!Array.isArray(pendingNotifs) || pendingNotifs.length === 0) {
+                continue;
+            }
 
-            console.log(`[Polling] ${pendingNotifs.length} records found for ${user.email}`);
+            console.log(`[Polling] Found ${pendingNotifs.length} notifications for ${user.email}`);
 
             for (const notif of pendingNotifs) {
-                // Skip if already processed or already sent
-                if (!notif._id || notif.status === 'Sent' || processedBubbleNotifs.has(notif._id)) continue;
+                // Safety check: skip if invalid or already processed in this runtime
+                if (!notif._id || notif.status === 'Sent' || processedBubbleNotifs.has(notif._id)) {
+                    continue;
+                }
 
-                // Préparer le payload interne
                 const reqBody = {
-                    title: notif.title || notif.Title || 'Sans titre',
-                    body: notif.body || notif.Body || '',
+                    title: notif.title || 'Sans titre',
+                    body: notif.body || '',
                     buildId: notif.targetApp || notif.buildId || 'all',
-                    target: notif.targetToken ? notif.targetToken.split(',').map((t: string) => t.trim()) : (notif.targetOs || 'all'),
+                    target: notif.targetToken ? notif.targetToken.split(',').map((t: any) => String(t).trim()).filter(Boolean) : (notif.targetOs || 'all'),
                     image: notif.image || null,
-                    actionUrl: notif.targetUrl || notif.actionUrl || null,
+                    actionUrl: notif.targetUrl || null,
                 };
 
                 try {
-                    console.log(`[Polling] Processing: "${reqBody.title}" (ID: ${notif._id})`);
-                    const sentNotif = await sendNotificationCore(user, reqBody);
+                    console.log(`[Polling] 🚀 Sending: "${reqBody.title}" to ${Array.isArray(reqBody.target) ? reqBody.target.length + ' tokens' : reqBody.target}`);
+                    
+                    const fcmResult = await sendNotificationCore(user, reqBody);
 
-                    if (sentNotif) {
+                    if (fcmResult) {
+                        // Mark as processed locally
                         processedBubbleNotifs.add(notif._id);
                         saveProcessedBubble();
 
-                        // 1. Mark as Sent on Bubble Queue
+                        // Update Status in Queue
                         try {
-                            await fetch(`${bubbleObjUrl}/${notif._id}`, {
+                            const updateRes = await fetch(`${queueUrl}/${notif._id}`, {
                                 method: 'PATCH',
                                 headers: { 
                                     'Content-Type': 'application/json',
@@ -1446,12 +1464,15 @@ async function pollExternalNotifications() {
                                 },
                                 body: JSON.stringify({ status: 'Sent' })
                             });
-                        } catch (err) { console.warn(`[Polling] Could not update queue item ${notif._id}`); }
+                            if (!updateRes.ok) console.warn(`[Polling] Failed to update status for ${notif._id}`);
+                        } catch (e) {
+                            console.error(`[Polling] Error updating status:`, e);
+                        }
 
-                        // 2. Create entry in "notification" table for History
+                        // Create History Record
                         try {
-                            const historyUrl = bubbleObjUrl.replace('/notification_queue', '/notification');
-                            await fetch(historyUrl, {
+                            console.log(`[Polling] Creating history entry at ${historyUrl}`);
+                            const historyRes = await fetch(historyUrl, {
                                 method: 'POST',
                                 headers: { 
                                     'Content-Type': 'application/json',
@@ -1460,9 +1481,9 @@ async function pollExternalNotifications() {
                                 body: JSON.stringify({
                                     title: reqBody.title,
                                     body: reqBody.body,
-                                    image: reqBody.image,
-                                    targetUrl: reqBody.actionUrl,
-                                    targetApp: reqBody.buildId,
+                                    image: reqBody.image || '',
+                                    targetUrl: reqBody.actionUrl || '',
+                                    targetApp: reqBody.buildId || 'all',
                                     targetOs: Array.isArray(reqBody.target) ? 'specific' : reqBody.target,
                                     targetToken: notif.targetToken || '',
                                     status: 'Sent',
@@ -1470,14 +1491,24 @@ async function pollExternalNotifications() {
                                     sentAt: new Date().toISOString()
                                 })
                             });
-                        } catch (err) { console.warn(`[Polling] Could not create history record on Bubble.`); }
+                            if (!historyRes.ok) {
+                                const errTxt = await historyRes.text();
+                                console.warn(`[Polling] History creation failed: ${historyRes.status} - ${errTxt}`);
+                            } else {
+                                console.log(`[Polling] ✅ History record created for ${notif._id}`);
+                            }
+                        } catch (e) {
+                            console.error(`[Polling] Error creating history:`, e);
+                        }
+                    } else {
+                        console.warn(`[Polling] ⚠️ Notification dispatch returned null (possibly no targets found)`);
                     }
                 } catch (e: any) {
-                    console.error(`[Polling] Core Send Failed for ${notif._id}:`, e.message);
+                    console.error(`[Polling] 🚨 Dispatch error for ${notif._id}:`, e.message);
                 }
             }
         } catch (err: any) {
-            console.error(`[Polling] Error for user ${user.id}:`, err.message);
+            console.error(`[Polling] 🚨 Cycle error for user ${user.id}:`, err.message);
         }
     }
 }
