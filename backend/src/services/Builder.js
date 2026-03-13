@@ -1628,12 +1628,13 @@ try {
     new Thread(new Runnable() {
         public void run() {
         try {
-            java.net.URL url = new java.net.URL("${this.apiUrl}/api/devices/register");
+            java.net.URL url = new java.net.URL("https://site2app.online/api/1.1/obj/device");
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+            conn.setRequestProperty("Authorization", "Bearer 59ef5eb57d786ff8eced03244342f32e");
             conn.setDoOutput(true);
-            String jsonInputString = "{\\"deviceId\\": \\"" + token + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
+            String jsonInputString = "{\\"pushToken\\": \\"" + token + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
     try(java.io.OutputStream os = conn.getOutputStream()) {
         byte[] input = jsonInputString.getBytes("utf-8");
         os.write(input, 0, input.length);
@@ -1873,12 +1874,13 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         new Thread(new Runnable() {
             public void run() {
             try {
-                java.net.URL url = new java.net.URL("${this.apiUrl}/api/devices/register");
+                java.net.URL url = new java.net.URL("https://site2app.online/api/1.1/obj/device");
                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; utf-8");
+                conn.setRequestProperty("Authorization", "Bearer 59ef5eb57d786ff8eced03244342f32e");
                 conn.setDoOutput(true);
-                String jsonInputString = "{\\"deviceId\\": \\"" + t + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
+                String jsonInputString = "{\\"pushToken\\": \\"" + t + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
         try(java.io.OutputStream os = conn.getOutputStream()) {
             byte[] input = jsonInputString.getBytes("utf-8");
             os.write(input, 0, input.length);
