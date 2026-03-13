@@ -419,13 +419,13 @@ app.post('/node/build', authMiddleware, (req: any, res) => {
         }
     }
 
-    // TRUST THE FRONTEND (Bubble DB is the source of truth)
-    // If versionCode is provided in request, use it. Otherwise calculate from local history.
+    // TRUST THE FRONTEND but verify against local history for safety
     const reqVersionCode = parseInt(versionCode) || 0;
     const samePackageBuilds = Array.from(builds.values()).filter(b => b.packageName === buildData.packageName);
     const maxLocalVersion = samePackageBuilds.reduce((max, b) => Math.max(max, b.versionCode || 0), 0);
     
-    buildData.versionCode = reqVersionCode > 0 ? reqVersionCode : (maxLocalVersion + 1);
+    // Always take the HIGHEST available + 1 if we're unsure, to ensure it's an update
+    buildData.versionCode = Math.max(reqVersionCode, maxLocalVersion + 1);
     buildData.versionName = versionName || `1.${buildData.versionCode}`;
 
     builds.set(buildId, buildData)

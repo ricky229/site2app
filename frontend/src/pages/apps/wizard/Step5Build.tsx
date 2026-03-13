@@ -12,7 +12,7 @@ import Button from '../../../components/ui/Button'
 import { platformLabel } from '../../../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
-import { createApp, getAppById, updateApp, getUserById } from '../../../lib/api'
+import { createApp, getAppById, updateApp, getUserById, getAppsByUser } from '../../../lib/api'
 
 type BuildStepStatus = 'pending' | 'running' | 'done' | 'failed'
 
@@ -131,8 +131,13 @@ export default function Step5Build() {
         let appId: string | null = existingAppId || null
 
         try {
-            const safeName = (config.name || 'app').toLowerCase().replace(/[^a-z0-9]/g, '');
-            const generatedPackageName = config.packageName || `com.site2app.${safeName}.${Date.now().toString().slice(-6)}`;
+            const sanitizedNameForPackage = (config.name || 'app')
+                .toLowerCase()
+                .replace(/[^a-z0-9\s]/g, '')
+                .replace(/\s+/g, '.')
+                .replace(/\.+/g, '.')
+                .replace(/^\.+|\.+$/g, '');
+            const generatedPackageName = config.packageName || `com.site2app.${sanitizedNameForPackage}`;
             
             const compressedIconBase64 = await compressImageForPayload(config.icon, 192, 'image/png');
             
@@ -143,16 +148,26 @@ export default function Step5Build() {
             const iconIsUrl = config.icon && (config.icon.startsWith('http') || config.icon.startsWith('//'));
             const splashIsUrl = config.splashScreen && (config.splashScreen.startsWith('http') || config.splashScreen.startsWith('//'));
 
-            // Determine versionCode: increment for updates, start at 1 for new apps
+            // Determine versionCode: CRITICAL for updates.
+            // We search across ALL apps of the user to find the highest versionCode for this packageName
             let currentVersionCode = 1;
-            if (appId) {
-                try {
-                    const existingApp = await getAppById(appId);
-                    currentVersionCode = (parseInt(existingApp?.versionCode) || 0) + 1;
-                    console.log('[Build] Incrementing versionCode to', currentVersionCode);
-                } catch (_) {
-                    currentVersionCode = 2; // Safe fallback for updates
+            try {
+                if (user?.id) {
+                    const userApps = await getAppsByUser(user.id);
+                    const matchingApps = userApps.filter((a: any) => a.packageName === generatedPackageName);
+                    const maxCode = matchingApps.reduce((max: number, a: any) => Math.max(max, parseInt(a.versionCode) || 0), 0);
+                    
+                    if (maxCode > 0) {
+                        currentVersionCode = maxCode + 1;
+                        console.log(`[Build] Found existing version ${maxCode} for package ${generatedPackageName}. Incrementing to ${currentVersionCode}`);
+                    } else if (appId) {
+                        // If it's an edit but no other apps found, use a safe high number to "jump" over potential ghost versions
+                        currentVersionCode = 10; 
+                    }
                 }
+            } catch (err) {
+                console.warn('[Build] Failed to calculate global max version, using fallback');
+                currentVersionCode = appId ? 20 : 1;
             }
 
             const appData: any = {
@@ -166,7 +181,7 @@ export default function Step5Build() {
                 enableFullscreen: config.features?.fullscreen || false,
                 status: 'building',
                 versionCode: currentVersionCode,
-                versionName: appId ? `1.${currentVersionCode - 1}` : '1.0',
+                versionName: `1.${currentVersionCode}`,
             }
             if (user?.id) appData.owner = user.id;
 
