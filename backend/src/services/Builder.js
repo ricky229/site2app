@@ -207,10 +207,10 @@ class Builder {
                 `<?xml version="1.0" encoding="utf-8"?>
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
     android:drawable="@drawable/ic_launcher_foreground_content"
-    android:insetLeft="16%"
-    android:insetRight="16%"
-    android:insetTop="16%"
-    android:insetBottom="16%" />`)
+    android:insetLeft="10%"
+    android:insetRight="10%"
+    android:insetTop="10%"
+    android:insetBottom="10%" />`)
 
             this._write(path.join(anydpiDir, 'ic_launcher.xml'),
                 `<?xml version="1.0" encoding="utf-8"?>
@@ -578,14 +578,11 @@ ${this.features.deepLinking ? `            <intent-filter android:autoVerify="tr
         // ── SplashActivity.java — shows custom image if available, else default branded splash ──
         const splashImageCode = hasSplashImage
             ? `
-        // User-provided splash image — display it centered and responsive
+        // User-provided splash image — display it full screen (CENTER_CROP)
         ImageView splashImg = new ImageView(this);
         splashImg.setImageResource(R.drawable.splash_custom);
-        // FIT_CENTER ensures the whole image is visible without being "too zoomed" or cropped
-        splashImg.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        // Padding for safety
-        int splashPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24, getResources().getDisplayMetrics());
-        splashImg.setPadding(splashPadding, splashPadding, splashPadding, splashPadding);
+        // CENTER_CROP covers the whole screen for a premium look
+        splashImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
         root.addView(splashImg, new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));`
             : `
