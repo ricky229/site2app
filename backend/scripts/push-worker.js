@@ -36,21 +36,24 @@ async function runWorker() {
         // 1. Récupérer les notifications en attente (status !== 'Sent')
         // On récupère tout et on filtre manuellement pour plus de fiabilité
         const queueUrl = `${BUBBLE_BASE}/obj/notification_queue`;
+        console.log(`[Worker] Tentative de lecture de la file: ${queueUrl}`);
         const res = await fetch(queueUrl, {
             headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}`, 'Accept': 'application/json' }
         });
 
         if (!res.ok) {
-            throw new Error(`Erreur Bubble Queue: ${res.status}`);
+            const errorText = await res.text();
+            throw new Error(`Erreur Bubble Queue: ${res.status} - ${errorText}`);
         }
 
         const data = await res.json();
         const queue = data.response?.results || [];
         
+        console.log(`[Worker] ${queue.length} lignes totales dans la table Bubble.`);
         const pending = queue.filter(n => n.status !== 'Sent');
         
         if (pending.length === 0) {
-            console.log('✅ Aucune notification en attente dans la file.');
+            console.log('✅ Aucune notification "en attente" (status !== Sent) dans la file.');
             return;
         }
 

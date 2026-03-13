@@ -1,9 +1,11 @@
 name: Push Notification Worker
 
 on:
+  push:
+    branches: [main]
   schedule:
-    - cron: '* * * * *' # S'exécute toutes les 1 minutes 24h/24
-  workflow_dispatch: # Permet de lancer à la main le script au besoin depuis la page "Actions" de GitHub
+    - cron: '*/5 * * * *' # S'exécute toutes les 5 minutes (limite GitHub Actions)
+  workflow_dispatch:
 
 jobs:
   send-push:

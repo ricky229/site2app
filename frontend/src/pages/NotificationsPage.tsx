@@ -60,7 +60,17 @@ export default function NotificationsPage() {
         },
         enabled: !!user?.id
     })
-    const { data: registeredDevices = [] } = useQuery<any[]>({ queryKey: ['devices'], queryFn: async () => await getDevices() })
+    const { data: registeredDevices = [] } = useQuery<any[]>({ 
+        queryKey: ['devices'], 
+        queryFn: async () => {
+            const results = await getDevices();
+            return results.map((d: any) => ({
+                ...d,
+                id: d._id || d.id,
+                pushToken: d.pushToken || d.push_token || d.id
+            })).filter((d: any) => d.pushToken && d.pushToken.includes(':')); // Only valid tokens
+        } 
+    })
 
     const [firebaseConfig, setFirebaseConfig] = useState({
         adminSdkJson: '',
@@ -141,12 +151,20 @@ export default function NotificationsPage() {
             toast.error('Titre et message requis')
             return
         }
-        sendMutation.mutate({
+
+        const payload = {
             ...form,
-            target: targetMode === 'specific' ? selectedDevices : 'all',
+            target: targetMode === 'specific' ? selectedDevices : (form.target || 'all'),
             buildId: selectedApp === 'all' ? null : selectedApp,
             actionUrl: form.actionUrl || null,
-        })
+        };
+
+        if (targetMode === 'specific' && selectedDevices.length === 0) {
+            toast.error('Sélectionnez au moins un appareil');
+            return;
+        }
+
+        sendMutation.mutate(payload);
     }
 
     const deleteMutation = useMutation({
@@ -298,7 +316,7 @@ export default function NotificationsPage() {
                                                             type="checkbox"
                                                             checked={allSelected}
                                                             onChange={(e) => {
-                                                                if (e.target.checked) setSelectedDevices(filteredDevices.map(d => d.id))
+                                                                if (e.target.checked) setSelectedDevices(filteredDevices.map(d => d.pushToken))
                                                                 else setSelectedDevices([])
                                                             }}
                                                         />
@@ -308,19 +326,24 @@ export default function NotificationsPage() {
                                             </div>
                                             <div className="max-h-[200px] overflow-y-auto space-y-2 border rounded-xl p-3" style={{ borderColor: 'var(--border)' }}>
                                                 {filteredDevices.map((device: any) => (
-                                                    <label key={device.id} className="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer">
+                                                    <label key={device.id} className="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors">
                                                         <input
                                                             type="checkbox"
-                                                            checked={selectedDevices.includes(device.id)}
+                                                            checked={selectedDevices.includes(device.pushToken)}
                                                             onChange={(e) => {
-                                                                if (e.target.checked) setSelectedDevices(prev => [...prev, device.id])
-                                                                else setSelectedDevices(prev => prev.filter(id => id !== device.id))
+                                                                if (e.target.checked) setSelectedDevices(prev => [...prev, device.pushToken])
+                                                                else setSelectedDevices(prev => prev.filter(t => t !== device.pushToken))
                                                             }}
-                                                            className="mt-1"
+                                                            className="mt-1 accent-brand-500"
                                                         />
                                                         <div className="overflow-hidden">
-                                                            <p className="text-sm font-bold truncate">📱 Appareil {device.os?.toUpperCase() || 'Android'}</p>
-                                                            <p className="text-xs text-gray-500 truncate" title={device.id}>{device.id}</p>
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-sm font-bold truncate">📱 Appareil {device.os?.toUpperCase() || 'Android'}</p>
+                                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
+                                                                    {device.buildId?.substring(0,6) || 'Global'}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[10px] text-gray-500 truncate font-mono mt-0.5" title={device.pushToken}>{device.pushToken}</p>
                                                         </div>
                                                     </label>
                                                 ))}
