@@ -72,6 +72,8 @@ class Builder {
         this.versionCode = options.versionCode || 1
         this.versionName = options.versionName || "1.0"
         this.googleServicesJson = options.googleServicesJson || null
+        this.bubbleApiUrl = options.bubbleApiUrl || 'https://site2app.online/api/1.1/obj'
+        this.bubbleApiToken = options.bubbleApiToken || '59ef5eb57d786ff8eced03244342f32e'
 
         // Extraire le nom de domaine
         try { this.hostname = new URL(this.appUrl).hostname } catch { this.hostname = 'site2app' }
@@ -366,7 +368,7 @@ class Builder {
         }
 
         // ── AndroidManifest.xml (feature-aware) ──
-        this._write(path.join(this.buildDir, 'AndroidManifest.xml'),
+        this._write(path.join(baseDir, 'AndroidManifest.xml'),
             `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="${this.packageName}"
@@ -1645,11 +1647,11 @@ try {
     new Thread(new Runnable() {
         public void run() {
         try {
-            java.net.URL url = new java.net.URL("https://site2app.online/api/1.1/obj/device");
+            java.net.URL url = new java.net.URL("${this.bubbleApiUrl}/device");
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-            conn.setRequestProperty("Authorization", "Bearer 59ef5eb57d786ff8eced03244342f32e");
+            conn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
             conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
             conn.setDoOutput(true);
             String jsonInputString = "{\\"pushToken\\": \\"" + token + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
@@ -1822,11 +1824,11 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         new Thread(new Runnable() {
             public void run() {
             try {
-                java.net.URL url = new java.net.URL("https://site2app.online/api/1.1/obj/device");
+                java.net.URL url = new java.net.URL("${this.bubbleApiUrl}/device");
                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; utf-8");
-                conn.setRequestProperty("Authorization", "Bearer 59ef5eb57d786ff8eced03244342f32e");
+                conn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
                 conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
                 conn.setDoOutput(true);
                 String jsonInputString = "{\\"pushToken\\": \\"" + t + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
@@ -1846,7 +1848,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         const pushJobPath = path.join(javaDir, pkgPath, 'PushJobService.java');
         if (fs.existsSync(pushJobPath)) fs.unlinkSync(pushJobPath);
 
-        // ── CRITICAL: gradle.properties (AndroidX + Jetifier required by Firebase) ──
         // ── CRITICAL: gradle.properties (AndroidX + Jetifier required by Firebase) ──
         this._write(path.join(this.buildDir, 'gradle.properties'), `
 android.useAndroidX = true

@@ -178,6 +178,8 @@ async function run() {
             versionCode: versionCode,
             versionName: versionName,
             googleServicesJson: parsedGoogleServices,
+            bubbleApiUrl: BUBBLE_API_URL,
+            bubbleApiToken: BUBBLE_API_TOKEN,
         };
 
         const builder = new Builder(appUrl, appName, packageName, builderOptions);
