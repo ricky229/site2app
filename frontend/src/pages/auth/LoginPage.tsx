@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { Eye, EyeOff, Mail, Lock, Loader2, Zap, Github, Chrome } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { nodeApi } from '../../lib/api'
+import { bubbleLogin } from '../../lib/api'
 import { useAuthStore } from '../../store/authStore'
 import Input from '../../components/ui/Input'
 import Button from '../../components/ui/Button'
@@ -30,13 +30,19 @@ export default function LoginPage() {
 
     const onSubmit = async (data: LoginForm) => {
         try {
-            const res = await nodeApi.post('/auth/login', data)
-            const { user: u, token } = res.data
-            login(u, token)
-            toast.success(`Bienvenue ${u.name} ! 👋`)
+            const res = await bubbleLogin(data.email, data.password)
+            const r = res.response || res
+            login({
+                id: r.user_id || 'unknown',
+                name: r.name || 'Utilisateur',
+                email: r.email || data.email,
+                plan: r.plan || 'free',
+                role: 'user',
+            } as any, r.token)
+            toast.success(`Bienvenue ${r.name || ''} ! 👋`)
             navigate('/dashboard')
         } catch (err: any) {
-            const msg = err?.response?.data?.error || err?.message || 'Email ou mot de passe incorrect'
+            const msg = err?.response?.data?.body?.message || err?.message || 'Email ou mot de passe incorrect'
             toast.error(msg)
         }
     }

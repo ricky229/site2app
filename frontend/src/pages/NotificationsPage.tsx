@@ -14,7 +14,7 @@ import { StatCard } from '../components/ui/Card'
 import { formatRelativeTime, formatNumber } from '../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api, { getAppsByUser, nodeApi } from '../lib/api'
+import api, { getUserById, updateUser, getDevices, getAppsByUser, dataApi, nodeApi } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import type { App } from '../types'
 
@@ -46,8 +46,9 @@ export default function NotificationsPage() {
         queryKey: ['notifications', user?.id], 
         queryFn: async () => {
             if (!user?.id) return []
-            const res = await nodeApi.get('/notifications')
-            return res.data || []
+            const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
+            const res = await dataApi.get(`/notification?constraints=${encodeURIComponent(constraints)}`)
+            return res.data?.response?.results || []
         },
         enabled: !!user?.id
     })
@@ -55,19 +56,11 @@ export default function NotificationsPage() {
         queryKey: ['userProfile', user?.id], 
         queryFn: async () => {
             if (!user?.id) return null;
-            const res = await nodeApi.get('/auth/me');
-            return res.data;
+            return await getUserById(user.id);
         },
         enabled: !!user?.id
     })
-    const { data: registeredDevices = [] } = useQuery<any[]>({
-        queryKey: ['devices', user?.id],
-        queryFn: async () => {
-            const res = await nodeApi.get('/devices')
-            return res.data || []
-        },
-        enabled: !!user?.id
-    })
+    const { data: registeredDevices = [] } = useQuery<any[]>({ queryKey: ['devices'], queryFn: async () => await getDevices() })
 
     const [firebaseConfig, setFirebaseConfig] = useState({
         adminSdkJson: '',
@@ -88,16 +81,15 @@ export default function NotificationsPage() {
     const firebaseMutation = useMutation({
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
-            // Send to our Node Backend (it handles both local and Bubble sync)
-            const res = await nodeApi.post('/auth/firebase-config', payload)
-            return res.data
+            // Update directly on Bubble
+            return await updateUser(user.id, {
+                firebaseKey: payload.adminSdkJson,
+                googleServicesJson: payload.googleServicesJson,
+                bubbleApiUrl: payload.bubbleApiUrl
+            })
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['userProfile'] })
-            // IMPORTANT: Update the store so the keys survive a refresh!
-            if (data?.user) {
-                updateAuthUser(data.user)
-            }
             toast.success('Configuration sauvegardée !')
         },
         onError: (err: any) => {
@@ -108,22 +100,25 @@ export default function NotificationsPage() {
 
     const sendMutation = useMutation({
         mutationFn: async (payload: any) => {
-            const res = await nodeApi.post('/notifications/send', payload)
-            return res.data
+            if (!user?.id) throw new Error("Non authentifié")
+            return await dataApi.post('/notification_queue', {
+                title: payload.title,
+                body: payload.body,
+                owner: user.id,
+                targetApp: payload.buildId || 'all',
+                targetOs: payload.target || 'all',
+                image: payload.image || '',
+                targetUrl: payload.actionUrl || ''
+            })
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
-            if (data?.fcmError) {
-                toast.error(`⚠️ ${data.fcmError}`, { duration: 6000 })
-                toast.success('Notification enregistrée dans l\'historique (mais non envoyée via Push).')
-            } else {
-                toast.success(form.scheduled ? '📅 Notification programmée !' : '🚀 Notification envoyée avec succès !')
-            }
+            toast.success(form.scheduled ? '📅 Notification programmée !' : '🚀 Notification enregistrée pour envoi !')
             setForm(f => ({ ...f, title: '', body: '' }))
             if (!form.scheduled) setTab('history')
         },
         onError: (err: any) => {
-            toast.error(err?.response?.data?.error || 'Erreur lors de l\'envoi')
+            toast.error('Erreur lors de l\'enregistrement (vérifiez Bubble)')
         }
     })
 
@@ -141,7 +136,7 @@ export default function NotificationsPage() {
     }
 
     const deleteMutation = useMutation({
-        mutationFn: async (id: string) => await nodeApi.delete(`/notifications/${id}`),
+        mutationFn: async (id: string) => await dataApi.delete(`/notification/${id}`),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
             toast.success('Notification supprimée')
@@ -149,10 +144,11 @@ export default function NotificationsPage() {
     })
 
     const clearAllMutation = useMutation({
-        mutationFn: async () => await nodeApi.delete('/notifications'),
+        mutationFn: async () => {
+            toast.error("La suppression en masse n'est pas supportée par l'API Bubble par défaut.")
+            throw new Error("Action non supportée")
+        },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['notifications'] })
-            toast.success('Historique effacé')
         }
     })
 
@@ -434,7 +430,7 @@ export default function NotificationsPage() {
                         </div>
                     ) : notifications.map(notif => (
                         <motion.div
-                            key={notif.id}
+                            key={notif._id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="card p-3 sm:p-5"
@@ -456,8 +452,8 @@ export default function NotificationsPage() {
                                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{notif.body}</p>
                                     <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                                         {notif.status === 'scheduled'
-                                            ? `Programmée pour le ${new Date(notif.scheduledAt!).toLocaleDateString('fr-FR')}`
-                                            : `Envoyée ${formatRelativeTime(notif.sentAt!)}`
+                                            ? `Programmée pour le ${new Date(notif.scheduledAt || Date.now()).toLocaleDateString('fr-FR')}`
+                                            : `Envoyée ${formatRelativeTime(notif.sentAt || notif['Created Date'])}`
                                         }
                                     </p>
                                 </div>
@@ -471,9 +467,9 @@ export default function NotificationsPage() {
                                         size="sm"
                                         icon={<Trash2 size={14} />}
                                         onClick={() => {
-                                            if (confirm('Supprimer cette notification ?')) deleteMutation.mutate(notif.id)
+                                            if (confirm('Supprimer cette notification ?')) deleteMutation.mutate(notif._id)
                                         }}
-                                        loading={deleteMutation.isPending && deleteMutation.variables === notif.id}
+                                        loading={deleteMutation.isPending && deleteMutation.variables === notif._id}
                                     >
                                         Effacer
                                     </Button>
@@ -526,14 +522,14 @@ export default function NotificationsPage() {
                                 </thead>
                                 <tbody>
                                     {registeredDevices.map((device: any) => (
-                                        <tr key={device.id} className="border-b last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" style={{ borderColor: 'var(--border)' }}>
+                                        <tr key={device._id} className="border-b last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" style={{ borderColor: 'var(--border)' }}>
                                             <td className="py-3 px-4 font-semibold text-emerald-600 flex items-center gap-2">
                                                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                                                {device.os?.toUpperCase()}
+                                                {device.os?.toUpperCase() || 'ANDROID'}
                                             </td>
-                                            <td className="py-3 px-4 font-mono text-xs">{device.buildId}</td>
-                                            <td className="py-3 px-4">{new Date(device.createdAt).toLocaleDateString()} à {new Date(device.createdAt).toLocaleTimeString()}</td>
-                                            <td className="py-3 px-4 font-mono text-[10px] text-slate-500 max-w-[200px] overflow-hidden text-ellipsis" title={device.id}>{device.id}</td>
+                                            <td className="py-3 px-4 font-mono text-xs">{device.buildId || 'N/A'}</td>
+                                            <td className="py-3 px-4">{new Date(device.createdAt || device['Created Date']).toLocaleDateString()} à {new Date(device.createdAt || device['Created Date']).toLocaleTimeString()}</td>
+                                            <td className="py-3 px-4 font-mono text-[10px] text-slate-500 max-w-[200px] overflow-hidden text-ellipsis" title={device.pushToken || device._id}>{device.pushToken || device._id}</td>
                                         </tr>
                                     ))}
                                 </tbody>

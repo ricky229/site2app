@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { Eye, EyeOff, Mail, Lock, User, Loader2, Zap, Github, Chrome, CheckCircle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { nodeApi } from '../../lib/api'
+import { bubbleRegister } from '../../lib/api'
 import { useAuthStore } from '../../store/authStore'
 import Input from '../../components/ui/Input'
 import Button from '../../components/ui/Button'
@@ -46,17 +46,19 @@ export default function RegisterPage() {
 
     const onSubmit = async (data: RegisterForm) => {
         try {
-            const res = await nodeApi.post('/auth/register', {
+            const res = await bubbleRegister(data.name, data.email, data.password)
+            const r = res.response || res
+            login({
+                id: r.user_id || 'unknown',
                 name: data.name,
                 email: data.email,
-                password: data.password
-            })
-            const { user: u, token } = res.data
-            login(u, token)
+                plan: 'free',
+                role: 'user',
+            } as any, r.token)
             toast.success('Compte créé avec succès ! 🎉')
             navigate('/dashboard')
         } catch (err: any) {
-            const msg = err?.response?.data?.error || err?.message || 'Erreur lors de la création du compte'
+            const msg = err?.response?.data?.body?.message || err?.message || 'Erreur lors de la création du compte'
             toast.error(msg)
         }
     }
