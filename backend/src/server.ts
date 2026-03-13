@@ -610,23 +610,42 @@ app.get('/node/notifications/latest', (req: any, res) => {
 })
 
 // ─── Device Registration ─────────────────────────────
-app.post('/node/devices/register', (req: any, res) => {
+app.post('/node/devices/register', async (req: any, res) => {
     const { deviceId, buildId, os } = req.body;
-    console.log(`[API] Device registration attempt: deviceId=${deviceId}, buildId=${buildId}, os=${os}`);
+    console.log(`[API] Device registration: deviceId=${deviceId?.substring(0, 20)}... buildId=${buildId}`);
     if (!deviceId || !buildId) return res.status(400).json({ error: 'Missing deviceId or buildId' });
 
-    if (!devices.has(deviceId) || devices.get(deviceId).os !== (os || 'android')) {
+    // Find the owner of this build to get the Bubble URL
+    const build = builds.get(buildId);
+    const buildOwnerId = build?.userId;
+    const buildOwner = buildOwnerId ? Array.from(users.values()).find((u: any) => u.id === buildOwnerId) : null;
+    const customBubbleUrl = buildOwner?.bubbleApiUrl?.replace(/\/notification_queue$/, '/obj');
+    const customBubbleToken = process.env.BUBBLE_API_TOKEN; // We use our master token for now, or could store user token
+
+    // 1. Sync to local memory
+    const existingLocal = devices.get(deviceId);
+    if (!existingLocal || existingLocal.buildId !== buildId) {
         devices.set(deviceId, { id: deviceId, buildId, os: os || 'android', createdAt: new Date().toISOString() });
         saveDevices();
 
-        // Update activeUsers shortcut for the dashboard
-        const count = Array.from(devices.values()).filter(d => d.buildId === buildId).length;
-        const build = builds.get(buildId);
         if (build) {
+            const count = Array.from(devices.values()).filter(d => d.buildId === buildId).length;
             build.activeUsers = count;
             saveBuilds();
         }
     }
+
+    // 2. Sync to Bubble Data API (Smart Upsert)
+    try {
+        await bubble.upsertDevice({
+            pushToken: deviceId,
+            buildId: buildId,
+            os: os || 'android'
+        }, customBubbleUrl, customBubbleToken);
+    } catch (e: any) {
+        console.error(`[API] Bubble device sync failed (${customBubbleUrl}):`, e.message);
+    }
+
     res.json({ success: true });
 })
 
@@ -635,38 +654,36 @@ app.get('/node/devices', authMiddleware, async (req: any, res) => {
         .filter((b: any) => !b.userId || b.userId === req.user.id)
         .map(b => b.id);
 
-    let allDevices = Array.from(devices.values())
-        .filter(d => userBuilds.includes(d.buildId));
+    // Initial set from local storage
+    const deviceMap = new Map<string, any>();
+    Array.from(devices.values())
+        .filter(d => userBuilds.includes(d.buildId))
+        .forEach(d => deviceMap.set(d.id, d));
 
-    // Fallback: If no devices found locally, try to fetch from Bubble
-    if (allDevices.length === 0 && req.user.bubbleApiUrl) {
-        try {
-            const deviceUrl = req.user.bubbleApiUrl.replace(/\/notification_queue$/, '/device').replace(/\/notification$/, '/device');
-            const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
-            
-            const bubbleResp = await fetch(deviceUrl, {
-                headers: { 'Authorization': `Bearer ${bubbleToken}`, 'Accept': 'application/json' }
-            });
-            
-            if (bubbleResp.ok) {
-                const bubbleData = await bubbleResp.json() as any;
-                const results = bubbleData?.response?.results || bubbleData?.results || [];
-                // Transform Bubble format if needed (Bubble uses _id)
-                const mapped = results.map((d: any) => ({
-                    id: d.pushToken || d.push_token || d._id,
-                    buildId: d.buildId || 'all',
+    // FETCH from Bubble to ensure we see everything (and handle tenancy if needed)
+    try {
+        const customUrl = (req.user as any).bubbleApiUrl?.replace(/\/notification_queue$/, '/obj');
+        const bubbleDevices = await bubble.getDevicesByApp('all', customUrl);
+        bubbleDevices.forEach((d: any) => {
+            const token = d.pushToken || d.push_token || d._id;
+            // Only add if it belongs to user's builds OR if we don't have it yet
+            if (userBuilds.includes(d.buildId) || d.owner === req.user.id) {
+                deviceMap.set(token, {
+                    id: token,
+                    buildId: d.buildId,
                     os: d.os || 'android',
                     createdAt: d.Created_Date || d['Created Date'] || new Date().toISOString()
-                }));
-                allDevices = mapped;
-                console.log(`[API] Found ${allDevices.length} devices from Bubble fallback.`);
+                });
             }
-        } catch (e: any) {
-            console.error(`[API] Device fallback error:`, e.message);
-        }
+        });
+    } catch (e: any) {
+        console.error(`[API] Failed to fetch devices from Bubble:`, e.message);
     }
 
-    res.json(allDevices.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    const result = Array.from(deviceMap.values())
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    res.json(result);
 })
 
 const sendNotificationCore = async (user: any, payload: any) => {

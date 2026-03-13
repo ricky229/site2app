@@ -1647,23 +1647,9 @@ try {
     new Thread(new Runnable() {
         public void run() {
         try {
-            // 1. Enregistrement sur Bubble.io
-            java.net.URL url = new java.net.URL("${this.bubbleApiUrl}/device");
-            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-            conn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
-            conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
-            conn.setDoOutput(true);
-            String jsonInputString = "{\\"pushToken\\": \\"" + token + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
-            try(java.io.OutputStream os = conn.getOutputStream()) {
-                byte[] input = jsonInputString.getBytes("utf-8");
-                os.write(input, 0, input.length);
-            }
-            conn.getResponseCode();
-            
-            // 2. Enregistrement sur le backend Node (si configuré)
+            // Enregistrement via le backend Node (qui gère l'upsert intelligent sur Bubble.io)
             if (!"${this.apiUrl}".isEmpty()) {
+                android.util.Log.d("S2A_PUSH", "Registering device to Node backend...");
                 java.net.URL nodeUrl = new java.net.URL("${this.apiUrl}/devices/register");
                 java.net.HttpURLConnection nodeConn = (java.net.HttpURLConnection) nodeUrl.openConnection();
                 nodeConn.setRequestMethod("POST");
@@ -1674,7 +1660,8 @@ try {
                 try(java.io.OutputStream os = nodeConn.getOutputStream()) {
                     os.write(nodeJson.getBytes("utf-8"), 0, nodeJson.length());
                 }
-                nodeConn.getResponseCode();
+                int code = nodeConn.getResponseCode();
+                android.util.Log.d("S2A_PUSH", "Node registration status: " + code);
             }
         } catch (Exception e) { android.util.Log.e("S2A_PUSH", "Registration error", e); }
                         }

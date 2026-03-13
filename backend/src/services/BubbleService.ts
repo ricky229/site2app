@@ -9,23 +9,23 @@ export class BubbleService {
         this.token = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
     }
 
-    private get headers() {
+    private getHeaders(customToken?: string) {
         return {
-            'Authorization': `Bearer ${this.token}`,
+            'Authorization': `Bearer ${customToken || this.token}`,
             'Content-Type': 'application/json'
         };
     }
 
     async getUserByEmail(email: string) {
         const constraints = JSON.stringify([{ key: 'emailAddress', constraint_type: 'equals', value: email }]);
-        const res = await fetch(`${this.baseUrl}/user?constraints=${encodeURIComponent(constraints)}`, { headers: this.headers });
+        const res = await fetch(`${this.baseUrl}/user?constraints=${encodeURIComponent(constraints)}`, { headers: this.getHeaders() });
         const data = await res.json() as any;
         if (!res.ok) throw new Error(data?.message || 'Error fetching user');
         return data?.response?.results?.[0] || null;
     }
 
     async getUserById(id: string) {
-        const res = await fetch(`${this.baseUrl}/user/${id}`, { headers: this.headers });
+        const res = await fetch(`${this.baseUrl}/user/${id}`, { headers: this.getHeaders() });
         const data = await res.json() as any;
         if (!res.ok) throw new Error(data?.message || 'Error fetching user');
         return data?.response || null;
@@ -34,7 +34,7 @@ export class BubbleService {
     async createUser(userData: any) {
         const res = await fetch(`${this.baseUrl}/user`, {
             method: 'POST',
-            headers: this.headers,
+            headers: this.getHeaders(),
             body: JSON.stringify(userData)
         });
         const data = await res.json() as any;
@@ -44,14 +44,14 @@ export class BubbleService {
 
     async getAppsByUser(userId: string) {
         const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: userId }]);
-        const res = await fetch(`${this.baseUrl}/app?constraints=${encodeURIComponent(constraints)}&limit=100`, { headers: this.headers });
+        const res = await fetch(`${this.baseUrl}/app?constraints=${encodeURIComponent(constraints)}&limit=100`, { headers: this.getHeaders() });
         const data = await res.json() as any;
         if (!res.ok) throw new Error(data?.message || 'Error fetching apps');
         return data?.response?.results || [];
     }
 
     async getAppById(appId: string) {
-        const res = await fetch(`${this.baseUrl}/app/${appId}`, { headers: this.headers });
+        const res = await fetch(`${this.baseUrl}/app/${appId}`, { headers: this.getHeaders() });
         const data = await res.json() as any;
         if (res.status === 404) return null;
         if (!res.ok) throw new Error(data?.message || 'Error fetching app');
@@ -61,7 +61,7 @@ export class BubbleService {
     async createApp(appData: any) {
         const res = await fetch(`${this.baseUrl}/app`, {
             method: 'POST',
-            headers: this.headers,
+            headers: this.getHeaders(),
             body: JSON.stringify(appData)
         });
         const data = await res.json() as any;
@@ -72,7 +72,7 @@ export class BubbleService {
     async updateApp(appId: string, appData: any) {
         const res = await fetch(`${this.baseUrl}/app/${appId}`, {
             method: 'PATCH',
-            headers: this.headers,
+            headers: this.getHeaders(),
             body: JSON.stringify(appData)
         });
         const data = await res.json() as any;
@@ -88,7 +88,7 @@ export class BubbleService {
 
         const res = await fetch(`${this.baseUrl}/user/${userId}`, {
             method: 'PATCH',
-            headers: this.headers,
+            headers: this.getHeaders(),
             body: JSON.stringify(userData)
         });
 
@@ -105,19 +105,19 @@ export class BubbleService {
     async deleteApp(appId: string) {
         const res = await fetch(`${this.baseUrl}/app/${appId}`, {
             method: 'DELETE',
-            headers: this.headers
+            headers: this.getHeaders()
         });
         if (!res.ok) throw new Error('Error deleting app');
         return true;
     }
 
-    async getDevicesByApp(appId?: string) {
-        let url = `${this.baseUrl}/device`;
+    async getDevicesByApp(appId?: string, customUrl?: string, customToken?: string) {
+        let url = `${customUrl || this.baseUrl}/device`;
         if (appId && appId !== 'all') {
             const constraints = JSON.stringify([{ key: 'buildId', constraint_type: 'equals', value: appId }]);
             url += `?constraints=${encodeURIComponent(constraints)}`;
         }
-        const res = await fetch(url, { headers: this.headers });
+        const res = await fetch(url, { headers: this.getHeaders(customToken) });
         const data = await res.json() as any;
         return data?.response?.results || [];
     }
@@ -125,15 +125,47 @@ export class BubbleService {
     async registerDevice(deviceData: any) {
         const res = await fetch(`${this.baseUrl}/device`, {
             method: 'POST',
-            headers: this.headers,
+            headers: this.getHeaders(),
             body: JSON.stringify(deviceData)
         });
         return res.ok;
     }
 
+    async findDevicesByToken(token: string, customUrl?: string, customToken?: string) {
+        const constraints = JSON.stringify([{ key: 'pushToken', constraint_type: 'equals', value: token }]);
+        const baseUrl = customUrl || this.baseUrl;
+        const res = await fetch(`${baseUrl}/device?constraints=${encodeURIComponent(constraints)}`, { headers: this.getHeaders(customToken) });
+        const data = await res.json() as any;
+        return data?.response?.results || [];
+    }
+
+    async upsertDevice(deviceData: any, customUrl?: string, customToken?: string) {
+        const baseUrl = customUrl || this.baseUrl;
+        const existing = await this.findDevicesByToken(deviceData.pushToken, baseUrl, customToken);
+        if (existing.length > 0) {
+            const res = await fetch(`${baseUrl}/device/${existing[0]._id}`, {
+                method: 'PATCH',
+                headers: this.getHeaders(customToken),
+                body: JSON.stringify({
+                    buildId: deviceData.buildId,
+                    os: deviceData.os,
+                    lastSeen: new Date().toISOString()
+                })
+            });
+            return res.ok;
+        } else {
+            const res = await fetch(`${baseUrl}/device`, {
+                method: 'POST',
+                headers: this.getHeaders(customToken),
+                body: JSON.stringify(deviceData)
+            });
+            return res.ok;
+        }
+    }
+
     async getPendingNotifications() {
         const constraints = JSON.stringify([{ key: 'status', constraint_type: 'equals', value: 'Pending' }]);
-        const res = await fetch(`${this.baseUrl}/notification?constraints=${encodeURIComponent(constraints)}`, { headers: this.headers });
+        const res = await fetch(`${this.baseUrl}/notification?constraints=${encodeURIComponent(constraints)}`, { headers: this.getHeaders() });
         const data = await res.json() as any;
         return data?.response?.results || [];
     }
@@ -141,7 +173,7 @@ export class BubbleService {
     async createNotification(notifData: any) {
         const res = await fetch(`${this.baseUrl}/notification`, {
             method: 'POST',
-            headers: this.headers,
+            headers: this.getHeaders(),
             body: JSON.stringify(notifData)
         });
         const data = await res.json() as any;
@@ -152,7 +184,7 @@ export class BubbleService {
     async updateNotificationStatus(notifId: string, status: string, sentCount: number, deliveredCount: number) {
         const res = await fetch(`${this.baseUrl}/notification/${notifId}`, {
             method: 'PATCH',
-            headers: this.headers,
+            headers: this.getHeaders(),
             body: JSON.stringify({
                 status,
                 sentCount,
