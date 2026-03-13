@@ -407,7 +407,7 @@ app.post('/node/build', authMiddleware, (req: any, res) => {
         appName: appName || 'My App',
         url: url || 'https://google.com',
         platform: platform || 'android',
-        packageName: packageName || `com.site2app.${(appName || 'myapp').toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+        packageName: packageName || `com.site2app.${(appName || 'myapp').toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '.').replace(/\.+/g, '.').replace(/^\.+|\.+$/g, '')}`,
         status: 'building',
         startedAt: new Date().toISOString(),
         userId: req.user.id,
@@ -417,8 +417,14 @@ app.post('/node/build', authMiddleware, (req: any, res) => {
         }
     }
 
-    const userAppBuilds = Array.from(builds.values()).filter(b => b.packageName === buildData.packageName && b.userId === req.user.id);
-    buildData.versionCode = userAppBuilds.length + 1;
+    // Calculate versionCode based on MAX existing version for this packageName (more robust than .length)
+    const samePackageBuilds = Array.from(builds.values()).filter(b => b.packageName === buildData.packageName);
+    const maxVersion = samePackageBuilds.reduce((max, b) => Math.max(max, b.versionCode || 0), 0);
+    
+    buildData.versionCode = (buildData.versionCode || maxVersion) + 1;
+    // Ensure we don't regress if the request already had a version
+    if (maxVersion >= buildData.versionCode) buildData.versionCode = maxVersion + 1;
+    
     buildData.versionName = `1.${buildData.versionCode}`;
 
     builds.set(buildId, buildData)
