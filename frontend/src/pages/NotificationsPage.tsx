@@ -124,7 +124,9 @@ export default function NotificationsPage() {
             if (!form.scheduled) setTab('history')
         },
         onError: (err: any) => {
-            toast.error('Erreur lors de l\'enregistrement (vérifiez Bubble)')
+            const errorMsg = err?.response?.data?.message || err?.message || 'Erreur inconnue';
+            console.error('Bubble Save Error:', err?.response?.data || err);
+            toast.error(`Erreur Bubble: ${errorMsg}`);
         }
     })
 
