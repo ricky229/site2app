@@ -152,7 +152,7 @@ async function run() {
         }
 
         // Resolve splash: prefer raw base64 sent directly from frontend, fallback to URL download
-        let splashImageBase64 = buildData.splashBase64 || null;
+        let splashImageBase64 = buildData.splashImageBase64 || null;
         if (!splashImageBase64 && buildData.splashUrl) {
             console.log('[CI] No direct base64 splash, downloading from URL...');
             splashImageBase64 = await downloadBase64(buildData.splashUrl);

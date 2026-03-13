@@ -177,26 +177,44 @@ class Builder {
             mkdirSync(dir, { recursive: true })
             writeFileSync(path.join(dir, `ic_launcher.${ext}`), iconPngBuffer)
             writeFileSync(path.join(dir, `ic_launcher_round.${ext}`), iconPngBuffer)
-            writeFileSync(path.join(dir, `ic_launcher_foreground.${ext}`), iconPngBuffer)
         }
 
         // Adaptive Icons for Android 8+ (API 26)
-        // For CUSTOM icons: do NOT generate mipmap-anydpi-v26 so Android uses the raw PNG
-        // directly from mipmap-xxxhdpi etc. This prevents the adaptive icon mask from
-        // cropping/zooming the user's icon.
-        // For FALLBACK icons: generate full adaptive icon with vector foreground.
-        
-        if (!isCustomIcon) {
-            // Background color for adaptive icon
-            const valuesDir = path.join(baseDir, 'res', 'values')
-            mkdirSync(valuesDir, { recursive: true })
-            this._write(path.join(valuesDir, 'ic_launcher_background.xml'),
-                `<?xml version="1.0" encoding="utf-8"?>
+        // We ALWAYS provide these to ensure the icon is shown correctly on modern devices.
+        // If it's a custom icon, we use it as the foreground and the statusBarColor as background.
+        const valuesDir = path.join(baseDir, 'res', 'values')
+        mkdirSync(valuesDir, { recursive: true })
+        this._write(path.join(valuesDir, 'ic_launcher_background.xml'),
+            `<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">${this.statusBarColor}</color>
 </resources>`)
 
-            // Foreground vector drawable for fallback
+        // Adaptive icon XMLs (API 26+)
+        const anydpiDir = path.join(baseDir, 'res', 'mipmap-anydpi-v26')
+        mkdirSync(anydpiDir, { recursive: true })
+
+        if (isCustomIcon) {
+            // For custom icons, we treat the icon as the foreground drawable
+            // Note: We write it to drawable/ as well so adaptive icon can reference it easily
+            const drawableDir = path.join(baseDir, 'res', 'drawable')
+            mkdirSync(drawableDir, { recursive: true })
+            writeFileSync(path.join(drawableDir, `ic_launcher_foreground.${ext}`), iconPngBuffer)
+
+            this._write(path.join(anydpiDir, 'ic_launcher.xml'),
+                `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+</adaptive-icon>`)
+            this._write(path.join(anydpiDir, 'ic_launcher_round.xml'),
+                `<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+</adaptive-icon>`)
+        } else {
+            // Fallback vector foreground
             this._write(path.join(baseDir, 'res', 'drawable', 'ic_launcher_foreground.xml'),
                 `<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -208,25 +226,18 @@ class Builder {
     </group>
 </vector>`)
 
-            // Adaptive icon XMLs (API 26+)
-            const anydpiDir = path.join(baseDir, 'res', 'mipmap-anydpi-v26')
-            mkdirSync(anydpiDir, { recursive: true })
-
             this._write(path.join(anydpiDir, 'ic_launcher.xml'),
                 `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background"/>
     <foreground android:drawable="@drawable/ic_launcher_foreground"/>
 </adaptive-icon>`)
-
             this._write(path.join(anydpiDir, 'ic_launcher_round.xml'),
                 `<?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@color/ic_launcher_background"/>
     <foreground android:drawable="@drawable/ic_launcher_foreground"/>
 </adaptive-icon>`)
-        } else {
-            console.log(`[BUILD ${this.buildId}] 🎨 Custom icon: skipping adaptive icon to prevent zoom/crop`)
         }
     }
 
@@ -985,6 +996,7 @@ ${this.features.deepLinking ? `
                     URL url = new URL("${this.apiUrl}/api/apps/check-update?package=${this.packageName}&versionCode=${this.versionCode}");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
+                    conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
                     conn.setConnectTimeout(5000);
                     conn.setReadTimeout(5000);
                     
@@ -1629,6 +1641,7 @@ try {
         public void onComplete(com.google.android.gms.tasks.Task < String > task) {
         if(!task.isSuccessful()) return;
                     final String token = task.getResult();
+                    android.util.Log.d("S2A_PUSH", "Token obtained: " + token);
     new Thread(new Runnable() {
         public void run() {
         try {
@@ -1644,8 +1657,9 @@ try {
         byte[] input = jsonInputString.getBytes("utf-8");
         os.write(input, 0, input.length);
     }
-    conn.getResponseCode();
-} catch (Exception e) { }
+    int resp = conn.getResponseCode();
+    android.util.Log.d("S2A_PUSH", "Registration response: " + resp);
+} catch (Exception e) { android.util.Log.e("S2A_PUSH", "Registration error", e); }
                         }
                     }).start();
 
@@ -1668,6 +1682,8 @@ runOnUiThread(new Runnable() {
             String script = "(function() { window.SITE2APP_DEVICE_TOKEN = '" + token + "'; })();";
             webView.evaluateJavascript(script, null);
         }
+        // Small toast for visual confirmation during debug if needed:
+        // Toast.makeText(MainActivity.this, "Appareil prêt pour les notifications", Toast.LENGTH_SHORT).show();
     } catch (Exception e) { }
     }
 });
@@ -1687,71 +1703,25 @@ runOnUiThread(new Runnable() {
             console.error("Copy failed", e);
         }
 
-        // Generate AndroidManifest for Gradle (remove PushJobService which is fast-mode only, add FCM service)
-        const manifestStr = `<?xml version="1.0" encoding="utf-8"?>
-    <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="${this.packageName}">
-        <uses-permission android:name="android.permission.INTERNET" />
-        <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-        <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-        ${this.features.camera ? '<uses-permission android:name="android.permission.CAMERA" />' : ''}
-        ${this.features.location ? '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />' : ''}
-        ${this.features.admob ? '<uses-permission android:name="com.google.android.gms.permission.AD_ID" />' : ''}
+        // Generate AndroidManifest for Gradle (start with the one from _prepareFiles and add FCM service)
+        const manifestPath = path.join(tempRawDir, 'AndroidManifest.xml');
+        let manifestContent = fs.readFileSync(manifestPath, 'utf8');
 
-        <application
-            android:allowBackup="true"
-            android:icon="@mipmap/ic_launcher"
-            android:label="${this.appName}"
-            android:roundIcon="@mipmap/ic_launcher_round"
-            android:usesCleartextTraffic="true"
-            android:networkSecurityConfig="@xml/network_security_config"
-            android:theme="@style/SplashTheme">
+        // Remove PushJobService which is native-poll specific
+        manifestContent = manifestContent.replace(/<service android:name="\.PushJobService"[\s\S]*?<\/service>/, '');
 
-            <activity
-                android:name=".SplashActivity"
-                android:exported="true"
-                android:theme="@style/SplashTheme"
-                android:screenOrientation="${this.orientation === 'portrait' ? 'portrait' : this.orientation === 'landscape' ? 'landscape' : 'unspecified'}">
-                <intent-filter>
-                    <action android:name="android.intent.action.MAIN" />
-                    <category android:name="android.intent.category.LAUNCHER" />
-                </intent-filter>
-            </activity>
+        // Add FCM Service before </application>
+        const fcmServiceXml = `
+        <service android:name=".MyFirebaseMessagingService" android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>`;
+        manifestContent = manifestContent.replace('</application>', fcmServiceXml + '\n    </application>');
 
-            <activity
-                android:name=".MainActivity"
-                android:exported="${this.features.deepLinking ? 'true' : 'false'}"
-                android:theme="@style/AppTheme"
-                android:configChanges="orientation|keyboardHidden|screenSize"
-                android:launchMode="singleTask"
-                android:windowSoftInputMode="adjustResize"
-                android:screenOrientation="${this.orientation === 'portrait' ? 'portrait' : this.orientation === 'landscape' ? 'landscape' : 'unspecified'}">
-${this.features.deepLinking ? `
-                <intent-filter android:autoVerify="true">
-                    <action android:name="android.intent.action.VIEW" />
-                    <category android:name="android.intent.category.DEFAULT" />
-                    <category android:name="android.intent.category.BROWSABLE" />
-                    <data android:scheme="https" android:host="${this.hostname}" />
-                    <data android:scheme="http" android:host="${this.hostname}" />
-                </intent-filter>
-                <intent-filter>
-                    <action android:name="android.intent.action.VIEW" />
-                    <category android:name="android.intent.category.DEFAULT" />
-                    <category android:name="android.intent.category.BROWSABLE" />
-                    <data android:scheme="${this.packageName}" />
-                </intent-filter>
-` : ''}
-            </activity>
+        this._write(path.join(srcMain, 'AndroidManifest.xml'), manifestContent);
 
-            <service android:name=".MyFirebaseMessagingService" android:exported="true">
-                <intent-filter>
-                    <action android:name="com.google.firebase.MESSAGING_EVENT" />
-                </intent-filter>
-            </service>
-${this.features.admob ? `            <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy" />` : ''}
-        </application>
-    </manifest>`;
-
-        this._write(path.join(srcMain, 'AndroidManifest.xml'), manifestStr);
+        // Modify google-services.json to match the current package name if needed
         let modifiedGoogleServices = this.googleServicesJson;
         try {
             const parsed = JSON.parse(modifiedGoogleServices);
@@ -1769,53 +1739,26 @@ ${this.features.admob ? `            <meta-data android:name="com.google.android
         } catch (e) { }
         this._write(path.join(appDir, 'google-services.json'), modifiedGoogleServices);
 
-        // ── Ensure theme/style/color/string resources exist for Gradle build ──
+        // ── Ensure resources are copied correctly ──
+        // This ensures Styles, Colors, and Strings from _prepareFiles are used
+        // which contains the proper Splash Screen branding.
         const gradleValuesDir = path.join(resDir, 'values');
-        fs.mkdirSync(gradleValuesDir, { recursive: true });
-
-        this._write(path.join(gradleValuesDir, 'styles.xml'), `<?xml version="1.0" encoding="utf-8"?>
-    <resources>
-        <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
-            <item name="android:statusBarColor">${this.statusBarColor}</item>
-            <item name="android:navigationBarColor">${this.statusBarColor}</item>
-            <item name="android:windowNoTitle">true</item>
-            <item name="android:windowActionBar">false</item>
-            <item name="android:colorPrimary">${this.statusBarColor}</item>
-            <item name="android:colorPrimaryDark">${this.statusBarColor}</item>
-            <item name="android:colorAccent">${this.statusBarColor}</item>
-        </style>
-        <style name="SplashTheme" parent="android:Theme.Material.Light.NoActionBar">
-            <item name="android:windowBackground">@drawable/splash_background</item>
-            <item name="android:statusBarColor">${this.statusBarColor}</item>
-            <item name="android:navigationBarColor">${this.statusBarColor}</item>
-            <item name="android:windowNoTitle">true</item>
-            <item name="android:windowActionBar">false</item>
-            <item name="android:windowFullscreen">false</item>
-            <item name="android:windowContentOverlay">@null</item>
-        </style>
-    </resources>`);
-
-        this._write(path.join(gradleValuesDir, 'colors.xml'), `<?xml version="1.0" encoding="utf-8"?>
-    <resources>
-        <color name="colorPrimary">${this.statusBarColor}</color>
-        <color name="colorPrimaryDark">${this.statusBarColor}</color>
-        <color name="colorAccent">#4fc3f7</color>
-        <color name="splash_bg">${this.splashBgColor}</color>
-        <color name="white">#FFFFFF</color>
-    </resources>`);
-
-        this._write(path.join(gradleValuesDir, 'strings.xml'), `<?xml version="1.0" encoding="utf-8"?>
-    <resources>
-        <string name="app_name">${this.appName}</string>
-    </resources>`);
+        mkdirSync(gradleValuesDir, { recursive: true });
+        
+        // No need to manually write Styles/Colors/Strings here anymore as they are copied from tempRawDir
+        // BUT we need to make sure we don't have conflicts.
+        // Actually, cp already did the job.
 
         // ── Ensure splash drawable exists ──
         const gradleDrawableDir = path.join(resDir, 'drawable');
         fs.mkdirSync(gradleDrawableDir, { recursive: true });
-        this._write(path.join(gradleDrawableDir, 'splash_background.xml'), `<?xml version="1.0" encoding="utf-8"?>
-    <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-        <item android:drawable="@color/splash_bg" />
-    </layer-list>`);
+        // Make sure splash_background.xml is there (it was copied, but just in case)
+        if (!fs.existsSync(path.join(gradleDrawableDir, 'splash_background.xml'))) {
+            this._write(path.join(gradleDrawableDir, 'splash_background.xml'), `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/splash_bg" />
+</layer-list>`);
+        }
 
         // Inject FCM Java Service
         const fcmService = `package ${this.packageName};
