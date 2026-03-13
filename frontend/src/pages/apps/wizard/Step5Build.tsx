@@ -11,7 +11,8 @@ import { useAuthStore } from '../../../store/authStore'
 import Button from '../../../components/ui/Button'
 import { platformLabel } from '../../../lib/utils'
 import toast from 'react-hot-toast'
-import { createApp, getAppById, updateApp } from '../../../lib/api'
+import { useQuery } from '@tanstack/react-query'
+import { createApp, getAppById, updateApp, getUserById } from '../../../lib/api'
 
 type BuildStepStatus = 'pending' | 'running' | 'done' | 'failed'
 
@@ -99,6 +100,12 @@ export default function Step5Build() {
     const [buildId, setBuildId] = useState<string | null>(null)
     const [buildError, setBuildError] = useState<string | null>(null)
     const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+
+    const { data: userProfile } = useQuery({
+        queryKey: ['userProfile', user?.id],
+        queryFn: () => user?.id ? getUserById(user.id) : null,
+        enabled: !!user?.id
+    })
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>
@@ -190,7 +197,7 @@ export default function Step5Build() {
                 splashImageBase64: compressedSplashBase64 || null,
                 splashUrl: splashIsUrl ? config.splashScreen : null,
                 features: config.features || {},
-                googleServices: (config as any).googleServices || user?.googleServicesJson || null
+                googleServices: (config as any).googleServices || userProfile?.googleServicesJson || user?.googleServicesJson || null
             };
 
             const buildDataStr = JSON.stringify(buildPayload);

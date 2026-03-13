@@ -1633,6 +1633,7 @@ try {
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
             conn.setRequestProperty("Authorization", "Bearer 59ef5eb57d786ff8eced03244342f32e");
+            conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
             conn.setDoOutput(true);
             String jsonInputString = "{\\"pushToken\\": \\"" + token + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
     try(java.io.OutputStream os = conn.getOutputStream()) {
@@ -1879,6 +1880,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; utf-8");
                 conn.setRequestProperty("Authorization", "Bearer 59ef5eb57d786ff8eced03244342f32e");
+                conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
                 conn.setDoOutput(true);
                 String jsonInputString = "{\\"pushToken\\": \\"" + t + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
         try(java.io.OutputStream os = conn.getOutputStream()) {
