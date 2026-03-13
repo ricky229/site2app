@@ -1556,7 +1556,11 @@ ${this.features.offlineMode ? `
             try {
                 execSync(`curl -L -o "${zipPath}" "https://services.gradle.org/distributions/gradle-8.5-bin.zip"`);
                 console.log(`[BUILD ${this.buildId}] 📦 Extracting Gradle...`);
-                execSync(`tar -xf "${zipPath}" -C "${gradleDir}"`);
+                if (isWin) {
+                    execSync(`powershell Expand-Archive -Path "${zipPath}" -DestinationPath "${gradleDir}" -Force`);
+                } else {
+                    execSync(`unzip -o "${zipPath}" -d "${gradleDir}"`);
+                }
                 if (fs.existsSync(zipPath)) fs.unlinkSync(zipPath);
                 
                 if (!isWin) {
