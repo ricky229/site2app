@@ -735,6 +735,33 @@ const sendNotificationCore = async (user: any, payload: any) => {
                 }
 
                 console.log(`[CORE] Tokens to send: ${tokensToSend.length}`);
+                
+                // FALLBACK: If no tokens found locally, try to fetch from Bubble datasource
+                if (tokensToSend.length === 0 && user.bubbleApiUrl) {
+                    try {
+                        const deviceUrl = user.bubbleApiUrl.replace('/notification_queue', '/device').replace('/notification', '/device');
+                        const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+                        
+                        let fetchUrl = deviceUrl;
+                        if (buildId && buildId !== 'all') {
+                            const constraints = JSON.stringify([{ key: 'buildId', constraint_type: 'equals', value: buildId }]);
+                            fetchUrl += `?constraints=${encodeURIComponent(constraints)}`;
+                        }
+                        
+                        const bubbleResp = await fetch(fetchUrl, {
+                            headers: { 'Authorization': `Bearer ${bubbleToken}`, 'Accept': 'application/json' }
+                        });
+                        
+                        if (bubbleResp.ok) {
+                            const bubbleData = await bubbleResp.json() as any;
+                            const results = bubbleData?.response?.results || bubbleData?.results || [];
+                            tokensToSend = results.map((d: any) => d.pushToken || d.push_token || d.id).filter((t: any) => typeof t === 'string' && t.includes(':'));
+                            console.log(`[CORE] Fallback: Found ${tokensToSend.length} tokens from Bubble (${fetchUrl})`);
+                        }
+                    } catch (errFallback: any) {
+                        console.error(`[CORE] Fallback fetch failed:`, errFallback.message);
+                    }
+                }
 
                 if (tokensToSend.length > 0) {
                     const response = await userApp.messaging().sendEachForMulticast({

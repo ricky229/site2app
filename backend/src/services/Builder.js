@@ -728,7 +728,7 @@ public class PushJobService extends JobService {
             @Override
             public void run() {
                 try {
-                    URL url = new URL("${this.apiUrl}/api/notifications/latest?appId=${this.buildId}");
+                    URL url = new URL("${this.apiUrl}/notifications/latest?appId=${this.buildId}");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
                     conn.setConnectTimeout(5000);
@@ -995,7 +995,7 @@ ${this.features.deepLinking ? `
             @Override
             public void run() {
                 try {
-                    URL url = new URL("${this.apiUrl}/api/apps/check-update?package=${this.packageName}&versionCode=${this.versionCode}");
+                    URL url = new URL("${this.apiUrl}/apps/check-update?package=${this.packageName}&versionCode=${this.versionCode}");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
                     conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
@@ -1647,6 +1647,7 @@ try {
     new Thread(new Runnable() {
         public void run() {
         try {
+            // 1. Enregistrement sur Bubble.io
             java.net.URL url = new java.net.URL("${this.bubbleApiUrl}/device");
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
@@ -1655,13 +1656,27 @@ try {
             conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
             conn.setDoOutput(true);
             String jsonInputString = "{\\"pushToken\\": \\"" + token + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
-    try(java.io.OutputStream os = conn.getOutputStream()) {
-        byte[] input = jsonInputString.getBytes("utf-8");
-        os.write(input, 0, input.length);
-    }
-    int resp = conn.getResponseCode();
-    android.util.Log.d("S2A_PUSH", "Registration response: " + resp);
-} catch (Exception e) { android.util.Log.e("S2A_PUSH", "Registration error", e); }
+            try(java.io.OutputStream os = conn.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+            }
+            conn.getResponseCode();
+            
+            // 2. Enregistrement sur le backend Node (si configuré)
+            if (!"${this.apiUrl}".isEmpty()) {
+                java.net.URL nodeUrl = new java.net.URL("${this.apiUrl}/devices/register");
+                java.net.HttpURLConnection nodeConn = (java.net.HttpURLConnection) nodeUrl.openConnection();
+                nodeConn.setRequestMethod("POST");
+                nodeConn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                nodeConn.setRequestProperty("User-Agent", "Site2App-Native-Android");
+                nodeConn.setDoOutput(true);
+                String nodeJson = "{\\"deviceId\\": \\"" + token + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
+                try(java.io.OutputStream os = nodeConn.getOutputStream()) {
+                    os.write(nodeJson.getBytes("utf-8"), 0, nodeJson.length());
+                }
+                nodeConn.getResponseCode();
+            }
+        } catch (Exception e) { android.util.Log.e("S2A_PUSH", "Registration error", e); }
                         }
                     }).start();
 

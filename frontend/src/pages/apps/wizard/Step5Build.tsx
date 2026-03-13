@@ -192,6 +192,7 @@ export default function Step5Build() {
             const buildPayload = {
                 ...appData,
                 buildId: appId,
+                apiUrl: window.location.origin + "/node",
                 iconBase64: compressedIconBase64 || null,
                 iconUrl: iconIsUrl ? config.icon : null,
                 splashImageBase64: compressedSplashBase64 || null,

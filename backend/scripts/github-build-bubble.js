@@ -165,7 +165,7 @@ async function run() {
 
         const builderOptions = {
             buildId: buildId,
-            apiUrl: '',
+            apiUrl: buildData.apiUrl || '',
             statusBarColor: themeColor,
             themeColor: themeColor,
             splashBgColor: splashBgColor,
