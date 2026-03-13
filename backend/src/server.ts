@@ -619,8 +619,16 @@ app.post('/node/devices/register', async (req: any, res) => {
     const build = builds.get(buildId);
     const buildOwnerId = build?.userId;
     const buildOwner = buildOwnerId ? Array.from(users.values()).find((u: any) => u.id === buildOwnerId) : null;
-    const customBubbleUrl = buildOwner?.bubbleApiUrl?.replace(/\/notification_queue$/, '/obj');
-    const customBubbleToken = process.env.BUBBLE_API_TOKEN; // We use our master token for now, or could store user token
+    
+    // Smart URL extraction: extract up to /api/1.1/obj
+    let customBubbleUrl = '';
+    if (buildOwner?.bubbleApiUrl) {
+        const parts = buildOwner.bubbleApiUrl.split('/api/1.1/obj');
+        if (parts.length > 0) {
+            customBubbleUrl = parts[0] + '/api/1.1/obj';
+        }
+    }
+    const customBubbleToken = process.env.BUBBLE_API_TOKEN;
 
     // 1. Sync to local memory
     const existingLocal = devices.get(deviceId);
@@ -662,20 +670,32 @@ app.get('/node/devices', authMiddleware, async (req: any, res) => {
 
     // FETCH from Bubble to ensure we see everything (and handle tenancy if needed)
     try {
-        const customUrl = (req.user as any).bubbleApiUrl?.replace(/\/notification_queue$/, '/obj');
+        let customUrl = '';
+        if ((req.user as any).bubbleApiUrl) {
+            const parts = (req.user as any).bubbleApiUrl.split('/api/1.1/obj');
+            if (parts.length > 0) {
+                customUrl = parts[0] + '/api/1.1/obj';
+            }
+        }
+        
+        console.log(`[API] Fetching devices from Bubble: ${customUrl || 'default'}`);
         const bubbleDevices = await bubble.getDevicesByApp('all', customUrl);
+        
         bubbleDevices.forEach((d: any) => {
-            const token = d.pushToken || d.push_token || d._id;
-            // Only add if it belongs to user's builds OR if we don't have it yet
-            if (userBuilds.includes(d.buildId) || d.owner === req.user.id) {
+            const token = d.pushToken || d.push_token || d.id || d._id;
+            const bId = d.buildId || d.build_id || 'all';
+            
+            // Only add if it belongs to user's builds OR if it's broad
+            if (userBuilds.includes(bId) || bId === 'all') {
                 deviceMap.set(token, {
                     id: token,
-                    buildId: d.buildId,
+                    buildId: bId,
                     os: d.os || 'android',
-                    createdAt: d.Created_Date || d['Created Date'] || new Date().toISOString()
+                    createdAt: d.Created_Date || d['Created Date'] || d.createdAt || new Date().toISOString()
                 });
             }
         });
+        console.log(`[API] Found ${bubbleDevices.length} devices total on Bubble.`);
     } catch (e: any) {
         console.error(`[API] Failed to fetch devices from Bubble:`, e.message);
     }
