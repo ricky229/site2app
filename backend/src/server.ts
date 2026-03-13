@@ -1345,6 +1345,16 @@ app.delete('/node/user', authMiddleware, (req: any, res) => {
     res.json({ success: true, message: 'Account deleted' });
 })
 
+// Trigger polling manually from UI
+app.post('/node/notifications/poll', authMiddleware, async (req: any, res) => {
+    try {
+        await pollExternalNotifications();
+        res.json({ success: true, message: 'Polling cycle executed' });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+})
+
 // ─── Polling Service (Bubble.io / External Webhooks via Pull) ──────
 const POLLING_INTERVAL_MS = 15000; // 15 seconds
 

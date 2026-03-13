@@ -4,7 +4,7 @@ import {
     Bell, Send, Clock, Users, BarChart2, Plus, Image,
     Link, AlertCircle, CheckCircle, Loader2, Trash2, Copy,
     ChevronDown, Filter, Globe, Smartphone, Apple,
-    Shield, Sparkles, Upload, Save, Settings, Play, Image as ImageIcon
+    Shield, Sparkles, Upload, Save, Settings, Play, Image as ImageIcon, RefreshCw
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -114,6 +114,15 @@ export default function NotificationsPage() {
         }
     })
 
+    const pollMutation = useMutation({
+        mutationFn: async () => await nodeApi.post('/notifications/poll'),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] })
+            toast.success('Worker activé ! Les messages arrivent...')
+        },
+        onError: () => toast.error('Le serveur ne répond pas')
+    })
+
     const sendMutation = useMutation({
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
@@ -135,8 +144,11 @@ export default function NotificationsPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
-            toast.success(form.scheduled ? '📅 Notification programmée !' : '🚀 Notification enregistrée pour envoi !')
+            toast.success(form.scheduled ? '📅 Notification programmée !' : '🚀 Notification enregistrée !')
             setForm(f => ({ ...f, title: '', body: '' }))
+            setSelectedDevices([]) // Nettoyage
+            // On lance le polling node immédiatement pour ne pas attendre 15s
+            pollMutation.mutate()
             if (!form.scheduled) setTab('history')
         },
         onError: (err: any) => {
@@ -222,6 +234,14 @@ export default function NotificationsPage() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <StatCard title="Notifications envoyées" value={formatNumber(totalSent)} change={0} icon={<Send size={20} />} color="#3461f5" />
                 <StatCard title="Appareils actifs" value={formatNumber(devicesCount)} change={0} icon={<CheckCircle size={20} />} color="#10b981" />
+                <button 
+                    onClick={() => pollMutation.mutate()}
+                    disabled={pollMutation.isPending}
+                    className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white border border-dashed border-brand-200 hover:bg-brand-50 transition-all text-brand-600 disabled:opacity-50"
+                >
+                    <RefreshCw size={24} className={pollMutation.isPending ? 'animate-spin' : ''} />
+                    <span className="text-[10px] uppercase font-bold mt-2">Force Poll</span>
+                </button>
             </div>
 
             {/* Tabs */}
