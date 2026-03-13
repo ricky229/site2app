@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: ./backend
-        run: npm install firebase-admin axios
+        run: npm install firebase-admin
 
       - name: Run Push Worker
         working-directory: ./backend
