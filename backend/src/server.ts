@@ -1345,6 +1345,93 @@ app.delete('/node/user', authMiddleware, (req: any, res) => {
     res.json({ success: true, message: 'Account deleted' });
 })
 
+// ─── Webhook for immediate delivery from Bubble ─────────────────────
+// This endpoint is called by Bubble.io API Connector / Backend Workflows
+app.post('/node/notifications/webhook', async (req: any, res) => {
+    const { api_key, user_id, notif_id, title, body, buildId, targetToken, targetOs, image, targetUrl } = req.body;
+    
+    // Security check (Shared secret)
+    const secret = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+    if (api_key !== secret) {
+        console.warn(`[Webhook] ❌ Unauthorized access attempt with key: ${api_key}`);
+        return res.status(401).json({ error: 'Invalid API Key' });
+    }
+
+    if (!user_id) {
+        return res.status(400).json({ error: 'Missing user_id' });
+    }
+
+    console.log(`[Webhook] 🪝 Received trigger for user:${user_id}${notif_id ? ', notif:' + notif_id : ''}`);
+
+    try {
+        const user = users.get(user_id);
+        if (!user) {
+            console.warn(`[Webhook] ⚠️ User ${user_id} not found in Node memory. Triggering full poll as fallback.`);
+            await pollExternalNotifications();
+            return res.json({ success: true, message: 'User not in local cache, full poll triggered' });
+        }
+
+        // If data is provided in the body, we send it INSTANTLY
+        if (title) {
+            console.log(`[Webhook] 🚀 Instant dispatch: "${title}"`);
+            const reqBody = {
+                title,
+                body: body || '',
+                buildId: buildId || 'all',
+                target: targetToken ? String(targetToken).split(',').map((t: any) => String(t).trim()).filter(Boolean) : (targetOs || 'all'),
+                image: image || null,
+                actionUrl: targetUrl || null,
+            };
+            
+            await sendNotificationCore(user, reqBody);
+            
+            // Mark as sent on Bubble if notif_id is provided
+            if (notif_id) {
+                const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+                const defaultBase = 'https://site2app.online/api/1.1/obj/notification_queue';
+                let queueUrl = user.bubbleApiUrl || defaultBase;
+                if (!queueUrl.includes('/notification_queue')) {
+                    queueUrl = queueUrl.replace(/\/$/, '') + '/notification_queue';
+                }
+
+                try {
+                    await fetch(`${queueUrl}/${notif_id}`, {
+                        method: 'PATCH',
+                        headers: { 
+                            'Authorization': `Bearer ${bubbleToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ status: 'Sent' })
+                    });
+                    
+                    // Also create history record
+                    const historyUrl = queueUrl.replace('/notification_queue', '/notification');
+                    await fetch(historyUrl, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${bubbleToken}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title, body, owner: user_id, 
+                            status: 'Sent', sentAt: new Date().toISOString(),
+                            targetApp: buildId || 'all', targetOs: targetOs || 'specific',
+                            targetToken: targetToken || '', image: image || '', targetUrl: targetUrl || ''
+                        })
+                    });
+                } catch (e) { console.warn('[Webhook] Bubble update failed', e); }
+            }
+
+            return res.json({ success: true, message: 'Notification dispatched instantly' });
+        } else {
+            // No data provided? Just trigger a poll cycle for this user
+            console.log(`[Webhook] 🔄 Simple trigger, running poll cycle...`);
+            await pollExternalNotifications();
+            return res.json({ success: true, message: 'Poll cycle triggered via webhook' });
+        }
+    } catch (err: any) {
+        console.error(`[Webhook] 🚨 Error:`, err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Trigger polling manually from UI (GET to avoid 405)
 app.get('/node/notifications/poll', authMiddleware, async (req: any, res) => {
     console.log(`[API] Manual poll requested by user ${req.user?.id}`);
