@@ -181,27 +181,16 @@ app.get('/node/health', (req, res) => {
     })
 })
 
-// Diagnostic log for all notification-related requests
-app.use('/node/notifications/*', (req, res, next) => {
-    console.log(`[Diagnostic] ${req.method} ${req.originalUrl}`);
-    next();
-});
-
-// Robust Webhook for immediate delivery (Defined early to avoid route interference)
+// Webhook & Token Utils for Bubble immediate delivery
 const handleWebhook = async (req: any, res: any) => {
-    const { api_key, user_id, notif_id } = req.method === 'GET' ? req.query : req.body;
     const body = req.method === 'GET' ? req.query : req.body;
-    
-    console.log(`[Webhook] 🪝 ${req.method} request received. Payload:`, JSON.stringify(body));
-
+    const { api_key, user_id, notif_id } = body;
     const secret = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
-    const providedKey = body.api_key || req.headers['x-api-key'];
 
-    if (providedKey !== secret) {
-        console.warn(`[Webhook] ❌ Unauthorized. Key received: ${providedKey}`);
+    if (api_key !== secret) {
+        console.warn(`[Webhook] ❌ Unauthorized Key`);
         return res.status(401).json({ error: 'Invalid API Key' });
     }
-
     if (!user_id) return res.status(400).json({ error: 'Missing user_id' });
 
     try {
@@ -209,7 +198,7 @@ const handleWebhook = async (req: any, res: any) => {
         if (!user) {
             console.warn(`[Webhook] ⚠️ User ${user_id} not in memory. Polling...`);
             await pollExternalNotifications();
-            return res.json({ success: true, message: 'User cache miss, poll triggered' });
+            return res.json({ success: true, message: 'Poll triggered (cache miss)' });
         }
 
         if (body.title) {
@@ -227,7 +216,6 @@ const handleWebhook = async (req: any, res: any) => {
                 const bubbleToken = secret;
                 let queueUrl = user.bubbleApiUrl || `https://site2app.online/api/1.1/obj/notification_queue`;
                 if (!queueUrl.includes('/notification_queue')) queueUrl = queueUrl.replace(/\/$/, '') + '/notification_queue';
-
                 try {
                     await fetch(`${queueUrl}/${notif_id}`, {
                         method: 'PATCH',
@@ -247,11 +235,42 @@ const handleWebhook = async (req: any, res: any) => {
     }
 };
 
-app.get('/node/notifications/webhook', handleWebhook);
-app.post('/node/notifications/webhook', handleWebhook);
-// Also define without /node prefix just in case of proxy stripping
-app.get('/notifications/webhook', handleWebhook);
-app.post('/notifications/webhook', handleWebhook);
+// Endpoint specifically for user "Option 1" (Bubble triggers FCM directly)
+app.post('/node/notifications/get-fcm-token', async (req, res) => {
+    const { api_key, user_id } = req.body;
+    const secret = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+
+    if (api_key !== secret) return res.status(401).json({ error: 'Unauthorized' });
+    
+    try {
+        const user = users.get(user_id);
+        if (!user || !user.firebaseKey) return res.status(404).json({ error: 'No Firebase config found for this user' });
+        
+        const key = typeof user.firebaseKey === 'string' ? JSON.parse(user.firebaseKey) : user.firebaseKey;
+        const appName = `token_gen_${user_id}`;
+        
+        let tokenApp;
+        try {
+            tokenApp = admin.app(appName);
+        } catch (e) {
+            tokenApp = admin.initializeApp({ credential: admin.credential.cert(key) }, appName);
+        }
+        
+        if (!tokenApp.options.credential) throw new Error('Credential not initialized');
+        const accessTokenObj = await (tokenApp.options.credential as any).getAccessToken();
+        res.json({ 
+            access_token: accessTokenObj.access_token, 
+            project_id: key.project_id,
+            expires_in: accessTokenObj.expires_in
+        });
+    } catch (err: any) {
+        console.error('[TokenGen] Error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.all(['/node/notifications/webhook', '/notifications/webhook'], handleWebhook);
+
 
 // ─── Auth Middleware ─────────────────────────────────
 const authMiddleware = async (req: any, res: any, next: any) => {
