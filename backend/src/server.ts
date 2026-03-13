@@ -177,9 +177,17 @@ app.get('/node/health', (req, res) => {
     res.json({ 
         status: 'ok', 
         timestamp: new Date().toISOString(),
-        version: '1.0.5-webhook-instant'
+        version: '1.0.6-token-instant'
     })
 })
+
+// Global logger for notification routes to debug 404s
+app.use((req, res, next) => {
+    if (req.url.includes('notifications')) {
+        console.log(`[HTTP] ${req.method} ${req.url} - ${new Date().toISOString()}`);
+    }
+    next();
+});
 
 // Webhook & Token Utils for Bubble immediate delivery
 const handleWebhook = async (req: any, res: any) => {
@@ -236,15 +244,22 @@ const handleWebhook = async (req: any, res: any) => {
 };
 
 // Endpoint specifically for user "Option 1" (Bubble triggers FCM directly)
-app.post('/node/notifications/get-fcm-token', async (req, res) => {
-    const { api_key, user_id } = req.body;
+const handleGetFcmToken = async (req: any, res: any) => {
+    const body = req.method === 'POST' ? req.body : req.query;
+    const { api_key, user_id } = body;
     const secret = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
 
-    if (api_key !== secret) return res.status(401).json({ error: 'Unauthorized' });
+    if (api_key !== secret) {
+        console.warn(`[TokenGen] ❌ Unauthorized Key`);
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
     
     try {
         const user = users.get(user_id);
-        if (!user || !user.firebaseKey) return res.status(404).json({ error: 'No Firebase config found for this user' });
+        if (!user || !user.firebaseKey) {
+            console.warn(`[TokenGen] ⚠️ No config for ${user_id}`);
+            return res.status(404).json({ error: 'No Firebase config found' });
+        }
         
         const key = typeof user.firebaseKey === 'string' ? JSON.parse(user.firebaseKey) : user.firebaseKey;
         const appName = `token_gen_${user_id}`;
@@ -267,8 +282,9 @@ app.post('/node/notifications/get-fcm-token', async (req, res) => {
         console.error('[TokenGen] Error:', err.message);
         res.status(500).json({ error: err.message });
     }
-});
+};
 
+app.all(['/node/notifications/get-fcm-token', '/notifications/get-fcm-token'], handleGetFcmToken);
 app.all(['/node/notifications/webhook', '/notifications/webhook'], handleWebhook);
 
 
