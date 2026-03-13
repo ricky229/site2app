@@ -46,9 +46,13 @@ export default function NotificationsPage() {
         queryKey: ['notifications', user?.id], 
         queryFn: async () => {
             if (!user?.id) return []
-            const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
-            const res = await dataApi.get(`/notification?constraints=${encodeURIComponent(constraints)}`)
-            return res.data?.response?.results || []
+            try {
+                const res = await nodeApi.get('/notifications')
+                return res.data || []
+            } catch (e) {
+                console.error('Error fetching notifications from Node:', e)
+                return []
+            }
         },
         enabled: !!user?.id
     })
@@ -60,7 +64,18 @@ export default function NotificationsPage() {
         },
         enabled: !!user?.id
     })
-    const { data: registeredDevices = [] } = useQuery<any[]>({ queryKey: ['devices'], queryFn: async () => await getDevices() })
+    const { data: registeredDevices = [] } = useQuery<any[]>({ 
+        queryKey: ['devices'], 
+        queryFn: async () => {
+            try {
+                const res = await nodeApi.get('/devices')
+                return res.data || []
+            } catch (e) {
+                console.error('Error fetching devices:', e)
+                return []
+            }
+        }
+    })
 
     const [firebaseConfig, setFirebaseConfig] = useState({
         adminSdkJson: '',
@@ -82,9 +97,15 @@ export default function NotificationsPage() {
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
             // Update directly on Bubble
-            return await updateUser(user.id, {
-                firebaseKey: payload.adminSdkJson,
+            // 1. Update on Node Backend (this handles sensitive keys)
+            await nodeApi.post('/auth/firebase-config', {
+                adminSdkJson: payload.adminSdkJson,
                 googleServicesJson: payload.googleServicesJson,
+                bubbleApiUrl: payload.bubbleApiUrl
+            })
+            
+            // 2. Also update on Bubble for UI consistency (optional fields only)
+            return await updateUser(user.id, {
                 bubbleApiUrl: payload.bubbleApiUrl
             })
         },
@@ -101,14 +122,14 @@ export default function NotificationsPage() {
     const sendMutation = useMutation({
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
-            return await dataApi.post('/notification_queue', {
+            return await nodeApi.post('/notifications/send', {
                 title: payload.title,
                 body: payload.body,
-                owner: user.id,
-                targetApp: payload.buildId || 'all',
-                targetOs: payload.target || 'all',
+                buildId: payload.buildId || 'all',
+                target: payload.target || 'all',
                 image: payload.image || '',
-                targetUrl: payload.actionUrl || ''
+                actionUrl: payload.actionUrl || '',
+                scheduledAt: payload.scheduledAt || null
             })
         },
         onSuccess: () => {
@@ -118,7 +139,8 @@ export default function NotificationsPage() {
             if (!form.scheduled) setTab('history')
         },
         onError: (err: any) => {
-            toast.error('Erreur lors de l\'enregistrement (vérifiez Bubble)')
+            const msg = err?.response?.data?.error || err?.message || 'Erreur lors de l\'envoi'
+            toast.error(msg)
         }
     })
 
@@ -136,7 +158,7 @@ export default function NotificationsPage() {
     }
 
     const deleteMutation = useMutation({
-        mutationFn: async (id: string) => await dataApi.delete(`/notification/${id}`),
+        mutationFn: async (id: string) => await nodeApi.delete(`/notifications/${id}`),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
             toast.success('Notification supprimée')
@@ -145,10 +167,11 @@ export default function NotificationsPage() {
 
     const clearAllMutation = useMutation({
         mutationFn: async () => {
-            toast.error("La suppression en masse n'est pas supportée par l'API Bubble par défaut.")
-            throw new Error("Action non supportée")
+            await nodeApi.delete('/notifications')
         },
         onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['notifications'] })
+            toast.success('Historique effacé')
         }
     })
 
@@ -522,14 +545,14 @@ export default function NotificationsPage() {
                                 </thead>
                                 <tbody>
                                     {registeredDevices.map((device: any) => (
-                                        <tr key={device._id} className="border-b last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" style={{ borderColor: 'var(--border)' }}>
+                                        <tr key={device.id} className="border-b last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" style={{ borderColor: 'var(--border)' }}>
                                             <td className="py-3 px-4 font-semibold text-emerald-600 flex items-center gap-2">
                                                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                                                 {device.os?.toUpperCase() || 'ANDROID'}
                                             </td>
                                             <td className="py-3 px-4 font-mono text-xs">{device.buildId || 'N/A'}</td>
                                             <td className="py-3 px-4">{new Date(device.createdAt || device['Created Date']).toLocaleDateString()} à {new Date(device.createdAt || device['Created Date']).toLocaleTimeString()}</td>
-                                            <td className="py-3 px-4 font-mono text-[10px] text-slate-500 max-w-[200px] overflow-hidden text-ellipsis" title={device.pushToken || device._id}>{device.pushToken || device._id}</td>
+                                            <td className="py-3 px-4 font-mono text-[10px] text-slate-500 max-w-[200px] overflow-hidden text-ellipsis" title={device.pushToken || device.id}>{device.pushToken || device.id}</td>
                                         </tr>
                                     ))}
                                 </tbody>

@@ -630,16 +630,43 @@ app.post('/node/devices/register', (req: any, res) => {
     res.json({ success: true });
 })
 
-app.get('/node/devices', authMiddleware, (req: any, res) => {
+app.get('/node/devices', authMiddleware, async (req: any, res) => {
     const userBuilds = Array.from(builds.values())
         .filter((b: any) => !b.userId || b.userId === req.user.id)
         .map(b => b.id);
 
-    const allDevices = Array.from(devices.values())
-        .filter(d => userBuilds.includes(d.buildId))
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    let allDevices = Array.from(devices.values())
+        .filter(d => userBuilds.includes(d.buildId));
 
-    res.json(allDevices);
+    // Fallback: If no devices found locally, try to fetch from Bubble
+    if (allDevices.length === 0 && req.user.bubbleApiUrl) {
+        try {
+            const deviceUrl = req.user.bubbleApiUrl.replace(/\/notification_queue$/, '/device').replace(/\/notification$/, '/device');
+            const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+            
+            const bubbleResp = await fetch(deviceUrl, {
+                headers: { 'Authorization': `Bearer ${bubbleToken}`, 'Accept': 'application/json' }
+            });
+            
+            if (bubbleResp.ok) {
+                const bubbleData = await bubbleResp.json() as any;
+                const results = bubbleData?.response?.results || bubbleData?.results || [];
+                // Transform Bubble format if needed (Bubble uses _id)
+                const mapped = results.map((d: any) => ({
+                    id: d.pushToken || d.push_token || d._id,
+                    buildId: d.buildId || 'all',
+                    os: d.os || 'android',
+                    createdAt: d.Created_Date || d['Created Date'] || new Date().toISOString()
+                }));
+                allDevices = mapped;
+                console.log(`[API] Found ${allDevices.length} devices from Bubble fallback.`);
+            }
+        } catch (e: any) {
+            console.error(`[API] Device fallback error:`, e.message);
+        }
+    }
+
+    res.json(allDevices.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
 })
 
 const sendNotificationCore = async (user: any, payload: any) => {
@@ -1356,7 +1383,7 @@ setInterval(() => pollExternalNotifications().catch(console.error), POLLING_INTE
 // ─── Start Server ────────────────────────────────────
 const PORT = parseInt(process.env.PORT as string) || 4000
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n🚀 Site2App Backend running on port ${PORT} (0.0.0.0)`)
+    console.log(`🚀 Site2App Backend running on port ${PORT} (0.0.0.0)`)
     console.log(`📦 Build storage: ${path.join(__dirname, '../storage/builds')}`)
-    console.log(`❤️  Health check: http://localhost:${PORT}/api/health\n`)
+    console.log(`❤️  Health check: http://localhost:${PORT}/node/health\n`)
 })
