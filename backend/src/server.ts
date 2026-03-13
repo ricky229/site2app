@@ -158,6 +158,86 @@ loadBuilds()
 
 const app = express()
 
+// CRITICAL: Notification routes at the VERY TOP to avoid 404s
+const handleWebhook = async (req: any, res: any) => {
+    const body = req.method === 'POST' ? req.body : req.query;
+    const { api_key, user_id, notif_id } = body;
+    const secret = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+
+    if (api_key !== secret) return res.status(401).json({ error: 'Unauthorized' });
+    if (!user_id) return res.status(400).json({ error: 'Missing user_id' });
+
+    try {
+        const user = users.get(user_id);
+        if (!user) {
+            await pollExternalNotifications();
+            return res.json({ success: true, message: 'User cache miss, poll triggered' });
+        }
+        if (body.title) {
+            const reqBody = {
+                title: body.title,
+                body: body.body || '',
+                buildId: body.buildId || 'all',
+                target: body.targetToken ? String(body.targetToken).split(',').map((t: any) => String(t).trim()).filter(Boolean) : (body.targetOs || 'all'),
+                image: body.image || null,
+                actionUrl: body.targetUrl || null,
+            };
+            await sendNotificationCore(user, reqBody);
+            if (notif_id) {
+                let queueUrl = user.bubbleApiUrl || `https://site2app.online/api/1.1/obj/notification_queue`;
+                if (!queueUrl.includes('/notification_queue')) queueUrl = queueUrl.replace(/\/$/, '') + '/notification_queue';
+                try {
+                    await fetch(`${queueUrl}/${notif_id}`, {
+                        method: 'PATCH',
+                        headers: { 'Authorization': `Bearer ${secret}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'Sent' })
+                    });
+                } catch (e) {}
+            }
+            return res.json({ success: true, message: 'Sent' });
+        } else {
+            await pollExternalNotifications();
+            return res.json({ success: true, message: 'Poll triggered' });
+        }
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+const handleGetFcmToken = async (req: any, res: any) => {
+    const body = req.method === 'POST' ? req.body : req.query;
+    const { api_key, user_id } = body;
+    const secret = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+
+    if (api_key !== secret) return res.status(401).json({ error: 'Unauthorized' });
+    
+    try {
+        const user = users.get(user_id);
+        if (!user || !user.firebaseKey) return res.status(404).json({ error: 'No Firebase config' });
+        
+        const key = typeof user.firebaseKey === 'string' ? JSON.parse(user.firebaseKey) : user.firebaseKey;
+        const appName = `token_gen_${user_id}`;
+        
+        let tokenApp;
+        try {
+            tokenApp = admin.app(appName);
+        } catch (e) {
+            tokenApp = admin.initializeApp({ credential: admin.credential.cert(key) }, appName);
+        }
+        
+        if (!tokenApp.options.credential) throw new Error('No credential');
+        const accessTokenObj = await (tokenApp.options.credential as any).getAccessToken();
+        res.json({ access_token: accessTokenObj.access_token, project_id: key.project_id });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// Registered routes both with and without /node prefix
+app.all(['/node/notifications/webhook', '/notifications/webhook'], handleWebhook);
+app.all(['/node/notifications/get-fcm-token', '/notifications/get-fcm-token'], handleGetFcmToken);
+app.get(['/node/health', '/health'], (req, res) => res.json({ status: 'ok', version: '1.0.7-final-webhook' }));
+
 // Middlewares
 app.use(cors({
     origin: function (origin, callback) {
@@ -172,120 +252,8 @@ app.use(helmet({
 app.use(morgan('dev'))
 app.use(express.json({ limit: '50mb' }))
 
-// ─── Health Check ────────────────────────────────────
-app.get('/node/health', (req, res) => {
-    res.json({ 
-        status: 'ok', 
-        timestamp: new Date().toISOString(),
-        version: '1.0.6-token-instant'
-    })
-})
+// Webhook handlers moved to top...
 
-// Global logger for notification routes to debug 404s
-app.use((req, res, next) => {
-    if (req.url.includes('notifications')) {
-        console.log(`[HTTP] ${req.method} ${req.url} - ${new Date().toISOString()}`);
-    }
-    next();
-});
-
-// Webhook & Token Utils for Bubble immediate delivery
-const handleWebhook = async (req: any, res: any) => {
-    const body = req.method === 'GET' ? req.query : req.body;
-    const { api_key, user_id, notif_id } = body;
-    const secret = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
-
-    if (api_key !== secret) {
-        console.warn(`[Webhook] ❌ Unauthorized Key`);
-        return res.status(401).json({ error: 'Invalid API Key' });
-    }
-    if (!user_id) return res.status(400).json({ error: 'Missing user_id' });
-
-    try {
-        const user = users.get(user_id);
-        if (!user) {
-            console.warn(`[Webhook] ⚠️ User ${user_id} not in memory. Polling...`);
-            await pollExternalNotifications();
-            return res.json({ success: true, message: 'Poll triggered (cache miss)' });
-        }
-
-        if (body.title) {
-            const reqBody = {
-                title: body.title,
-                body: body.body || '',
-                buildId: body.buildId || 'all',
-                target: body.targetToken ? String(body.targetToken).split(',').map((t: any) => String(t).trim()).filter(Boolean) : (body.targetOs || 'all'),
-                image: body.image || null,
-                actionUrl: body.targetUrl || null,
-            };
-            await sendNotificationCore(user, reqBody);
-            
-            if (notif_id) {
-                const bubbleToken = secret;
-                let queueUrl = user.bubbleApiUrl || `https://site2app.online/api/1.1/obj/notification_queue`;
-                if (!queueUrl.includes('/notification_queue')) queueUrl = queueUrl.replace(/\/$/, '') + '/notification_queue';
-                try {
-                    await fetch(`${queueUrl}/${notif_id}`, {
-                        method: 'PATCH',
-                        headers: { 'Authorization': `Bearer ${bubbleToken}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ status: 'Sent' })
-                    });
-                } catch (e) {}
-            }
-            return res.json({ success: true, message: 'Dispatched' });
-        } else {
-            await pollExternalNotifications();
-            return res.json({ success: true, message: 'Poll cycle triggered' });
-        }
-    } catch (err: any) {
-        console.error(`[Webhook] Error:`, err.message);
-        res.status(500).json({ error: err.message });
-    }
-};
-
-// Endpoint specifically for user "Option 1" (Bubble triggers FCM directly)
-const handleGetFcmToken = async (req: any, res: any) => {
-    const body = req.method === 'POST' ? req.body : req.query;
-    const { api_key, user_id } = body;
-    const secret = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
-
-    if (api_key !== secret) {
-        console.warn(`[TokenGen] ❌ Unauthorized Key`);
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    
-    try {
-        const user = users.get(user_id);
-        if (!user || !user.firebaseKey) {
-            console.warn(`[TokenGen] ⚠️ No config for ${user_id}`);
-            return res.status(404).json({ error: 'No Firebase config found' });
-        }
-        
-        const key = typeof user.firebaseKey === 'string' ? JSON.parse(user.firebaseKey) : user.firebaseKey;
-        const appName = `token_gen_${user_id}`;
-        
-        let tokenApp;
-        try {
-            tokenApp = admin.app(appName);
-        } catch (e) {
-            tokenApp = admin.initializeApp({ credential: admin.credential.cert(key) }, appName);
-        }
-        
-        if (!tokenApp.options.credential) throw new Error('Credential not initialized');
-        const accessTokenObj = await (tokenApp.options.credential as any).getAccessToken();
-        res.json({ 
-            access_token: accessTokenObj.access_token, 
-            project_id: key.project_id,
-            expires_in: accessTokenObj.expires_in
-        });
-    } catch (err: any) {
-        console.error('[TokenGen] Error:', err.message);
-        res.status(500).json({ error: err.message });
-    }
-};
-
-app.all(['/node/notifications/get-fcm-token', '/notifications/get-fcm-token'], handleGetFcmToken);
-app.all(['/node/notifications/webhook', '/notifications/webhook'], handleWebhook);
 
 
 // ─── Auth Middleware ─────────────────────────────────
