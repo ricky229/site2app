@@ -397,7 +397,9 @@ app.post('/node/build', authMiddleware, (req: any, res) => {
         orientation,
         features,
         icon,
-        splashImage
+        splashImage,
+        versionCode,
+        versionName
     } = req.body
 
     const buildId = Date.now().toString()
@@ -417,15 +419,14 @@ app.post('/node/build', authMiddleware, (req: any, res) => {
         }
     }
 
-    // Calculate versionCode based on MAX existing version for this packageName (more robust than .length)
+    // TRUST THE FRONTEND (Bubble DB is the source of truth)
+    // If versionCode is provided in request, use it. Otherwise calculate from local history.
+    const reqVersionCode = parseInt(versionCode) || 0;
     const samePackageBuilds = Array.from(builds.values()).filter(b => b.packageName === buildData.packageName);
-    const maxVersion = samePackageBuilds.reduce((max, b) => Math.max(max, b.versionCode || 0), 0);
+    const maxLocalVersion = samePackageBuilds.reduce((max, b) => Math.max(max, b.versionCode || 0), 0);
     
-    buildData.versionCode = (buildData.versionCode || maxVersion) + 1;
-    // Ensure we don't regress if the request already had a version
-    if (maxVersion >= buildData.versionCode) buildData.versionCode = maxVersion + 1;
-    
-    buildData.versionName = `1.${buildData.versionCode}`;
+    buildData.versionCode = reqVersionCode > 0 ? reqVersionCode : (maxLocalVersion + 1);
+    buildData.versionName = versionName || `1.${buildData.versionCode}`;
 
     builds.set(buildId, buildData)
     saveBuilds()
