@@ -1350,56 +1350,82 @@ const POLLING_INTERVAL_MS = 15000; // 15 seconds
 
 async function pollExternalNotifications() {
     const allUsers = Array.from(users.values());
+    if (allUsers.length === 0) return;
+
+    console.log(`[Polling] Starting cycle for ${allUsers.length} users...`);
+    const defaultBubbleBase = 'https://site2app.online/api/1.1/obj';
+    const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+
     for (const user of allUsers) {
-        if (!user.bubbleApiUrl) continue;
+        // Use user's custom URL if available, otherwise use default
+        let bubbleObjUrl = user.bubbleApiUrl;
+        
+        if (!bubbleObjUrl) {
+            bubbleObjUrl = `${defaultBubbleBase}/notification_queue`;
+        } else {
+            // Ensure it's the right endpoint
+            if (!bubbleObjUrl.includes('/obj/')) {
+                bubbleObjUrl = bubbleObjUrl.replace(/\/$/, '') + '/api/1.1/obj/notification_queue';
+            } else if (!bubbleObjUrl.endsWith('/notification_queue')) {
+                // If they provided a base obj URL but not the specific table
+                bubbleObjUrl = bubbleObjUrl.replace(/\/notification$/, '').replace(/\/$/, '') + '/notification_queue';
+            }
+        }
 
         try {
-            const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
-            // Demander les notifications "en attente" à Bubble
-            const response = await fetch(user.bubbleApiUrl, {
+            // Demander les notifications "en attente" à Bubble pour cet utilisateur précis
+            const constraints = JSON.stringify([
+                { key: 'owner', constraint_type: 'equals', value: user.id },
+                { key: 'status', constraint_type: 'not equal', value: 'Sent' }
+            ]);
+            const scrollUrl = `${bubbleObjUrl}?constraints=${encodeURIComponent(constraints)}`;
+
+            const response = await fetch(scrollUrl, {
                 headers: { 
                     'Accept': 'application/json',
                     'Authorization': `Bearer ${bubbleToken}`
                 }
             });
 
-            if (!response.ok) continue;
+            if (!response.ok) {
+                if (response.status !== 404) {
+                    console.warn(`[Polling] Bubble fetch failed (${response.status}) for ${user.email} at ${bubbleObjUrl}`);
+                }
+                continue;
+            }
 
             const data = await response.json();
-            // Data API Bubble returns { response: { results: [...] } }
             const pendingNotifs = data?.response?.results || data?.results || (Array.isArray(data) ? data : []);
 
             if (!Array.isArray(pendingNotifs) || pendingNotifs.length === 0) continue;
 
-            console.log(`[Polling] ${pendingNotifs.length} pending notifications found for user ${user.email} at ${user.bubbleApiUrl}`);
+            console.log(`[Polling] ${pendingNotifs.length} records found for ${user.email}`);
 
             for (const notif of pendingNotifs) {
-                // Ignore si déjà envoyé côté Bubble OU DÉJÀ envoyé par nous (sécurité locale très stricte)
-                if (!notif._id || !notif.title || notif.status === 'Sent' || processedBubbleNotifs.has(notif._id)) continue;
+                // Skip if already processed or already sent
+                if (!notif._id || notif.status === 'Sent' || processedBubbleNotifs.has(notif._id)) continue;
 
-                // Préparer le payload interne (compatible avec les champs Bubble de l'utilisateur)
+                // Préparer le payload interne
                 const reqBody = {
                     title: notif.title || notif.Title || 'Sans titre',
                     body: notif.body || notif.Body || '',
                     buildId: notif.targetApp || notif.buildId || 'all',
-                    target: notif.targetToken ? notif.targetToken.split(',') : (notif.targetOs || 'all'),
+                    target: notif.targetToken ? notif.targetToken.split(',').map((t: string) => t.trim()) : (notif.targetOs || 'all'),
                     image: notif.image || null,
                     actionUrl: notif.targetUrl || notif.actionUrl || null,
                 };
 
                 try {
-                    console.log(`[Polling] Notification "${reqBody.title}" - Target: ${reqBody.target}`);
+                    console.log(`[Polling] Processing: "${reqBody.title}" (ID: ${notif._id})`);
                     const sentNotif = await sendNotificationCore(user, reqBody);
 
                     if (sentNotif) {
                         processedBubbleNotifs.add(notif._id);
                         saveProcessedBubble();
 
-                        const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
-                        
                         // 1. Mark as Sent on Bubble Queue
                         try {
-                            await fetch(`${user.bubbleApiUrl}/${notif._id}`, {
+                            await fetch(`${bubbleObjUrl}/${notif._id}`, {
                                 method: 'PATCH',
                                 headers: { 
                                     'Content-Type': 'application/json',
@@ -1407,12 +1433,11 @@ async function pollExternalNotifications() {
                                 },
                                 body: JSON.stringify({ status: 'Sent' })
                             });
-                            console.log(`[Polling] Notification ${notif._id} marked as Sent in queue.`);
                         } catch (err) { console.warn(`[Polling] Could not update queue item ${notif._id}`); }
 
                         // 2. Create entry in "notification" table for History
                         try {
-                            const historyUrl = user.bubbleApiUrl.replace('/notification_queue', '/notification');
+                            const historyUrl = bubbleObjUrl.replace('/notification_queue', '/notification');
                             await fetch(historyUrl, {
                                 method: 'POST',
                                 headers: { 
@@ -1426,12 +1451,12 @@ async function pollExternalNotifications() {
                                     targetUrl: reqBody.actionUrl,
                                     targetApp: reqBody.buildId,
                                     targetOs: Array.isArray(reqBody.target) ? 'specific' : reqBody.target,
+                                    targetToken: notif.targetToken || '',
                                     status: 'Sent',
                                     owner: user.id,
                                     sentAt: new Date().toISOString()
                                 })
                             });
-                            console.log(`[Polling] Notification record created on Bubble history table.`);
                         } catch (err) { console.warn(`[Polling] Could not create history record on Bubble.`); }
                     }
                 } catch (e: any) {
