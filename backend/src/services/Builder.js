@@ -197,11 +197,20 @@ class Builder {
         mkdirSync(anydpiDir, { recursive: true })
 
         if (isCustomIcon) {
-            // For custom icons, we treat the icon as the foreground drawable
-            // Note: We write it to drawable/ as well so adaptive icon can reference it easily
+            // For custom icons, we treat the icon as the foreground content
+            // We use an INSET drawable to provide safe-zone padding (16%) so it doesn't look zoomed in/cropped
             const drawableDir = path.join(baseDir, 'res', 'drawable')
             mkdirSync(drawableDir, { recursive: true })
-            writeFileSync(path.join(drawableDir, `ic_launcher_foreground.${ext}`), iconPngBuffer)
+            writeFileSync(path.join(drawableDir, `ic_launcher_foreground_content.${ext}`), iconPngBuffer)
+
+            this._write(path.join(drawableDir, 'ic_launcher_foreground.xml'),
+                `<?xml version="1.0" encoding="utf-8"?>
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_launcher_foreground_content"
+    android:insetLeft="16%"
+    android:insetRight="16%"
+    android:insetTop="16%"
+    android:insetBottom="16%" />`)
 
             this._write(path.join(anydpiDir, 'ic_launcher.xml'),
                 `<?xml version="1.0" encoding="utf-8"?>
@@ -569,10 +578,14 @@ ${this.features.deepLinking ? `            <intent-filter android:autoVerify="tr
         // ── SplashActivity.java — shows custom image if available, else default branded splash ──
         const splashImageCode = hasSplashImage
             ? `
-        // User-provided splash image — display it full screen
+        // User-provided splash image — display it centered and responsive
         ImageView splashImg = new ImageView(this);
         splashImg.setImageResource(R.drawable.splash_custom);
-        splashImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        // FIT_CENTER ensures the whole image is visible without being "too zoomed" or cropped
+        splashImg.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        // Padding for safety
+        int splashPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24, getResources().getDisplayMetrics());
+        splashImg.setPadding(splashPadding, splashPadding, splashPadding, splashPadding);
         root.addView(splashImg, new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));`
             : `
