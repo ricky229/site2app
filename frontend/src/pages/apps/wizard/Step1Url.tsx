@@ -33,119 +33,56 @@ function hslToHex(h: number, s: number, l: number): string {
     return `#${f(0)}${f(8)}${f(4)}`
 }
 
-// Analyse site directly from frontend via CORS proxy
+// Analyse site via Node.js backend (Deep analysis)
 async function analyzeSite(url: string): Promise<SiteAnalysis> {
     const domain = new URL(url).hostname.replace('www.', '')
     const words = domain.split('.')
     const fallbackTitle = words[0].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
-    let serverColors: string[] = []
-    let serverTitle = ''
-    let serverFavicon = ''
-    let serverDescription = ''
-
     try {
-        // Use allorigins as CORS proxy to fetch HTML
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
-        const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 10000)
-        const response = await fetch(proxyUrl, { signal: controller.signal })
-        clearTimeout(timeout)
-        const html = await response.text()
-
-        // Extract title
-        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i)
-        serverTitle = titleMatch?.[1]?.trim() || ''
-
-        // Extract meta description
-        const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i)
-        serverDescription = descMatch?.[1]?.trim() || ''
-
-        // Extract meta theme-color
-        const themeMatch = html.match(/<meta[^>]*name=["']theme-color["'][^>]*content=["']([^"']+)["']/i)
-            || html.match(/<meta[^>]*content=["']([#][0-9a-fA-F]{3,8})["'][^>]*name=["']theme-color["']/i)
-        if (themeMatch?.[1]) serverColors.push(themeMatch[1])
-
-        // Extract msapplication-TileColor
-        const tileMatch = html.match(/<meta[^>]*name=["']msapplication-TileColor["'][^>]*content=["']([^"']+)["']/i)
-        if (tileMatch?.[1]) serverColors.push(tileMatch[1])
-
-        // Extract CSS hex colors from inline styles and CSS
-        const hexRegex = /#([0-9a-fA-F]{6})\b/g
-        const allHex = new Set<string>()
-        let m
-        while ((m = hexRegex.exec(html)) !== null) {
-            const hex = '#' + (m[1] || '').toLowerCase()
-            // Filter out generic grays/whites/blacks
-            if (!['#000000', '#ffffff', '#333333', '#666666', '#999999', '#cccccc', '#f5f5f5',
-                   '#eeeeee', '#e5e5e5', '#f8f9fa', '#212529', '#111111', '#222222', '#444444',
-                   '#555555', '#777777', '#888888', '#aaaaaa', '#bbbbbb', '#dddddd'].includes(hex)) {
-                allHex.add(hex)
-            }
-        }
-        for (const c of allHex) {
-            if (serverColors.length >= 6) break
-            if (!serverColors.includes(c)) serverColors.push(c)
-        }
-
-        // Extract favicon
-        const faviconMatch = html.match(/<link[^>]*rel=["'](?:icon|shortcut icon|apple-touch-icon)["'][^>]*href=["']([^"']+)["']/i)
-            || html.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["'](?:icon|shortcut icon|apple-touch-icon)["']/i)
-        if (faviconMatch?.[1]) {
-            try {
-                serverFavicon = new URL(faviconMatch[1], url).href
-            } catch {
-                serverFavicon = faviconMatch[1]
-            }
+        // Construct the correct node API URL (handles production/development)
+        const baseUrl = window.location.hostname !== 'localhost' 
+            ? window.location.origin + '/node'
+            : '/node';
+            
+        const response = await fetch(`${baseUrl}/analyze?url=${encodeURIComponent(url)}`);
+        if (!response.ok) throw new Error('Backend analysis failed');
+        
+        const data = await response.json();
+        
+        // Final object with backend-provided deep scan results
+        return {
+            url,
+            title: data.title || fallbackTitle,
+            description: data.description || `Application mobile de ${data.title || fallbackTitle}`,
+            favicon: data.favicon || `https://www.google.com/s2/favicons?domain=${domain}&sz=256`,
+            screenshot: `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`,
+            colors: data.colors && data.colors.length >= 2 ? data.colors : ['#3461f5', '#7c3aed', '#ffffff', '#f1f5f9'],
+            pages: [
+                { url, title: 'Accueil' },
+                { url: url + '/about', title: 'À propos' },
+                { url: url + '/contact', title: 'Contact' },
+            ],
+            ssl: url.startsWith('https'),
+            responsive: true,
+            performanceScore: Math.floor(65 + Math.random() * 30),
+            loadTime: Math.round((0.8 + Math.random() * 2) * 10) / 10,
         }
     } catch (err) {
-        console.warn('[Analysis] CORS proxy fetch failed, using fallbacks:', err)
-    }
-
-    const title = serverTitle || fallbackTitle
-    let colors = serverColors
-
-    // Fallback: generate deterministic unique colors from domain hash
-    if (colors.length < 2) {
-        const h = hashStr(domain)
-        const hue1 = h % 360
-        const hue2 = (hue1 + 30 + (h % 40)) % 360
-        colors = [
-            hslToHex(hue1, 65, 50),
-            hslToHex(hue2, 55, 45),
-            '#ffffff',
-            hslToHex(hue1, 15, 95),
-        ]
-    }
-
-    // Pad to 4 colors
-    while (colors.length < 4) {
-        colors.push(colors.length === 2 ? '#ffffff' : '#f1f5f9')
-    }
-
-    // Use Google favicons API as reliable proxy (handles CORS for favicons)
-    const favicon = serverFavicon
-        ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
-        : `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
-    // Also store the real favicon URL for later use
-    const realFavicon = serverFavicon || `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
-
-    return {
-        url,
-        title,
-        description: serverDescription || `Application mobile de ${title} — votre boutique/service en ligne`,
-        favicon: realFavicon,
-        screenshot: `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`,
-        colors,
-        pages: [
-            { url, title: 'Accueil' },
-            { url: url + '/about', title: 'À propos' },
-            { url: url + '/contact', title: 'Contact' },
-        ],
-        ssl: url.startsWith('https'),
-        responsive: true,
-        performanceScore: Math.floor(65 + Math.random() * 30),
-        loadTime: Math.round((0.8 + Math.random() * 2) * 10) / 10,
+        console.warn('[Analysis] Node backend failed, falling back to basic details:', err)
+        return {
+            url,
+            title: fallbackTitle,
+            description: `Application mobile de ${fallbackTitle}`,
+            favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+            screenshot: `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`,
+            colors: ['#3461f5', '#7c3aed', '#ffffff', '#f1f5f9'],
+            pages: [{ url, title: 'Accueil' }],
+            ssl: url.startsWith('https'),
+            responsive: true,
+            performanceScore: 75,
+            loadTime: 1.5
+        }
     }
 }
 
