@@ -240,64 +240,208 @@ const handleAnalyze = async (req: any, res: any) => {
     if (!targetUrl) return res.status(400).json({ error: 'url parameter required' });
 
     console.log(`[Analysis] Analyzing URL: ${targetUrl}`);
+    
+    // Helper: convert rgb/rgba to hex
+    const rgbToHex = (r: number, g: number, b: number): string => {
+        return '#' + [r, g, b].map(x => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, '0')).join('');
+    };
+    
+    // Helper: check if color is too generic (black, white, pure grays)
+    const isGenericColor = (hex: string): boolean => {
+        const h = hex.toLowerCase();
+        const skip = ['#000000', '#ffffff', '#f5f5f5', '#eeeeee', '#e5e5e5', '#f8f9fa', '#212529', '#fafafa', '#f0f0f0', '#e0e0e0', '#d0d0d0', '#f8f8f8', '#fcfcfc'];
+        if (skip.includes(h)) return true;
+        // Skip pure grays (r == g == b)
+        const r = parseInt(h.slice(1, 3), 16);
+        const g = parseInt(h.slice(3, 5), 16);
+        const b = parseInt(h.slice(5, 7), 16);
+        if (r === g && g === b) return true;
+        return false;
+    };
+    
     try {
         const response = await fetch(targetUrl, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             },
-            timeout: 10000 // 10s
+            timeout: 15000
         });
 
         const html = await response.text();
-        const colors: string[] = [];
+        const colorFreq: Record<string, number> = {};
+        const priorityColors: string[] = []; // High-priority colors (theme-color, brand vars)
 
-        // 1. Meta Colors
-        const mColors = html.match(/<meta[^>]*content=["'](#[0-9a-fA-F]{3,6})["']/gi);
-        if (mColors) {
-            mColors.forEach(m => {
-                const hex = m.match(/#[0-9a-fA-F]{3,6}/)?.[0]?.toLowerCase();
-                if (hex && !colors.includes(hex)) colors.push(hex);
-            });
+        // ════════════════════════════════════════════════
+        // 1. THEME-COLOR meta tag (highest priority)
+        // ════════════════════════════════════════════════
+        const themeColorMatch = html.match(/<meta[^>]*name=["']theme-color["'][^>]*content=["']([^"']+)["']/i)
+            || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']theme-color["']/i);
+        if (themeColorMatch?.[1]) {
+            const tc = themeColorMatch[1].trim().toLowerCase();
+            if (tc.startsWith('#')) {
+                const full = tc.length === 4 ? '#' + tc[1]+tc[1]+tc[2]+tc[2]+tc[3]+tc[3] : tc;
+                priorityColors.push(full);
+            }
+        }
+        
+        // msapplication-TileColor
+        const tileColor = html.match(/<meta[^>]*name=["']msapplication-TileColor["'][^>]*content=["']([^"']+)["']/i);
+        if (tileColor?.[1]?.startsWith('#')) {
+            priorityColors.push(tileColor[1].toLowerCase());
         }
 
-        // 2. CSS Hex Scan (Frequency)
-        const hexRegex = /#([0-9a-fA-F]{6})\b/g;
-        const colorFreq: Record<string, number> = {};
-        const skip = ['#000000', '#ffffff', '#333333', '#666666', '#999999', '#cccccc', '#f5f5f5', '#eeeeee', '#e5e5e5', '#f8f9fa', '#212529'];
+        // ════════════════════════════════════════════════
+        // 2. Inline CSS & HTML hex colors (#xxxxxx and #xxx)
+        // ════════════════════════════════════════════════
+        const hexRegex6 = /#([0-9a-fA-F]{6})\b/g;
+        const hexRegex3 = /#([0-9a-fA-F]{3})\b/g;
         let match;
-        while ((match = hexRegex.exec(html)) !== null) {
+        
+        while ((match = hexRegex6.exec(html)) !== null) {
+            if (!match[1]) continue;
+            const hex = '#' + match[1].toLowerCase();
+            colorFreq[hex] = (colorFreq[hex] || 0) + 1;
+        }
+        while ((match = hexRegex3.exec(html)) !== null) {
             if (match[1]) {
-                const hex = '#' + match[1].toLowerCase();
-                if (!skip.includes(hex)) colorFreq[hex] = (colorFreq[hex] || 0) + 1;
+                const c = match[1].toLowerCase();
+                const hex = '#' + c[0]+c[0] + c[1]+c[1] + c[2]+c[2];
+                colorFreq[hex] = (colorFreq[hex] || 0) + 1;
+            }
+        }
+        
+        // ════════════════════════════════════════════════
+        // 3. RGB/RGBA colors in inline styles
+        // ════════════════════════════════════════════════
+        const rgbRegex = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/g;
+        while ((match = rgbRegex.exec(html)) !== null) {
+            if (!match[1] || !match[2] || !match[3]) continue;
+            const hex = rgbToHex(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+            colorFreq[hex] = (colorFreq[hex] || 0) + 1;
+        }
+
+        // ════════════════════════════════════════════════
+        // 4. CSS Custom Properties (--primary, --brand, etc.)
+        // ════════════════════════════════════════════════
+        const cssVarRegex = /--(?:primary|brand|accent|main|theme|color-primary|color-brand|color-accent)[^:]*:\s*(#[0-9a-fA-F]{3,6}|rgb[^)]+\))/gi;
+        let varMatch;
+        while ((varMatch = cssVarRegex.exec(html)) !== null) {
+            if (!varMatch[1]) continue;
+            let val = varMatch[1].trim().toLowerCase();
+            if (val.startsWith('#')) {
+                if (val.length === 4) val = '#' + val[1]+val[1]+val[2]+val[2]+val[3]+val[3];
+                priorityColors.push(val);
+            } else if (val.startsWith('rgb')) {
+                const rgbM = val.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+                if (rgbM && rgbM[1] && rgbM[2] && rgbM[3]) priorityColors.push(rgbToHex(parseInt(rgbM[1]), parseInt(rgbM[2]), parseInt(rgbM[3])));
             }
         }
 
-        const sortedColors = Object.entries(colorFreq)
+        // ════════════════════════════════════════════════
+        // 5. Fetch external CSS files for more colors
+        // ════════════════════════════════════════════════
+        const cssLinks = html.match(/<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["']/gi) || [];
+        const cssUrls: string[] = [];
+        for (const link of cssLinks.slice(0, 5)) { // Limit to 5 CSS files
+            const hrefMatch = link.match(/href=["']([^"']+)["']/i);
+            if (hrefMatch?.[1]) {
+                try { cssUrls.push(new URL(hrefMatch[1], targetUrl).href); } catch {}
+            }
+        }
+
+        for (const cssUrl of cssUrls) {
+            try {
+                const cssRes = await fetch(cssUrl, {
+                    headers: { 'User-Agent': 'Mozilla/5.0' },
+                    timeout: 5000
+                });
+                const cssText = await cssRes.text();
+                
+                // Hex colors in CSS
+                while ((match = hexRegex6.exec(cssText)) !== null) {
+                    if (!match[1]) continue;
+                    const hex = '#' + match[1].toLowerCase();
+                    colorFreq[hex] = (colorFreq[hex] || 0) + 1;
+                }
+                // Reset regex lastIndex
+                hexRegex6.lastIndex = 0;
+                
+                // RGB in CSS
+                while ((match = rgbRegex.exec(cssText)) !== null) {
+                    if (!match[1] || !match[2] || !match[3]) continue;
+                    const hex = rgbToHex(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+                    colorFreq[hex] = (colorFreq[hex] || 0) + 1;
+                }
+                rgbRegex.lastIndex = 0;
+                
+                // CSS variables in external files
+                while ((varMatch = cssVarRegex.exec(cssText)) !== null) {
+                    if (!varMatch[1]) continue;
+                    let val = varMatch[1].trim().toLowerCase();
+                    if (val.startsWith('#')) {
+                        if (val.length === 4) val = '#' + val[1]+val[1]+val[2]+val[2]+val[3]+val[3];
+                        priorityColors.push(val);
+                    } else if (val.startsWith('rgb')) {
+                        const rgbM = val.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+                        if (rgbM && rgbM[1] && rgbM[2] && rgbM[3]) priorityColors.push(rgbToHex(parseInt(rgbM[1]), parseInt(rgbM[2]), parseInt(rgbM[3])));
+                    }
+                }
+                cssVarRegex.lastIndex = 0;
+            } catch { /* CSS file not accessible, skip */ }
+        }
+
+        // ════════════════════════════════════════════════
+        // 6. Build final color list (priority first, then frequency)
+        // ════════════════════════════════════════════════
+        const finalColors: string[] = [];
+        
+        // Add priority colors first (theme-color, CSS vars)
+        for (const c of priorityColors) {
+            if (!isGenericColor(c) && !finalColors.includes(c)) {
+                finalColors.push(c);
+            }
+        }
+        
+        // Then add by frequency (most used first)
+        const sortedByFreq = Object.entries(colorFreq)
             .sort((a, b) => b[1] - a[1])
             .map(p => p[0]);
         
-        for (const c of sortedColors) {
-            if (colors.length >= 10) break;
-            if (!colors.includes(c)) colors.push(c);
+        for (const c of sortedByFreq) {
+            if (finalColors.length >= 6) break;
+            if (!isGenericColor(c) && !finalColors.includes(c)) {
+                finalColors.push(c);
+            }
         }
 
-        // 3. Title & Description (OG preferred)
-        const ogTitle = html.match(/<meta property=["']og:title["'] content=["']([^"']+)["']/i);
+        // ════════════════════════════════════════════════
+        // 7. Title & Description (multiple sources)
+        // ════════════════════════════════════════════════
+        const ogTitle = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i)
+            || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:title["']/i);
+        const twitterTitle = html.match(/<meta[^>]*name=["']twitter:title["'][^>]*content=["']([^"']+)["']/i);
         const tagTitle = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-        const title = (ogTitle?.[1] || tagTitle?.[1] || '').trim();
+        const h1Title = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+        const title = (ogTitle?.[1] || twitterTitle?.[1] || tagTitle?.[1] || h1Title?.[1] || '').trim();
 
-        const ogDesc = html.match(/<meta property=["']og:description["'] content=["']([^"']+)["']/i);
-        const metaDesc = html.match(/<meta name=["']description["'] content=["']([^"']+)["']/i);
+        const ogDesc = html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i)
+            || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:description["']/i);
+        const metaDesc = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i)
+            || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["']/i);
         const description = (ogDesc?.[1] || metaDesc?.[1] || '').trim();
 
-        // 4. Favicon
+        // ════════════════════════════════════════════════
+        // 8. Favicon (best quality first)
+        // ════════════════════════════════════════════════
         const appleIcon = html.match(/<link[^>]*rel=["']apple-touch-icon["'][^>]*href=["']([^"']+)["']/i);
-        const ogImage = html.match(/<meta property=["']og:image["'] content=["']([^"']+)["']/i);
+        const ogImage = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i)
+            || html.match(/<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i);
+        const icon32 = html.match(/<link[^>]*rel=["']icon["'][^>]*sizes=["']32x32["'][^>]*href=["']([^"']+)["']/i);
         const faviconLink = html.match(/<link[^>]*rel=["'](?:icon|shortcut icon)["'][^>]*href=["']([^"']+)["']/i);
         
         let favicon = '';
-        const rawIcon = appleIcon?.[1] || faviconLink?.[1] || ogImage?.[1];
+        const rawIcon = appleIcon?.[1] || icon32?.[1] || faviconLink?.[1] || ogImage?.[1];
         if (rawIcon) {
             try { favicon = new URL(rawIcon, targetUrl).href; } catch { favicon = rawIcon; }
         }
@@ -305,8 +449,8 @@ const handleAnalyze = async (req: any, res: any) => {
             try { favicon = `https://www.google.com/s2/favicons?domain=${new URL(targetUrl).hostname}&sz=256`; } catch {}
         }
 
-        console.log(`[Analysis] Result: "${title}" | ${colors.length} brand colors`);
-        res.json({ colors, title, favicon, description });
+        console.log(`[Analysis] Result: "${title}" | ${finalColors.length} brand colors: ${finalColors.slice(0, 4).join(', ')}`);
+        res.json({ colors: finalColors, title, favicon, description });
     } catch (err: any) {
         console.error(`[Analysis] ❌ Error for ${targetUrl}:`, err.message);
         res.json({ colors: [], title: '', favicon: '', description: '', error: err.message });
