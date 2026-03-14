@@ -1043,6 +1043,42 @@ app.post('/node/notifications/send', authMiddleware, async (req: any, res) => {
     }
 })
 
+// ─── INSTANT WEBHOOK FROM BUBBLE ─────────────────────────────────────────
+app.post('/node/notifications/webhook', express.json(), async (req: any, res) => {
+    try {
+        const { owner, title, body, buildId, targetOs, targetToken, actionUrl, image } = req.body;
+        
+        if (!owner) {
+            return res.status(400).json({ error: "Le champ 'owner' (ID utilisateur) est requis." });
+        }
+
+        // Find user by ID in memory or files
+        const user = users.get(owner) || await bubble.getUserById(owner).catch(() => null);
+        
+        if (!user) {
+            return res.status(404).json({ error: "Utilisateur non trouvé ou non configuré sur ce backend." });
+        }
+
+        const buildParams = {
+            title: title || 'Sans titre',
+            body: body || '',
+            buildId: buildId || 'all',
+            target: targetToken ? targetToken.split(',').map((t: string) => t.trim()).filter(Boolean) : (targetOs || 'all'),
+            image: image || null,
+            actionUrl: actionUrl || null
+        };
+
+        console.log(`[WEBHOOK] 🌐 Received instant Push request from Bubble for owner: ${owner}`);
+        const notif = await sendNotificationCore(user, buildParams);
+        
+        res.status(200).json({ success: true, message: "Notification expédiée instantanément", notification: notif });
+
+    } catch (err: any) {
+        console.error(`[WEBHOOK] 🚨 Instant webhook error:`, err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── Analytics API (données réelles) ────────────────────────────────────
 app.get('/node/analytics', authMiddleware, async (req: any, res) => {
     const userId = req.user.id
