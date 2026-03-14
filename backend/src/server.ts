@@ -1556,10 +1556,19 @@ async function pollExternalNotifications() {
             }
 
             // 2. Fetch notifications from Bubble
-            const constraints = JSON.stringify([
-                { key: 'owner', constraint_type: 'equals', value: user.id },
-                { key: 'status', constraint_type: 'not equal', value: 'Sent' }
-            ]);
+            // For custom client URLs, don't filter by 'owner' (different user system)
+            // For default Site2App URL, filter by owner to isolate each user's queue
+            let constraints;
+            if (user.bubbleApiUrl) {
+                constraints = JSON.stringify([
+                    { key: 'status', constraint_type: 'not equal', value: 'Sent' }
+                ]);
+            } else {
+                constraints = JSON.stringify([
+                    { key: 'owner', constraint_type: 'equals', value: user.id },
+                    { key: 'status', constraint_type: 'not equal', value: 'Sent' }
+                ]);
+            }
             
             const fetchUrl = `${queueUrl}?constraints=${encodeURIComponent(constraints)}`;
             console.log(`[Polling] Checking ${user.email} -> ${queueUrl}`);
