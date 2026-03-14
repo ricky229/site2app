@@ -982,6 +982,14 @@ const sendNotificationCore = async (user: any, payload: any) => {
 
     // Sync to Bubble (History) - don't let this block/fail the response
     try {
+        let customBubbleUrl = '';
+        if (user.bubbleApiUrl) {
+            const parts = user.bubbleApiUrl.split('/api/1.1/obj');
+            if (parts.length > 0) {
+                customBubbleUrl = parts[0] + '/api/1.1/obj';
+            }
+        }
+        
         await bubble.createNotification({
             title: notif.title,
             body: notif.body,
@@ -993,7 +1001,8 @@ const sendNotificationCore = async (user: any, payload: any) => {
             status: 'Sent',
             sentCount: notif.stats?.sent || 0,
             deliveredCount: notif.stats?.delivered || 0
-        });
+        }, customBubbleUrl);
+        console.log(`[CORE] ✅ History synced to Bubble: ${customBubbleUrl || 'default'}`);
     } catch (e: any) {
         console.error(`[CORE] Bubble History Sync Failed:`, e.message);
     }
@@ -1559,43 +1568,12 @@ async function pollExternalNotifications() {
                                 body: JSON.stringify({ status: 'Sent' })
                             });
                             if (!updateRes.ok) console.warn(`[Polling] Failed to update status for ${notif._id}`);
+                            else console.log(`[Polling] ✅ Queue status updated for ${notif._id}`);
                         } catch (e) {
                             console.error(`[Polling] Error updating status:`, e);
                         }
-
-                        // Create History Record
-                        try {
-                            console.log(`[Polling] Creating history entry at ${historyUrl}`);
-                            const historyRes = await fetch(historyUrl, {
-                                method: 'POST',
-                                headers: { 
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${bubbleToken}`
-                                },
-                                body: JSON.stringify({
-                                    title: reqBody.title,
-                                    body: reqBody.body,
-                                    image: reqBody.image || '',
-                                    targetUrl: reqBody.actionUrl || '',
-                                    targetApp: reqBody.buildId || 'all',
-                                    targetOs: Array.isArray(reqBody.target) ? 'specific' : reqBody.target,
-                                    targetToken: notif.targetToken || '',
-                                    status: 'Sent',
-                                    owner: user.id,
-                                    sentAt: new Date().toISOString()
-                                })
-                            });
-                            if (!historyRes.ok) {
-                                const errTxt = await historyRes.text();
-                                console.warn(`[Polling] History creation failed: ${historyRes.status} - ${errTxt}`);
-                            } else {
-                                console.log(`[Polling] ✅ History record created for ${notif._id}`);
-                            }
-                        } catch (e) {
-                            console.error(`[Polling] Error creating history:`, e);
-                        }
                     } else {
-                        console.warn(`[Polling] ⚠️ Notification dispatch returned null (possibly no targets found)`);
+                        console.warn(`[Polling] ⚠️ Notification dispatch returned null`);
                     }
                 } catch (e: any) {
                     console.error(`[Polling] 🚨 Dispatch error for ${notif._id}:`, e.message);

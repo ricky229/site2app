@@ -170,10 +170,11 @@ export class BubbleService {
         return data?.response?.results || [];
     }
 
-    async createNotification(notifData: any) {
-        const res = await fetch(`${this.baseUrl}/notification`, {
+    async createNotification(notifData: any, customUrl?: string, customToken?: string) {
+        const url = `${customUrl || this.baseUrl}/notification`;
+        const res = await fetch(url, {
             method: 'POST',
-            headers: this.getHeaders(),
+            headers: this.getHeaders(customToken),
             body: JSON.stringify(notifData)
         });
         const data = await res.json() as any;
@@ -181,10 +182,11 @@ export class BubbleService {
         return data;
     }
 
-    async updateNotificationStatus(notifId: string, status: string, sentCount: number, deliveredCount: number) {
-        const res = await fetch(`${this.baseUrl}/notification/${notifId}`, {
+    async updateNotificationStatus(notifId: string, status: string, sentCount: number, deliveredCount: number, customUrl?: string, customToken?: string) {
+        const url = `${customUrl || this.baseUrl}/notification/${notifId}`;
+        const res = await fetch(url, {
             method: 'PATCH',
-            headers: this.getHeaders(),
+            headers: this.getHeaders(customToken),
             body: JSON.stringify({
                 status,
                 sentCount,

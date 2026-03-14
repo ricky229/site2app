@@ -14,7 +14,8 @@ import { StatCard } from '../components/ui/Card'
 import { formatRelativeTime, formatNumber } from '../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api, { getUserById, updateUser, getDevices, getAppsByUser, dataApi, nodeApi } from '../lib/api'
+import axios from 'axios'
+import api, { getUserById, updateUser, getDevices, getAppsByUser, dataApi, nodeApi, BUBBLE_TOKEN } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import type { App } from '../types'
 
@@ -46,9 +47,30 @@ export default function NotificationsPage() {
         queryKey: ['notifications', user?.id], 
         queryFn: async () => {
             if (!user?.id) return []
+            
+            // Priority: User's custom URL, then default dataApi
+            let baseUrl = 'https://site2app.online/api/1.1/obj'
+            if (user.bubbleApiUrl) {
+                const parts = user.bubbleApiUrl.split('/api/1.1/obj');
+                if (parts.length > 0) baseUrl = parts[0] + '/api/1.1/obj';
+            }
+
             const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
-            const res = await dataApi.get(`/notification?constraints=${encodeURIComponent(constraints)}`)
-            return res.data?.response?.results || []
+            const res = await axios.get(`${baseUrl}/notification?constraints=${encodeURIComponent(constraints)}`, {
+                headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` }
+            })
+            
+            const results = res.data?.response?.results || []
+            return results.map((n: any) => ({
+                ...n,
+                stats: n.stats || {
+                    sent: n.sentCount || 0,
+                    delivered: n.deliveredCount || 0,
+                    deliveryRate: n.sentCount > 0 ? Math.round((n.deliveredCount || 0) / n.sentCount * 100) : 0,
+                    openRate: 0,
+                    clickRate: 0
+                }
+            }))
         },
         enabled: !!user?.id
     })
@@ -129,12 +151,20 @@ export default function NotificationsPage() {
     const sendMutation = useMutation({
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
-            // Prépare le payload pour Bubble (en s'assurant que ce sont des chaînes de caractères)
+            
+            // Priority: User's custom URL, then default dataApi
+            let baseUrl = 'https://site2app.online/api/1.1/obj'
+            if (user.bubbleApiUrl) {
+                const parts = user.bubbleApiUrl.split('/api/1.1/obj');
+                if (parts.length > 0) baseUrl = parts[0] + '/api/1.1/obj';
+            }
+
+            // Prépare le payload pour Bubble
             const isSpecific = Array.isArray(payload.target);
             const targetStr = isSpecific ? 'specific' : String(payload.target || 'all');
             const tokenStr = isSpecific ? payload.target.join(',') : '';
 
-            return await dataApi.post('/notification_queue', {
+            const res = await axios.post(`${baseUrl}/notification_queue`, {
                 title: String(payload.title || ''),
                 body: String(payload.body || ''),
                 owner: String(user.id || ''),
@@ -143,14 +173,16 @@ export default function NotificationsPage() {
                 targetToken: tokenStr,
                 image: String(payload.image || ''),
                 targetUrl: String(payload.actionUrl || '')
+            }, {
+                headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}`, 'Content-Type': 'application/json' }
             })
+            return res.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
             toast.success(form.scheduled ? '📅 Notification programmée !' : '🚀 Notification enregistrée !')
             setForm(f => ({ ...f, title: '', body: '' }))
-            setSelectedDevices([]) // Nettoyage
-            // On lance le polling node immédiatement pour ne pas attendre 15s
+            setSelectedDevices([]) 
             pollMutation.mutate()
             if (!form.scheduled) setTab('history')
         },
