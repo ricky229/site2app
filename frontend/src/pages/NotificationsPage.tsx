@@ -134,6 +134,92 @@ export default function NotificationsPage() {
         }
     }, [userProfile])
 
+    // ─── Auto-sync: Read client's notification table and forward to notification_queue ───
+    useEffect(() => {
+        if (!user?.bubbleApiUrl || !user?.id) return;
+
+        // Extract base URL from the stored URL (which may contain /notification_queue or /notification)
+        let clientBase = user.bubbleApiUrl;
+        // Normalize: extract the base obj URL
+        const objMatch = clientBase.match(/(https?:\/\/[^/]+(?:\/version-test|\/version-live)?)\/api\/1\.1\/obj/);
+        if (!objMatch) return;
+        const clientObjUrl = objMatch[0]; // e.g. https://bathospro.com/version-test/api/1.1/obj
+
+        const syncNotifications = async () => {
+            try {
+                // 1. Read unprocessed notifications from client's "notification" table
+                const constraints = JSON.stringify([
+                    { key: 'status', constraint_type: 'not equal', value: 'synced' }
+                ]);
+                const res = await axios.get(
+                    `${clientObjUrl}/notification?constraints=${encodeURIComponent(constraints)}&sort_field=Created%20Date&descending=true&limit=20`,
+                    { headers: { 'Content-Type': 'application/json' } }
+                );
+                const clientNotifs = res.data?.response?.results || [];
+                if (clientNotifs.length === 0) return;
+
+                // 2. For each unprocessed notification, create an entry in Site2App's notification_queue
+                for (const notif of clientNotifs) {
+                    const title = notif.title || notif.Title || 'Notification';
+                    const body = notif.body || notif.Body || notif.message || '';
+                    const targetToken = notif.targetToken || notif.target_token || notif.pushToken || '';
+                    const image = notif.image || notif.Image || '';
+                    const targetUrl = notif.targetUrl || notif.url || notif.actionUrl || '';
+
+                    // If no targetToken specified, use ALL registered devices
+                    let finalTokens = targetToken;
+                    if (!finalTokens && registeredDevices.length > 0) {
+                        finalTokens = registeredDevices
+                            .map((d: any) => d.pushToken)
+                            .filter((t: string) => t && t.includes(':'))
+                            .join(',');
+                    }
+
+                    if (!finalTokens) continue; // No tokens to send to
+
+                    // Create in Site2App's notification_queue (this triggers the Database Trigger)
+                    await dataApi.post('/notification_queue', {
+                        title,
+                        body,
+                        owner: String(user.id),
+                        targetToken: finalTokens,
+                        image,
+                        targetUrl,
+                        targetApp: 'all',
+                        targetOs: 'all'
+                    });
+
+                    // 3. Mark as synced on the client's Bubble (so we don't re-process)
+                    const notifId = notif._id || notif.id;
+                    if (notifId) {
+                        try {
+                            await axios.patch(
+                                `${clientObjUrl}/notification/${notifId}`,
+                                { status: 'synced' },
+                                { headers: { 'Content-Type': 'application/json' } }
+                            );
+                        } catch (e) {
+                            console.warn('Could not mark notification as synced on client Bubble:', e);
+                        }
+                    }
+                }
+
+                // Refresh notifications list
+                queryClient.invalidateQueries({ queryKey: ['notifications'] });
+                if (clientNotifs.length > 0) {
+                    console.log(`[Sync] ${clientNotifs.length} notification(s) synced from client app`);
+                }
+            } catch (err) {
+                console.warn('[Sync] Could not read client notifications:', err);
+            }
+        };
+
+        // Run sync immediately, then every 30 seconds
+        syncNotifications();
+        const interval = setInterval(syncNotifications, 30000);
+        return () => clearInterval(interval);
+    }, [user?.bubbleApiUrl, user?.id, registeredDevices])
+
     const firebaseMutation = useMutation({
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
@@ -686,18 +772,18 @@ export default function NotificationsPage() {
                         <hr className="my-6 border-slate-200 dark:border-slate-800" />
 
                         <div>
-                            <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                            <h2 className="text-lg font-bold flex items-center gap-2">
                                 <Globe size={24} style={{ color: '#10b981' }} />
                                 URL du Backend (Data API Bubble)
                             </h2>
                             <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                Indiquez ici l'URL de votre API de Données Bubble. Cette URL permet notamment de récupérer l'historique et de lier correctement les événements (Optionnel mais recommandé).
+                                Indiquez ici l'URL de base de votre API Bubble (jusqu'à <code>/api/1.1/obj</code>). Quand une entrée est créée dans votre table <strong>"notification"</strong> (ex: rechargement, commande), le système la détecte automatiquement et envoie le Push via Firebase.
                             </p>
                         </div>
 
                         <Input
                             label="URL de l'API (Bubble Data API)"
-                            placeholder="https://votre-site.com/api/1.1/obj/notification_queue"
+                            placeholder="https://votre-site.com/api/1.1/obj"
                             value={firebaseConfig.bubbleApiUrl}
                             onChange={e => {
                                 let val = e.target.value;
@@ -708,6 +794,9 @@ export default function NotificationsPage() {
                             }}
                             icon={<Link size={16} />}
                         />
+                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                            Exemple : <code>https://bathospro.com/version-test/api/1.1/obj</code> — Le système lira automatiquement les nouvelles entrées dans votre table "notification" et les enverra comme Push.
+                        </p>
 
                         <Button
                             onClick={() => firebaseMutation.mutate(firebaseConfig)}
