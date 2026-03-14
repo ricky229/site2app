@@ -91,14 +91,30 @@ export default function NotificationsPage() {
         enabled: !!user?.id
     })
     const { data: registeredDevices = [] } = useQuery<any[]>({ 
-        queryKey: ['devices'], 
+        queryKey: ['devices', user?.bubbleApiUrl], 
         queryFn: async () => {
-            const results = await getDevices();
-            return results.map((d: any) => ({
+            // Use user's custom Bubble URL if configured
+            let customBaseUrl = '';
+            if (user?.bubbleApiUrl) {
+                const parts = user.bubbleApiUrl.split('/api/1.1/obj');
+                if (parts.length > 0) customBaseUrl = parts[0] + '/api/1.1/obj';
+            }
+            const results = await getDevices(undefined, customBaseUrl);
+            const mapped = results.map((d: any) => ({
                 ...d,
                 id: d._id || d.id,
                 pushToken: d.pushToken || d.push_token || d.id
-            })).filter((d: any) => d.pushToken && d.pushToken.includes(':')); // Only valid tokens
+            })).filter((d: any) => d.pushToken && d.pushToken.includes(':')); // Only valid FCM tokens
+            
+            // Deduplicate by pushToken (keep the most recent entry)
+            const seen = new Map<string, any>();
+            for (const d of mapped) {
+                const existing = seen.get(d.pushToken);
+                if (!existing || new Date(d.Modified_Date || d.Created_Date || 0) > new Date(existing.Modified_Date || existing.Created_Date || 0)) {
+                    seen.set(d.pushToken, d);
+                }
+            }
+            return Array.from(seen.values());
         } 
     })
 
@@ -158,7 +174,19 @@ export default function NotificationsPage() {
             // Prépare le payload pour Bubble
             const isSpecific = Array.isArray(payload.target);
             const targetStr = isSpecific ? 'specific' : String(payload.target || 'all');
-            const tokenStr = isSpecific ? payload.target.join(',') : '';
+            
+            // IMPORTANT: When sending to 'all', we need to collect ALL device tokens
+            // so the Bubble Database Trigger has actual tokens to iterate over
+            let tokenStr = '';
+            if (isSpecific) {
+                tokenStr = payload.target.join(',');
+            } else {
+                // Fetch all valid device tokens for "send to all"
+                const allTokens = registeredDevices
+                    .map((d: any) => d.pushToken)
+                    .filter((t: string) => t && t.includes(':'));
+                tokenStr = allTokens.join(',');
+            }
 
             // If custom URL, try without token
             const headers: any = { 'Content-Type': 'application/json' }

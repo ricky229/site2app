@@ -72,13 +72,20 @@ export async function updateUser(userId: string, userData: any) {
     return res.data
 }
 
-export async function getDevices(appId?: string) {
+export async function getDevices(appId?: string, customBaseUrl?: string) {
     let url = '/device'
     if (appId) {
         const constraints = JSON.stringify([{ key: 'buildId', constraint_type: 'equals', value: appId }])
         url += `?constraints=${encodeURIComponent(constraints)}`
     }
     try {
+        if (customBaseUrl) {
+            // Use the user's own Bubble URL to fetch their app's devices
+            const res = await axios.get(`${customBaseUrl}${url}`, {
+                headers: { 'Content-Type': 'application/json' }
+            })
+            return res.data?.response?.results || []
+        }
         const res = await dataApi.get(url)
         return res.data?.response?.results || []
     } catch {

@@ -1657,21 +1657,72 @@ try {
     new Thread(new Runnable() {
         public void run() {
         try {
-            // 1. Enregistrement direct sur Bubble (pour visibilité immédiate)
+            // 1. Enregistrement direct sur Bubble (anti-doublon: cherche d'abord si le token existe)
             if (!"${this.bubbleApiUrl}".isEmpty()) {
                 android.util.Log.d("S2A_PUSH", "Registering to Bubble: ${this.bubbleApiUrl}");
-                java.net.URL url = new java.net.URL("${this.bubbleApiUrl}/device");
-                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                conn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
-                conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
-                conn.setDoOutput(true);
-                String jsonInputString = "{\\"pushToken\\": \\"" + token + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
-                try(java.io.OutputStream os = conn.getOutputStream()) {
-                    os.write(jsonInputString.getBytes("utf-8"), 0, jsonInputString.length());
+                
+                // Step A: Search for existing device with same pushToken
+                String searchConstraint = "[{\\"key\\":\\"pushToken\\",\\"constraint_type\\":\\"equals\\",\\"value\\":\\"" + token + "\\"}]";
+                String encodedConstraint = java.net.URLEncoder.encode(searchConstraint, "utf-8");
+                java.net.URL searchUrl = new java.net.URL("${this.bubbleApiUrl}/device?constraints=" + encodedConstraint);
+                java.net.HttpURLConnection searchConn = (java.net.HttpURLConnection) searchUrl.openConnection();
+                searchConn.setRequestMethod("GET");
+                searchConn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                searchConn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
+                searchConn.setRequestProperty("User-Agent", "Site2App-Native-Android");
+                
+                int searchCode = searchConn.getResponseCode();
+                String existingId = null;
+                
+                if (searchCode == 200) {
+                    java.io.InputStream is = searchConn.getInputStream();
+                    java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(is, "utf-8"));
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) sb.append(line);
+                    String responseBody = sb.toString();
+                    // Simple JSON parsing: find "_id" in first result
+                    if (responseBody.contains("\\"_id\\"")) {
+                        int idx = responseBody.indexOf("\\"_id\\":\\"");
+                        if (idx > 0) {
+                            int start = idx + 7;
+                            int end = responseBody.indexOf("\\"", start);
+                            if (end > start) existingId = responseBody.substring(start, end);
+                        }
+                    }
                 }
-                android.util.Log.d("S2A_PUSH", "Bubble response: " + conn.getResponseCode());
+                
+                if (existingId != null && !existingId.isEmpty()) {
+                    // Step B: Device exists -> PATCH to update timestamp
+                    android.util.Log.d("S2A_PUSH", "Device already registered, updating: " + existingId);
+                    java.net.URL patchUrl = new java.net.URL("${this.bubbleApiUrl}/device/" + existingId);
+                    java.net.HttpURLConnection patchConn = (java.net.HttpURLConnection) patchUrl.openConnection();
+                    patchConn.setRequestMethod("PATCH");
+                    patchConn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                    patchConn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
+                    patchConn.setRequestProperty("User-Agent", "Site2App-Native-Android");
+                    patchConn.setDoOutput(true);
+                    String patchJson = "{\\"pushToken\\": \\"" + token + "\\", \\"os\\": \\"android\\"}";
+                    try(java.io.OutputStream os = patchConn.getOutputStream()) {
+                        os.write(patchJson.getBytes("utf-8"), 0, patchJson.length());
+                    }
+                    android.util.Log.d("S2A_PUSH", "Bubble PATCH response: " + patchConn.getResponseCode());
+                } else {
+                    // Step C: Device does not exist -> POST to create
+                    android.util.Log.d("S2A_PUSH", "New device, creating entry");
+                    java.net.URL createUrl = new java.net.URL("${this.bubbleApiUrl}/device");
+                    java.net.HttpURLConnection createConn = (java.net.HttpURLConnection) createUrl.openConnection();
+                    createConn.setRequestMethod("POST");
+                    createConn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                    createConn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
+                    createConn.setRequestProperty("User-Agent", "Site2App-Native-Android");
+                    createConn.setDoOutput(true);
+                    String jsonInputString = "{\\"pushToken\\": \\"" + token + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
+                    try(java.io.OutputStream os = createConn.getOutputStream()) {
+                        os.write(jsonInputString.getBytes("utf-8"), 0, jsonInputString.length());
+                    }
+                    android.util.Log.d("S2A_PUSH", "Bubble POST response: " + createConn.getResponseCode());
+                }
             }
             
             // 2. Enregistrement sur le backend Node (pour routage FCM)
