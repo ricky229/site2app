@@ -762,39 +762,52 @@ export default function NotificationsPage() {
                         <div className="border p-5 rounded-xl" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--body-bg)' }}>
                             <h3 className="font-bold mb-3 flex items-center gap-2">
                                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: 'var(--brand-500)' }}>2</span>
-                                Déclencher une notification instantanée via Webhook
+                                Déclencher une notification 100% depuis Bubble (Recommandé)
                             </h3>
                             <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                Puisque l'envoi direct depuis votre site vers Firebase nécessite une clé cryptée (JWT), l'approche la plus performante est que <strong>Bubble déclenche un Webhook</strong> (Appel API vers ce serveur) pour envoyer le Push instantanément.
+                                L'envoi direct depuis Bubble vers Firebase nécessite une clé cryptée (un token OAuth2 valide 1 heure). Voici comment configurer ça proprement dans Bubble pour un envoi instantané en 24h/24, sans aucun serveur intermédiaire.
                             </p>
 
-                            <h4 className="font-bold text-sm mb-2">Sur Bubble.io :</h4>
+                            <h4 className="font-bold text-sm mb-2">Étape A : Générer le Jeton (Token) Google</h4>
                             <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                <li>Allez dans <strong>Plugins &gt; API Connector</strong>, et créez un appel API (Action / POST) nommé "Send Push".</li>
-                                <li>L'URL du webhook est la suivante :</li>
+                                <li>Installez le plugin gratuit <strong>Google Service Account</strong> sur Bubble (ou JWT Generator).</li>
+                                <li>Dans un <strong>Backend Workflow</strong> (ou sur une page), utilisez l'action de ce plugin pour générer un Token en utilisant votre fichier JSON Firebase (le même que celui fourni dans "Configuration Firebase").</li>
+                                <li>Scopes à utiliser : <code>https://www.googleapis.com/auth/cloud-platform</code></li>
+                            </ul>
+
+                            <h4 className="font-bold text-sm mb-2">Étape B : Créer l'Appel API vers Google (FCM)</h4>
+                            <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
+                                <li>Allez dans <strong>Plugins &gt; API Connector</strong>, et créez un appel API nommé "Firebase FCM API", puis un call (Action / POST) nommé "Send Push".</li>
                             </ul>
                             
                             <code className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded text-xs font-mono font-semibold border mb-4 inline-block w-full" style={{ borderColor: 'var(--border)' }}>
-                                POST https://votre-backend-site2app.onrender.com/node/notifications/webhook
+                                POST https://fcm.googleapis.com/v1/projects/VOTRE_FIREBASE_PROJECT_ID/messages:send
                             </code>
 
                             <h4 className="font-bold text-sm mb-2">Le Header et le Body :</h4>
                             <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                <li><strong>Header</strong> : <code>Content-Type: application/json</code></li>
+                                <li><strong>Header 1</strong> : <code>Content-Type: application/json</code></li>
+                                <li><strong>Header 2 (Décoché Private)</strong> : <code>Authorization: Bearer &lt;token&gt;</code></li>
                                 <li><strong>Body JSON</strong> :</li>
                             </ul>
                             
                             <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs font-mono border mb-4 overflow-x-auto" style={{ borderColor: 'var(--border)' }}>
 {`{
-  "owner": "VOTRE_ID_USER_BUBBLE",
-  "title": "Super offre !",
-  "body": "Découvrez notre nouveauté",
-  "targetToken": "Token_FCM_ici_séparés_par_virgule"
+  "message": {
+    "token": "<device_token>",
+    "notification": {
+      "title": "<title>",
+      "body": "<body>"
+    },
+    "data": {
+      "actionUrl": "<url>"
+    }
+  }
 }`}
                             </pre>
                             
                             <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>
-                                Le champ <code>owner</code> est crucial car il permet au Backend de retrouver votre configuration d'envoi et d'enregistrer l'historique dans votre propre Bubble. Vous pouvez désormais déclencher l'envoi Push depuis n'importe quel Workflow Bubble (quand un utilisateur reçoit un message, une commande, etc.) !
+                                <strong>Important</strong> : Décochez "Private" sur tous les paramètres dynamiques en bas du call `&lt;param&gt;`. Vous pourrez ainsi appeler cette action dans n'importe quel Workflow Bubble, en passant dynamiquement le Token OAuth2 généré à l'étape A, et le Push partira en 1 seconde à votre utilisateur !
                             </p>
                         </div>
                     </div>
