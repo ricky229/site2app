@@ -35,30 +35,61 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 }
 
 // Helper to fetch notifications from Bubble Data API
-async function getUserNotifications(userId: string) {
+async function getUserNotifications(user: any) {
+    if (!user?.id) return []
     try {
-        const constraints = JSON.stringify([{ key: 'userId', constraint_type: 'equals', value: userId }])
-        // Since we don't have a helper in api.ts for this, use raw fetch to avoid changing api.ts if possible
-        const BUBBLE_BASE = 'https://site2app.online/api/1.1/obj'
-        const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
-        const res = await axios.get(`${BUBBLE_BASE}/notification?constraints=${encodeURIComponent(constraints)}`, {
-            headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` }
-        })
+        let baseUrl = 'https://site2app.online/api/1.1/obj'
+        if (user.bubbleApiUrl) {
+            const parts = user.bubbleApiUrl.split('/api/1.1/obj')
+            if (parts.length > 0) baseUrl = parts[0] + '/api/1.1/obj'
+        }
+
+        const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
+        const headers: any = {}
+        if (!user.bubbleApiUrl) {
+            headers['Authorization'] = `Bearer 59ef5eb57d786ff8eced03244342f32e`
+        }
+
+        const res = await axios.get(`${baseUrl}/notification?constraints=${encodeURIComponent(constraints)}`, { headers })
         return res.data?.response?.results || []
     } catch {
         return []
     }
 }
 
-async function getUserDevices(userId: string) {
+async function getUserDevices(user: any) {
+    if (!user?.id) return []
     try {
-        const constraints = JSON.stringify([{ key: 'userId', constraint_type: 'equals', value: userId }])
-        const BUBBLE_BASE = 'https://site2app.online/api/1.1/obj'
-        const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
-        const res = await axios.get(`${BUBBLE_BASE}/device?constraints=${encodeURIComponent(constraints)}`, {
-            headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` }
-        })
-        return res.data?.response?.results || []
+        let baseUrl = 'https://site2app.online/api/1.1/obj'
+        if (user.bubbleApiUrl) {
+            const parts = user.bubbleApiUrl.split('/api/1.1/obj')
+            if (parts.length > 0) baseUrl = parts[0] + '/api/1.1/obj'
+        }
+
+        const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
+        const headers: any = {}
+        if (!user.bubbleApiUrl) {
+            headers['Authorization'] = `Bearer 59ef5eb57d786ff8eced03244342f32e`
+        }
+
+        const res = await axios.get(`${baseUrl}/device?constraints=${encodeURIComponent(constraints)}`, { headers })
+        
+        // Deduplicate devices by pushToken
+        const rawResults = res.data?.response?.results || []
+        const mapped = rawResults.map((d: any) => ({
+            ...d,
+            id: d._id || d.id,
+            pushToken: d.pushToken || d.push_token || d.id
+        })).filter((d: any) => d.pushToken && d.pushToken.includes(':'));
+        
+        const seen = new Map<string, any>();
+        for (const d of mapped) {
+            const existing = seen.get(d.pushToken);
+            if (!existing || new Date(d.Modified_Date || d.Created_Date || 0) > new Date(existing.Modified_Date || existing.Created_Date || 0)) {
+                seen.set(d.pushToken, d);
+            }
+        }
+        return Array.from(seen.values());
     } catch {
         return []
     }
@@ -76,8 +107,8 @@ export default function AnalyticsPage() {
              // Fetch real data from Bubble
              const [apps, notifs, devices] = await Promise.all([
                  getAppsByUser(user.id),
-                 getUserNotifications(user.id),
-                 getUserDevices(user.id)
+                 getUserNotifications(user),
+                 getUserDevices(user)
              ])
              
              const periodDays = parseInt(period) || 30
@@ -89,8 +120,8 @@ export default function AnalyticsPage() {
              const periodDevices = devices.filter((d: any) => new Date(d['Created Date'] || d.createdAt) >= periodStart)
 
              // Calculate stats
-             const totalSent = periodNotifs.reduce((sum: number, n: any) => sum + (n.sent || 0), 0)
-             const totalDelivered = periodNotifs.reduce((sum: number, n: any) => sum + (n.delivered || 0), 0)
+             const totalSent = periodNotifs.reduce((sum: number, n: any) => sum + (n.sentCount || n.sent || 0), 0)
+             const totalDelivered = periodNotifs.reduce((sum: number, n: any) => sum + (n.deliveredCount || n.delivered || 0), 0)
              const avgDeliveryRate = totalSent > 0 ? Math.round((totalDelivered / totalSent) * 100) : 0
              
              const summary = {
@@ -114,8 +145,8 @@ export default function AnalyticsPage() {
                  if (isNaN(d1.getTime())) return;
                  const key = d1.toISOString().split('T')[0]
                  if (dailyData[key]) {
-                     dailyData[key].sent += (n.sent || 0)
-                     dailyData[key].delivered += (n.delivered || 0)
+                     dailyData[key].sent += (n.sentCount || n.sent || 0)
+                     dailyData[key].delivered += (n.deliveredCount || n.delivered || 0)
                  }
              })
              
@@ -152,8 +183,8 @@ export default function AnalyticsPage() {
              // Apps stats mapping
              const appStats = apps.map((a: any) => {
                  const appNotifs = notifs.filter((n: any) => n.appId === a._id)
-                 const aSent = appNotifs.reduce((sum: number, n: any) => sum + (n.sent || 0), 0)
-                 const aDeliv = appNotifs.reduce((sum: number, n: any) => sum + (n.delivered || 0), 0)
+                 const aSent = appNotifs.reduce((sum: number, n: any) => sum + (n.sentCount || n.sent || 0), 0)
+                 const aDeliv = appNotifs.reduce((sum: number, n: any) => sum + (n.deliveredCount || n.delivered || 0), 0)
                  return {
                      id: a._id,
                      name: a.appName || a.name || 'App',
@@ -164,14 +195,18 @@ export default function AnalyticsPage() {
              })
              
              // Top notifs
-             const topNotifications = periodNotifs.sort((a: any, b: any) => new Date(b['Created Date'] || b.createdAt).getTime() - new Date(a['Created Date'] || a.createdAt).getTime()).slice(0, 5).map((n: any) => ({
-                 id: n._id,
-                 title: n.title,
-                 sent: n.sent || 0,
-                 delivered: n.delivered || 0,
-                 deliveryRate: n.sent > 0 ? Math.round(((n.delivered || 0) / n.sent) * 100) : 0,
-                 sentAt: n['Created Date'] || n.createdAt
-             }))
+             const topNotifications = periodNotifs.sort((a: any, b: any) => new Date(b['Created Date'] || b.createdAt).getTime() - new Date(a['Created Date'] || a.createdAt).getTime()).slice(0, 5).map((n: any) => {
+                 const nSent = n.sentCount || n.sent || 0;
+                 const nDeliv = n.deliveredCount || n.delivered || 0;
+                 return {
+                     id: n._id,
+                     title: n.title,
+                     sent: nSent,
+                     delivered: nDeliv,
+                     deliveryRate: nSent > 0 ? Math.round((nDeliv / nSent) * 100) : 0,
+                     sentAt: n['Created Date'] || n.createdAt
+                 }
+             })
              
              // Recent devices fallback
              const recentDevices = periodDevices.slice(0, 5).map((d: any) => ({
