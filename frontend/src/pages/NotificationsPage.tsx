@@ -4,7 +4,7 @@ import {
     Bell, Send, Clock, Users, BarChart2, Plus, Image,
     Link, AlertCircle, CheckCircle, Loader2, Trash2, Copy,
     ChevronDown, Filter, Globe, Smartphone, Apple,
-    Shield, Sparkles, Upload, Save, Settings, Play, Image as ImageIcon, RefreshCw
+    Shield, Sparkles, Upload, Save, Settings, Play, Image as ImageIcon
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -144,18 +144,6 @@ export default function NotificationsPage() {
         }
     })
 
-    const pollMutation = useMutation({
-        mutationFn: async () => await nodeApi.get('notifications/poll'),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['notifications'] })
-            toast.success('Worker activé ! Les messages arrivent...')
-        },
-        onError: (err: any) => {
-            const msg = err?.response?.data?.error || err?.message || 'Le serveur ne répond pas';
-            toast.error(`Erreur: ${msg}`);
-        }
-    })
-
     const sendMutation = useMutation({
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
@@ -197,7 +185,6 @@ export default function NotificationsPage() {
             toast.success(form.scheduled ? '📅 Notification programmée !' : '🚀 Notification enregistrée !')
             setForm(f => ({ ...f, title: '', body: '' }))
             setSelectedDevices([]) 
-            pollMutation.mutate()
             if (!form.scheduled) setTab('history')
         },
         onError: (err: any) => {
@@ -282,16 +269,8 @@ export default function NotificationsPage() {
             {/* Stats */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <StatCard title="Notifications envoyées" value={formatNumber(totalSent)} change={0} icon={<Send size={20} />} color="#3461f5" />
-                <StatCard title="Appareils actifs" value={formatNumber(devicesCount)} change={0} icon={<CheckCircle size={20} />} color="#10b981" />
-                <button 
-                    onClick={() => pollMutation.mutate()}
-                    disabled={pollMutation.isPending}
-                    className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white border border-dashed border-brand-200 hover:bg-brand-50 transition-all text-brand-600 disabled:opacity-50"
-                >
-                    <RefreshCw size={24} className={pollMutation.isPending ? 'animate-spin' : ''} />
-                    <span className="text-[10px] uppercase font-bold mt-2">Force Poll</span>
-                </button>
-            </div>
+            <StatCard title="Appareils actifs" value={formatNumber(devicesCount)} change={0} icon={<CheckCircle size={20} />} color="#10b981" />
+        </div>
 
             {/* Tabs */}
             <div className="flex gap-2 mb-6 border-b overflow-x-auto whitespace-nowrap hide-scroll" style={{ borderColor: 'var(--border)' }}>
@@ -681,10 +660,10 @@ export default function NotificationsPage() {
                         <div>
                             <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
                                 <Globe size={24} style={{ color: '#10b981' }} />
-                                Liaison Bubble.io (Polling)
+                                URL du Backend (Data API Bubble)
                             </h2>
                             <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                Indiquez ici l'URL de l'API de Données Bubble (Data API) où se trouve la "Notification Queue". Site2App interrogera cette URL automatiquement toutes les 15 secondes pour récupérer les notifications en attente.
+                                Indiquez ici l'URL de votre API de Données Bubble. Cette URL permet notamment de récupérer l'historique et de lier correctement les événements (Optionnel mais recommandé).
                             </p>
                         </div>
 
@@ -783,28 +762,39 @@ export default function NotificationsPage() {
                         <div className="border p-5 rounded-xl" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--body-bg)' }}>
                             <h3 className="font-bold mb-3 flex items-center gap-2">
                                 <span className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: 'var(--brand-500)' }}>2</span>
-                                Déclencher une notification (Méthode sans blocage)
+                                Déclencher une notification instantanée via Webhook
                             </h3>
                             <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                Puisque l'envoi direct depuis votre site vers votre ordinateur (localhost) est souvent bloqué par les pare-feux, Site2App utilise une <strong>file d'attente (Polling)</strong>. C'est Site2App qui viendra récupérer les notifications sur votre site toutes les 15 secondes.
+                                Puisque l'envoi direct depuis votre site vers Firebase nécessite une clé cryptée (JWT), l'approche la plus performante est que <strong>Bubble déclenche un Webhook</strong> (Appel API vers ce serveur) pour envoyer le Push instantanément.
                             </p>
 
                             <h4 className="font-bold text-sm mb-2">Sur Bubble.io :</h4>
                             <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                <li>Allez dans <strong>Data &gt; Data Types</strong> et créez un type <code>notification_queue</code>.</li>
-                                <li>Ajoutez-y 3 champs : <code>title</code> (text), <code>body</code> (text), et <code>targetToken</code> (text).</li>
-                                <li>Allez dans <strong>Settings &gt; API</strong>, cochez "Enable Data API" et cochez <code>notification_queue</code>.</li>
-                                <li>Créez simplement une ligne dans cette table via un Workflow Bubble quand vous voulez envoyer une notification.</li>
+                                <li>Allez dans <strong>Plugins &gt; API Connector</strong>, et créez un appel API (Action / POST) nommé "Send Push".</li>
+                                <li>L'URL du webhook est la suivante :</li>
                             </ul>
+                            
+                            <code className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded text-xs font-mono font-semibold border mb-4 inline-block w-full" style={{ borderColor: 'var(--border)' }}>
+                                POST https://votre-backend-site2app.onrender.com/node/notifications/webhook
+                            </code>
 
-                            <h4 className="font-bold text-sm mb-2">Dans Site2App (Cet outil) :</h4>
-                            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                Allez dans l'onglet <strong>Configuration Firebase</strong> de cette page, et tout en bas dans la section "Liaison Bubble.io", collez l'URL de votre Data API Bubble.<br /><br />
-                                <code className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded text-xs font-mono font-semibold border inline-block" style={{ borderColor: 'var(--border)' }}>https://VOTRE_APP.bubbleapps.io/version-test/api/1.1/obj/notification_queue</code>
-                            </p>
-
+                            <h4 className="font-bold text-sm mb-2">Le Header et le Body :</h4>
+                            <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
+                                <li><strong>Header</strong> : <code>Content-Type: application/json</code></li>
+                                <li><strong>Body JSON</strong> :</li>
+                            </ul>
+                            
+                            <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs font-mono border mb-4 overflow-x-auto" style={{ borderColor: 'var(--border)' }}>
+{`{
+  "owner": "VOTRE_ID_USER_BUBBLE",
+  "title": "Super offre !",
+  "body": "Découvrez notre nouveauté",
+  "targetToken": "Token_FCM_ici_séparés_par_virgule"
+}`}
+                            </pre>
+                            
                             <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>
-                                Note : Une fois la notification envoyée par Site2App, il fera automatiquement un appel à Bubble pour changer le `status` de la ligne à "Sent" afin de ne pas la renvoyer deux fois.
+                                Le champ <code>owner</code> est crucial car il permet au Backend de retrouver votre configuration d'envoi et d'enregistrer l'historique dans votre propre Bubble. Vous pouvez désormais déclencher l'envoi Push depuis n'importe quel Workflow Bubble (quand un utilisateur reçoit un message, une commande, etc.) !
                             </p>
                         </div>
                     </div>
