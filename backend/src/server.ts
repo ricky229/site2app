@@ -976,11 +976,11 @@ const sendNotificationCore = async (user: any, payload: any) => {
         }
     }
 
-    // Always save the notification to history
+    // Always save the notification to history locally
     notifications.set(notif.id, notif);
     saveNotifications();
 
-    // Sync to Bubble (History) - don't let this block/fail the response
+    // Sync to Bubble (History) - rigorously matching the queue schema
     try {
         let customBubbleUrl = '';
         if (user.bubbleApiUrl) {
@@ -989,20 +989,26 @@ const sendNotificationCore = async (user: any, payload: any) => {
                 customBubbleUrl = parts[0] + '/api/1.1/obj';
             }
         }
-        
+
+        const isSpecific = Array.isArray(notif.targetOs);
+        const targetOsVal = isSpecific ? 'specific' : String(notif.targetOs || 'all');
+        const targetTokenVal = isSpecific ? notif.targetOs.join(',') : '';
+
         await bubble.createNotification({
-            title: notif.title,
-            body: notif.body,
-            image: notif.image,
-            targetUrl: notif.targetUrl,
-            targetApp: notif.targetApp,
-            targetOs: typeof notif.targetOs === 'string' ? notif.targetOs : JSON.stringify(notif.targetOs),
+            title: notif.title || '',
+            body: notif.body || '',
+            image: notif.image || '',
+            targetUrl: notif.targetUrl || '',
+            targetApp: notif.targetApp || 'all',
+            targetOs: targetOsVal,
+            targetToken: targetTokenVal,
             owner: user.id,
             status: 'Sent',
             sentCount: notif.stats?.sent || 0,
-            deliveredCount: notif.stats?.delivered || 0
+            deliveredCount: notif.stats?.delivered || 0,
+            sentAt: new Date().toISOString()
         }, customBubbleUrl);
-        console.log(`[CORE] ✅ History synced to Bubble: ${customBubbleUrl || 'default'}`);
+        console.log(`[CORE] ✅ Rigorous history sync to Bubble: ${customBubbleUrl || 'default'}`);
     } catch (e: any) {
         console.error(`[CORE] Bubble History Sync Failed:`, e.message);
     }
