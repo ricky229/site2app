@@ -152,7 +152,7 @@ export default function NotificationsPage() {
                     { key: 'status', constraint_type: 'not equal', value: 'synced' }
                 ]);
                 const res = await axios.get(
-                    `${clientObjUrl}/notification?constraints=${encodeURIComponent(constraints)}&sort_field=Created%20Date&descending=true&limit=20`,
+                    `${clientObjUrl}/notification_queue?constraints=${encodeURIComponent(constraints)}&sort_field=Created%20Date&descending=true&limit=20`,
                     { headers: { 'Content-Type': 'application/json' } }
                 );
                 const clientNotifs = res.data?.response?.results || [];
@@ -194,7 +194,7 @@ export default function NotificationsPage() {
                     if (notifId) {
                         try {
                             await axios.patch(
-                                `${clientObjUrl}/notification/${notifId}`,
+                                `${clientObjUrl}/notification_queue/${notifId}`,
                                 { status: 'synced' },
                                 { headers: { 'Content-Type': 'application/json' } }
                             );
@@ -223,17 +223,24 @@ export default function NotificationsPage() {
     const firebaseMutation = useMutation({
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
-            // Update directly on Bubble
-            // 1. Update on Node Backend (this handles sensitive keys)
-            await nodeApi.post('/auth/firebase-config', {
-                adminSdkJson: payload.adminSdkJson,
-                googleServicesJson: payload.googleServicesJson,
-                bubbleApiUrl: payload.bubbleApiUrl
-            })
             
-            // 2. Also update on Bubble for UI consistency (optional fields only)
+            // Save directly on Bubble (no Node backend needed)
+            // 1. Try to save on Node Backend (if available), but don't fail if unavailable
+            try {
+                await nodeApi.post('/auth/firebase-config', {
+                    adminSdkJson: payload.adminSdkJson,
+                    googleServicesJson: payload.googleServicesJson,
+                    bubbleApiUrl: payload.bubbleApiUrl
+                })
+            } catch (nodeErr) {
+                console.warn('Node backend not available, saving directly to Bubble only');
+            }
+            
+            // 2. Save on Bubble (this is the primary storage)
             return await updateUser(user.id, {
-                bubbleApiUrl: payload.bubbleApiUrl
+                bubbleApiUrl: payload.bubbleApiUrl,
+                firebaseKey: payload.adminSdkJson,
+                googleServicesJson: payload.googleServicesJson
             })
         },
         onSuccess: (data) => {
