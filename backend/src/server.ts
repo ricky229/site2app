@@ -994,21 +994,34 @@ const sendNotificationCore = async (user: any, payload: any) => {
         const targetOsVal = isSpecific ? 'specific' : String(notif.targetOs || 'all');
         const targetTokenVal = isSpecific ? notif.targetOs.join(',') : '';
 
-        await bubble.createNotification({
-            title: notif.title || '',
-            body: notif.body || '',
-            image: notif.image || '',
-            targetUrl: notif.targetUrl || '',
-            targetApp: notif.targetApp || 'all',
-            targetOs: targetOsVal,
-            targetToken: targetTokenVal,
-            owner: user.id,
-            status: 'Sent',
-            sentCount: notif.stats?.sent || 0,
-            deliveredCount: notif.stats?.delivered || 0,
-            sentAt: new Date().toISOString()
-        }, customBubbleUrl);
-        console.log(`[CORE] ✅ Rigorous history sync to Bubble: ${customBubbleUrl || 'default'}`);
+        // Determine if we should send a token
+        const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
+        const headers: any = { 'Content-Type': 'application/json' };
+        if (!user.bubbleApiUrl) {
+            headers['Authorization'] = `Bearer ${bubbleToken}`;
+        }
+
+        const historyUrl = `${customBubbleUrl || (process.env.BUBBLE_API_URL || 'https://site2app.online/api/1.1/obj')}/notification`;
+        
+        await fetch(historyUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                title: notif.title || '',
+                body: notif.body || '',
+                image: notif.image || '',
+                targetUrl: notif.targetUrl || '',
+                targetApp: notif.targetApp || 'all',
+                targetOs: targetOsVal,
+                targetToken: targetTokenVal,
+                owner: user.id || '',
+                status: 'Sent',
+                sentCount: notif.stats?.sent || 0,
+                deliveredCount: notif.stats?.delivered || 0,
+                sentAt: new Date().toISOString()
+            })
+        });
+        console.log(`[CORE] ✅ Rigorous history sync to Bubble: ${historyUrl}`);
     } catch (e: any) {
         console.error(`[CORE] Bubble History Sync Failed:`, e.message);
     }
@@ -1515,11 +1528,13 @@ async function pollExternalNotifications() {
             const fetchUrl = `${queueUrl}?constraints=${encodeURIComponent(constraints)}`;
             console.log(`[Polling] Checking ${user.email} -> ${queueUrl}`);
 
+            const headers: any = { 'Accept': 'application/json' };
+            if (!user.bubbleApiUrl) {
+                headers['Authorization'] = `Bearer ${bubbleToken}`;
+            }
+
             const response = await fetch(fetchUrl, {
-                headers: { 
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${bubbleToken}`
-                }
+                headers
             });
 
             if (!response.ok) {
@@ -1565,12 +1580,14 @@ async function pollExternalNotifications() {
 
                         // Update Status in Queue
                         try {
+                            const updateHeaders: any = { 'Content-Type': 'application/json' };
+                            if (!user.bubbleApiUrl) {
+                                updateHeaders['Authorization'] = `Bearer ${bubbleToken}`;
+                            }
+
                             const updateRes = await fetch(`${queueUrl}/${notif._id}`, {
                                 method: 'PATCH',
-                                headers: { 
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${bubbleToken}`
-                                },
+                                headers: updateHeaders,
                                 body: JSON.stringify({ status: 'Sent' })
                             });
                             if (!updateRes.ok) console.warn(`[Polling] Failed to update status for ${notif._id}`);

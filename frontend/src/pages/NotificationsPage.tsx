@@ -56,8 +56,16 @@ export default function NotificationsPage() {
             }
 
             const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
-            const res = await axios.get(`${baseUrl}/notification?constraints=${encodeURIComponent(constraints)}`, {
-                headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}` }
+            
+            // If custom URL, try without token or with user's token (if we had one)
+            // Bubble often rejects the platform token on other apps
+            const headers: any = {}
+            if (!user.bubbleApiUrl) {
+                headers['Authorization'] = `Bearer ${BUBBLE_TOKEN}`
+            }
+
+            const res = await axios.get(`${baseUrl}/notification?constraints=${encodeURIComponent(constraints)}&sort_field=Created%20Date&descending=true`, {
+                headers
             })
             
             const results = res.data?.response?.results || []
@@ -164,6 +172,12 @@ export default function NotificationsPage() {
             const targetStr = isSpecific ? 'specific' : String(payload.target || 'all');
             const tokenStr = isSpecific ? payload.target.join(',') : '';
 
+            // If custom URL, try without token
+            const headers: any = { 'Content-Type': 'application/json' }
+            if (!user.bubbleApiUrl) {
+                headers['Authorization'] = `Bearer ${BUBBLE_TOKEN}`
+            }
+
             const res = await axios.post(`${baseUrl}/notification_queue`, {
                 title: String(payload.title || ''),
                 body: String(payload.body || ''),
@@ -174,7 +188,7 @@ export default function NotificationsPage() {
                 image: String(payload.image || ''),
                 targetUrl: String(payload.actionUrl || '')
             }, {
-                headers: { 'Authorization': `Bearer ${BUBBLE_TOKEN}`, 'Content-Type': 'application/json' }
+                headers
             })
             return res.data;
         },
