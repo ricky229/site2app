@@ -925,7 +925,7 @@ public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final int PERMISSION_REQUEST = 1002;
 ${this.features.pullToRefresh ? `    private android.widget.FrameLayout swipeContainer;` : ''}
-    private WebView popupWebView;` : ''}
+${this.features.popupSupport ? `    private WebView popupWebView;` : ''}
 
     private BroadcastReceiver tokenReceiver = new BroadcastReceiver() {
         @Override
