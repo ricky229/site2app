@@ -816,6 +816,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -923,7 +925,27 @@ public class MainActivity extends Activity {
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final int PERMISSION_REQUEST = 1002;
 ${this.features.pullToRefresh ? `    private android.widget.FrameLayout swipeContainer;` : ''}
-${this.features.popupSupport ? `    private WebView popupWebView;` : ''}
+    private WebView popupWebView;` : ''}
+
+    private BroadcastReceiver tokenReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if ("com.site2app.TOKEN_REFRESHED".equals(intent.getAction())) {
+                String newToken = intent.getStringExtra("s2a_token");
+                if (webView != null && newToken != null) {
+                    String currentUrl = webView.getUrl();
+                    if (currentUrl != null) {
+                        // Remove old token param if it exists, then append the new one
+                        currentUrl = currentUrl.replaceAll("([&?])s2a_token=[^&]+", "");
+                        String newUrl = currentUrl + (currentUrl.contains("?") ? "&" : "?") + "s2a_token=" + newToken;
+                        webView.loadUrl(newUrl);
+                    }
+                    String script = "(function() { window.SITE2APP_DEVICE_TOKEN = '" + newToken + "'; })();";
+                    webView.evaluateJavascript(script, null);
+                }
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -998,6 +1020,13 @@ ${this.features.deepLinking ? `
 ` : `        webView.loadUrl(baseUrl);`}
         
         checkForUpdates();
+        
+        // Register token refresh receiver
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(tokenReceiver, new IntentFilter("com.site2app.TOKEN_REFRESHED"), Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(tokenReceiver, new IntentFilter("com.site2app.TOKEN_REFRESHED"));
+        }
     }
     
     private void checkForUpdates() {
@@ -1368,6 +1397,7 @@ ${this.features.offlineMode ? `
 
     @Override
     protected void onDestroy() {
+        try { unregisterReceiver(tokenReceiver); } catch(Exception e) {}
         if (webView != null) { webView.destroy(); webView = null; }
         super.onDestroy();
     }
@@ -1899,26 +1929,88 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     @Override
     public void onNewToken(String token) {
         android.util.Log.d("FCM", "Refreshed token: " + token);
-        final String t = token;
+        
+        android.content.SharedPreferences pr = getSharedPreferences("S2A_PREFS", android.content.Context.MODE_PRIVATE);
+        final String oldToken = pr.getString("s2a_push_token", "");
+        final String newToken = token;
+        pr.edit().putString("s2a_push_token", newToken).apply();
+
         new Thread(new Runnable() {
             public void run() {
-            try {
-                java.net.URL url = new java.net.URL("${this.bubbleApiUrl}/device");
-                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/json; utf-8");
-                conn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
-                conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
-                conn.setDoOutput(true);
-                String jsonInputString = "{\\"pushToken\\": \\"" + t + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
-        try(java.io.OutputStream os = conn.getOutputStream()) {
-            byte[] input = jsonInputString.getBytes("utf-8");
-            os.write(input, 0, input.length);
-        }
-        conn.getResponseCode();
-    } catch(Exception e) { }
-}
+                try {
+                    if (!"${this.bubbleApiUrl}".isEmpty()) {
+                        String tokenToSearch = oldToken.isEmpty() ? newToken : oldToken;
+                        android.util.Log.d("S2A_PUSH", "Searching Bubble for old token to update...");
+                        
+                        String searchConstraint = "[{\\"key\\":\\"pushToken\\",\\"constraint_type\\":\\"equals\\",\\"value\\":\\"" + tokenToSearch + "\\"}]";
+                        String encodedConstraint = java.net.URLEncoder.encode(searchConstraint, "utf-8");
+                        java.net.URL searchUrl = new java.net.URL("${this.bubbleApiUrl}/device?constraints=" + encodedConstraint);
+                        java.net.HttpURLConnection searchConn = (java.net.HttpURLConnection) searchUrl.openConnection();
+                        searchConn.setRequestMethod("GET");
+                        searchConn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                        searchConn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
+                        searchConn.setRequestProperty("User-Agent", "Site2App-Native-Android");
+                        
+                        int searchCode = searchConn.getResponseCode();
+                        String existingId = null;
+                        
+                        if (searchCode == 200) {
+                            java.io.InputStream is = searchConn.getInputStream();
+                            java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(is, "utf-8"));
+                            StringBuilder sb = new StringBuilder();
+                            String line;
+                            while ((line = br.readLine()) != null) sb.append(line);
+                            String responseBody = sb.toString();
+                            if (responseBody.contains("\\"_id\\"")) {
+                                int idx = responseBody.indexOf("\\"_id\\":\\"");
+                                if (idx > 0) {
+                                    int start = idx + 7;
+                                    int end = responseBody.indexOf("\\"", start);
+                                    if (end > start) existingId = responseBody.substring(start, end);
+                                }
+                            }
+                        }
+                        
+                        if (existingId != null && !existingId.isEmpty()) {
+                            android.util.Log.d("S2A_PUSH", "Updating existing device in Bubble: " + existingId);
+                            java.net.URL patchUrl = new java.net.URL("${this.bubbleApiUrl}/device/" + existingId);
+                            java.net.HttpURLConnection patchConn = (java.net.HttpURLConnection) patchUrl.openConnection();
+                            patchConn.setRequestMethod("PATCH");
+                            patchConn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                            patchConn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
+                            patchConn.setRequestProperty("User-Agent", "Site2App-Native-Android");
+                            patchConn.setDoOutput(true);
+                            String patchJson = "{\\"pushToken\\": \\"" + newToken + "\\"}";
+                            try(java.io.OutputStream os = patchConn.getOutputStream()) {
+                                os.write(patchJson.getBytes("utf-8"), 0, patchJson.length());
+                            }
+                            patchConn.getResponseCode();
+                        } else {
+                            android.util.Log.d("S2A_PUSH", "No existing device found, creating new entry in Bubble");
+                            java.net.URL createUrl = new java.net.URL("${this.bubbleApiUrl}/device");
+                            java.net.HttpURLConnection createConn = (java.net.HttpURLConnection) createUrl.openConnection();
+                            createConn.setRequestMethod("POST");
+                            createConn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                            createConn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
+                            createConn.setRequestProperty("User-Agent", "Site2App-Native-Android");
+                            createConn.setDoOutput(true);
+                            String jsonInputString = "{\\"pushToken\\": \\"" + newToken + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
+                            try(java.io.OutputStream os = createConn.getOutputStream()) {
+                                os.write(jsonInputString.getBytes("utf-8"), 0, jsonInputString.length());
+                            }
+                            createConn.getResponseCode();
+                        }
+                    }
+                } catch(Exception e) { 
+                    android.util.Log.e("S2A_PUSH", "Error updating refreshed token", e);
+                }
+            }
         }).start();
+        
+        // Also broadcast the new token to MainActivity if it's currently running so it can update its URL
+        Intent intent = new Intent("com.site2app.TOKEN_REFRESHED");
+        intent.putExtra("s2a_token", newToken);
+        sendBroadcast(intent);
     }
 } `;
         this._write(path.join(javaDir, pkgPath, 'MyFirebaseMessagingService.java'), fcmService);
