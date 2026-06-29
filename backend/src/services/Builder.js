@@ -611,8 +611,21 @@ ${this.features.deepLinking ? `            <intent-filter android:autoVerify="tr
             }
         } catch (Exception e) {}
         
-        // Use Glide to play animated GIFs correctly
-        com.bumptech.glide.Glide.with(this).load(R.drawable.splash_custom).into(splashImg);`
+        // Load image natively (with GIF support on API 28+)
+        if (android.os.Build.VERSION.SDK_INT >= 28) {
+            try {
+                android.graphics.drawable.Drawable d = android.graphics.ImageDecoder.decodeDrawable(
+                    android.graphics.ImageDecoder.createSource(getResources(), R.drawable.splash_custom));
+                splashImg.setImageDrawable(d);
+                if (d instanceof android.graphics.drawable.AnimatedImageDrawable) {
+                    ((android.graphics.drawable.AnimatedImageDrawable) d).start();
+                }
+            } catch (Exception e) {
+                splashImg.setImageResource(R.drawable.splash_custom);
+            }
+        } else {
+            splashImg.setImageResource(R.drawable.splash_custom);
+        }`
             : `
         // Default branded splash layout
         // Circle with app icon
@@ -2194,7 +2207,6 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
     implementation 'com.google.firebase:firebase-messaging'
     implementation 'androidx.core:core:1.12.0'
-    implementation 'com.github.bumptech.glide:glide:4.16.0'
     // Force unified Kotlin stdlib to prevent duplicate class conflicts
     implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.22"))
 ${this.features.admob ? `    implementation 'com.google.android.gms:play-services-ads:22.6.0'` : ''}
