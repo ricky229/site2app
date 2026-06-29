@@ -564,6 +564,7 @@ ${this.features.deepLinking ? `            <intent-filter android:autoVerify="tr
                 if (splashBuffer.length > 4) {
                     if (splashBuffer[0] === 0xFF && splashBuffer[1] === 0xD8 && splashBuffer[2] === 0xFF) ext = 'jpg'
                     else if (splashBuffer[0] === 0x52 && splashBuffer[1] === 0x49 && splashBuffer[2] === 0x46 && splashBuffer[3] === 0x46) ext = 'webp'
+                    else if (splashBuffer[0] === 0x47 && splashBuffer[1] === 0x49 && splashBuffer[2] === 0x46 && splashBuffer[3] === 0x38) ext = 'gif'
                 }
 
                 writeFileSync(path.join(drawableDir, `splash_custom.${ext}`), splashBuffer)
@@ -579,13 +580,15 @@ ${this.features.deepLinking ? `            <intent-filter android:autoVerify="tr
         // ── SplashActivity.java — shows custom image if available, else default branded splash ──
         const splashImageCode = hasSplashImage
             ? `
-        // User-provided splash image — display it full screen (CENTER_CROP)
+        // User-provided splash image — display it properly centered (FIT_CENTER)
         ImageView splashImg = new ImageView(this);
-        splashImg.setImageResource(R.drawable.splash_custom);
-        // CENTER_CROP covers the whole screen for a premium look
-        splashImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        // FIT_CENTER adapts the image to the screen keeping aspect ratio, preventing blur/zoom
+        splashImg.setScaleType(ImageView.ScaleType.FIT_CENTER);
         root.addView(splashImg, new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));`
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+        
+        // Use Glide to play animated GIFs correctly
+        com.bumptech.glide.Glide.with(this).load(R.drawable.splash_custom).into(splashImg);`
             : `
         // Default branded splash layout
         // Circle with app icon
@@ -2167,6 +2170,7 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:32.7.0')
     implementation 'com.google.firebase:firebase-messaging'
     implementation 'androidx.core:core:1.12.0'
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
     // Force unified Kotlin stdlib to prevent duplicate class conflicts
     implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.22"))
 ${this.features.admob ? `    implementation 'com.google.android.gms:play-services-ads:22.6.0'` : ''}
