@@ -347,6 +347,7 @@ class Builder {
         const permissions = [
             '    <uses-permission android:name="android.permission.INTERNET" />',
             '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />',
+            '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />',
             '    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />',
             '    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />',
         ]
@@ -823,6 +824,8 @@ public class PushJobService extends JobService {
         int flags = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0);
         PendingIntent pi = PendingIntent.getActivity(this, 0, intent, flags);
         
+
+        // Push Notifications
         Notification.Builder nb = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O 
             ? new Notification.Builder(this, "SITE2APP_PUSH") 
             : new Notification.Builder(this);
@@ -994,6 +997,7 @@ public class MainActivity extends Activity {
     private WebView webView;
     private ProgressBar progressBar;
     private ValueCallback<Uri[]> fileUploadCallback;
+    private long updateDownloadId = -1;
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final int PERMISSION_REQUEST = 1002;
 ${this.features.pullToRefresh ? `    private android.widget.FrameLayout swipeContainer;` : ''}
@@ -1106,7 +1110,7 @@ ${this.features.deepLinking ? `
             @Override
             public void run() {
                 try {
-                    URL url = new URL("${this.apiUrl}/apps/check-update?package=${this.packageName}&versionCode=${this.versionCode}");
+                    URL url = new URL("${this.apiUrl}/node/apps/check-update?package=${this.packageName}&versionCode=${this.versionCode}");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
                     conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
@@ -1132,8 +1136,23 @@ ${this.features.deepLinking ? `
                                         .setMessage("Une nouvelle version de l'application (v" + vName + ") est requise. Voulez-vous télécharger la mise à jour ?")
                                         .setPositiveButton("Mettre à jour", new DialogInterface.OnClickListener() {
                                             public void onClick(DialogInterface dialog, int which) {
-                                                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl));
-                                                startActivity(browserIntent);
+                                                try {
+                                                    DownloadManager.Request request = new DownloadManager.Request(Uri.parse(downloadUrl));
+                                                    request.setTitle("Mise à jour de l'application");
+                                                    request.setDescription("Téléchargement de la nouvelle version...");
+                                                    request.setMimeType("application/vnd.android.package-archive");
+                                                    request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                                                    request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "update_" + vName + ".apk");
+                                                    
+                                                    DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                                                    updateDownloadId = dm.enqueue(request);
+                                                    
+                                                    Toast.makeText(MainActivity.this, "Téléchargement de la mise à jour en arrière-plan...", Toast.LENGTH_LONG).show();
+                                                } catch (Exception e) {
+                                                    // Fallback to browser
+                                                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl));
+                                                    startActivity(browserIntent);
+                                                }
                                             }
                                         })
                                         .setNegativeButton("Plus tard", null)
