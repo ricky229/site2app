@@ -256,8 +256,16 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
-                if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") || url.startsWith("whatsapp:") || url.startsWith("intent:")) {
-                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception e) {}
+                if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") || url.startsWith("whatsapp:") || url.startsWith("intent:") || url.startsWith("https://wa.me/") || url.startsWith("http://wa.me/")) {
+                    try { 
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); 
+                    } catch (Exception e) {
+                        if (url.startsWith("whatsapp://")) {
+                            Toast.makeText(view.getContext(), "Veuillez installer WhatsApp pour utiliser cette fonction.", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(view.getContext(), "Impossible d'ouvrir ce lien.", Toast.LENGTH_LONG).show();
+                        }
+                    }
                     return true;
                 }
                 
@@ -275,8 +283,16 @@ public class MainActivity extends Activity {
             // For older Android versions compatibility
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") || url.startsWith("whatsapp:") || url.startsWith("intent:")) {
-                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception e) {}
+                if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") || url.startsWith("whatsapp:") || url.startsWith("intent:") || url.startsWith("https://wa.me/") || url.startsWith("http://wa.me/")) {
+                    try { 
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); 
+                    } catch (Exception e) {
+                        if (url.startsWith("whatsapp://")) {
+                            Toast.makeText(view.getContext(), "Veuillez installer WhatsApp pour utiliser cette fonction.", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(view.getContext(), "Impossible d'ouvrir ce lien.", Toast.LENGTH_LONG).show();
+                        }
+                    }
                     return true;
                 }
                 
@@ -333,6 +349,13 @@ public class MainActivity extends Activity {
                     request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
                     request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename);
                     request.setMimeType(mimetype);
+                    
+                    String cookie = CookieManager.getInstance().getCookie(url);
+                    if (cookie != null) {
+                        request.addRequestHeader("Cookie", cookie);
+                    }
+                    request.addRequestHeader("User-Agent", userAgent);
+                    
                     DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
                     if (dm != null) dm.enqueue(request);
                     Toast.makeText(MainActivity.this, "Downloading " + filename, Toast.LENGTH_SHORT).show();
@@ -347,8 +370,9 @@ public class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             java.util.List<String> permsList = new java.util.ArrayList<>();
             
-            
-            
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                permsList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
             
             if (permsList.isEmpty()) return;
             
