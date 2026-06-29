@@ -586,6 +586,30 @@ ${this.features.deepLinking ? `            <intent-filter android:autoVerify="tr
         splashImg.setScaleType(ImageView.ScaleType.FIT_CENTER);
         root.addView(splashImg, new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
+            
+        // Dynamically match the background color to the image's edge color (top-left pixel)
+        // This eliminates ugly borders when the image doesn't perfectly fit the screen ratio
+        try {
+            android.graphics.BitmapFactory.Options options = new android.graphics.BitmapFactory.Options();
+            android.graphics.Bitmap bitmap = android.graphics.BitmapFactory.decodeResource(getResources(), R.drawable.splash_custom, options);
+            if (bitmap != null) {
+                int color = bitmap.getPixel(0, 0);
+                if (android.graphics.Color.alpha(color) == 255) {
+                    root.setBackgroundColor(color);
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                        android.view.Window w = getWindow();
+                        w.setStatusBarColor(color);
+                        w.setNavigationBarColor(color);
+                        double darkness = 1 - (0.299 * android.graphics.Color.red(color) + 0.587 * android.graphics.Color.green(color) + 0.114 * android.graphics.Color.blue(color)) / 255;
+                        if (darkness < 0.5 && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                            w.getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                        } else {
+                            w.getDecorView().setSystemUiVisibility(0);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {}
         
         // Use Glide to play animated GIFs correctly
         com.bumptech.glide.Glide.with(this).load(R.drawable.splash_custom).into(splashImg);`
