@@ -348,6 +348,7 @@ class Builder {
             '    <uses-permission android:name="android.permission.INTERNET" />',
             '    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />',
             '    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />',
+            '    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />',
         ]
         const hardwareFeatures = []
 
@@ -1186,8 +1187,16 @@ ${this.features.offlineMode ? `
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
-                if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") || url.startsWith("whatsapp:") || url.startsWith("intent:")) {
-                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception e) {}
+                if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") || url.startsWith("whatsapp:") || url.startsWith("intent:") || url.startsWith("https://wa.me/") || url.startsWith("http://wa.me/") || url.startsWith("https://api.whatsapp.com/")) {
+                    try { 
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); 
+                    } catch (Exception e) {
+                        if (url.startsWith("whatsapp://")) {
+                            Toast.makeText(view.getContext(), "Veuillez installer WhatsApp pour utiliser cette fonction.", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(view.getContext(), "Impossible d'ouvrir ce lien.", Toast.LENGTH_LONG).show();
+                        }
+                    }
                     return true;
                 }
                 
@@ -1205,8 +1214,16 @@ ${this.features.offlineMode ? `
             // For older Android versions compatibility
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") || url.startsWith("whatsapp:") || url.startsWith("intent:")) {
-                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception e) {}
+                if (url.startsWith("tel:") || url.startsWith("mailto:") || url.startsWith("sms:") || url.startsWith("whatsapp:") || url.startsWith("intent:") || url.startsWith("https://wa.me/") || url.startsWith("http://wa.me/") || url.startsWith("https://api.whatsapp.com/")) {
+                    try { 
+                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); 
+                    } catch (Exception e) {
+                        if (url.startsWith("whatsapp://")) {
+                            Toast.makeText(view.getContext(), "Veuillez installer WhatsApp pour utiliser cette fonction.", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(view.getContext(), "Impossible d'ouvrir ce lien.", Toast.LENGTH_LONG).show();
+                        }
+                    }
                     return true;
                 }
                 
@@ -1269,8 +1286,10 @@ ${this.features.popupSupport ? `
                     @Override
                     public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest request) {
                         String popupUrl = request.getUrl().toString();
-                        if (popupUrl.startsWith("tel:") || popupUrl.startsWith("mailto:") || popupUrl.startsWith("sms:")) {
-                            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(popupUrl))); } catch (Exception e) {}
+                        if (popupUrl.startsWith("tel:") || popupUrl.startsWith("mailto:") || popupUrl.startsWith("sms:") || popupUrl.startsWith("whatsapp:") || popupUrl.startsWith("intent:") || popupUrl.startsWith("https://wa.me/") || popupUrl.startsWith("http://wa.me/") || popupUrl.startsWith("https://api.whatsapp.com/")) {
+                            try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(popupUrl))); } catch (Exception e) {
+                                Toast.makeText(v.getContext(), "Impossible d'ouvrir ce lien.", Toast.LENGTH_LONG).show();
+                            }
                             return true;
                         }
                         return false;
@@ -1307,11 +1326,20 @@ ${this.features.popupSupport ? `
                     request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
                     request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename);
                     request.setMimeType(mimetype);
+                    
+                    String cookie = CookieManager.getInstance().getCookie(url);
+                    if (cookie != null) {
+                        request.addRequestHeader("Cookie", cookie);
+                    }
+                    request.addRequestHeader("User-Agent", userAgent);
+                    
                     DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
                     if (dm != null) dm.enqueue(request);
                     Toast.makeText(MainActivity.this, "Downloading " + filename, Toast.LENGTH_SHORT).show();
                 } catch (Exception e) {
-                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception ex) {}
+                    try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception ex) {
+                        Toast.makeText(MainActivity.this, "Impossible de t\u00e9l\u00e9charger ce fichier.", Toast.LENGTH_LONG).show();
+                    }
                 }
             }
         });
@@ -1320,6 +1348,9 @@ ${this.features.popupSupport ? `
     private void requestPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             java.util.List<String> permsList = new java.util.ArrayList<>();
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+                permsList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            }
             ${this.features.camera ? `permsList.add(Manifest.permission.CAMERA); permsList.add(Manifest.permission.RECORD_AUDIO);` : ''}
             ${this.features.location ? `permsList.add(Manifest.permission.ACCESS_FINE_LOCATION);` : ''}
             ${this.features.pushNotifications ? `
