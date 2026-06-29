@@ -67,6 +67,7 @@ interface BuildInfo {
     publishedVersionName?: string
     activeUsers?: number
     downloadCount?: number
+    downloadUrl?: string
     builderConfig?: any
 }
 
@@ -741,32 +742,40 @@ app.post('/node/internal/build/:buildId/fail', internalAuth, (req, res) => {
 
 app.post('/node/apps/:buildId/publish', authMiddleware, async (req: any, res) => {
     const buildId = req.params.buildId;
-    const build = builds.get(buildId);
-    
-    if (!build) return res.status(404).json({ error: 'Build not found' });
-    if (build.userId && build.userId !== req.user.id) return res.status(403).json({ error: 'Unauthorized' });
-    if (!build.fileName || build.status !== 'completed') return res.status(400).json({ error: 'Build not completed' });
-
-    const buildDir = path.join(STORAGE_PATH, 'builds', buildId);
-    const draftApk = path.join(buildDir, build.fileName);
-    const publishedApk = path.join(buildDir, 'published.apk');
-
+    let bubbleApp = null;
     try {
-        if (!fsSync.existsSync(draftApk)) {
-            return res.status(404).json({ error: 'APK file not found on server' });
-        }
-        await fs.copyFile(draftApk, publishedApk);
-        
-        if (build.versionCode !== undefined) build.publishedVersionCode = build.versionCode;
-        if (build.versionName !== undefined) build.publishedVersionName = build.versionName;
-        saveBuilds();
-        
-        console.log(`[API] 🚀 Published build ${buildId} (v${build.publishedVersionCode})`);
-        res.json({ success: true, publishedVersionCode: build.publishedVersionCode });
-    } catch (e: any) {
-        console.error(`[API] ❌ Failed to publish APK:`, e);
-        res.status(500).json({ error: 'Failed to publish APK' });
+        bubbleApp = await bubble.getAppById(buildId);
+    } catch (e) {
+        console.error('[API] Failed to fetch app from Bubble for publish', e);
     }
+    
+    if (!bubbleApp) return res.status(404).json({ error: 'App not found in Bubble' });
+    if (bubbleApp.owner !== req.user.id) return res.status(403).json({ error: 'Unauthorized' });
+    if (bubbleApp.status !== 'completed' || !bubbleApp.apkFile) return res.status(400).json({ error: 'App not completed or missing APK' });
+
+    // Store/Update local build metadata for the published app
+    const build: BuildInfo = builds.get(buildId) || {
+        id: buildId,
+        appName: bubbleApp.appName,
+        packageName: bubbleApp.packageName,
+        status: bubbleApp.status,
+        url: bubbleApp.url,
+        platform: bubbleApp.platform,
+        userId: bubbleApp.owner,
+        startedAt: bubbleApp['Created Date'] || new Date().toISOString(),
+    };
+
+    build.versionCode = bubbleApp.versionCode;
+    build.versionName = bubbleApp.versionName || `1.${bubbleApp.versionCode}`;
+    if (bubbleApp.versionCode !== undefined) build.publishedVersionCode = bubbleApp.versionCode;
+    if (build.versionName !== undefined) build.publishedVersionName = build.versionName;
+    if (bubbleApp.apkFile) build.downloadUrl = bubbleApp.apkFile; // store the Bubble URL for downloading
+
+    builds.set(buildId, build);
+    saveBuilds();
+    
+    console.log(`[API] 🚀 Published build ${buildId} (v${build.publishedVersionCode}) via Bubble Data`);
+    res.json({ success: true, publishedVersionCode: build.publishedVersionCode });
 });
 
 // ─── Build Status & List ───────────────────────────
@@ -1515,7 +1524,12 @@ const checkUpdateHandler = (req: any, res: any) => {
             const latestVersionCode = latest.publishedVersionCode || 1;
 
             if (latestVersionCode > currentVersionCode) {
-                const downloadUrl = `${req.protocol}://${req.get('host')}/node/download/${latest.id}/published`;
+                // Use Bubble URL if available, otherwise fallback to local download
+                let downloadUrl = latest.downloadUrl || `${req.protocol}://${req.get('host')}/node/download/${latest.id}/published`;
+                if (downloadUrl.startsWith('//')) {
+                    downloadUrl = 'https:' + downloadUrl;
+                }
+                
                 return res.json({
                     updateAvailable: true,
                     versionCode: latestVersionCode,
