@@ -855,6 +855,19 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.app.AlertDialog;
+import android.app.Dialog;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.Window;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -1141,35 +1154,119 @@ ${this.features.deepLinking ? `
                                         final String downloadUrl = rawDownloadUrl;
                                         final String vName = latest.optString("publishedVersionName", "1." + latestVersionCode);
                                         runOnUiThread(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                new AlertDialog.Builder(MainActivity.this)
-                                        .setTitle("Mise à jour disponible")
-                                        .setMessage("Une nouvelle version de l'application (v" + vName + ") est requise. Voulez-vous télécharger la mise à jour ?")
-                                        .setPositiveButton("Mettre à jour", new DialogInterface.OnClickListener() {
-                                            public void onClick(DialogInterface dialog, int which) {
-                                                try {
-                                                    DownloadManager.Request request = new DownloadManager.Request(Uri.parse(downloadUrl));
-                                                    request.setTitle("Mise à jour de l'application");
-                                                    request.setDescription("Téléchargement de la nouvelle version...");
-                                                    request.setMimeType("application/vnd.android.package-archive");
-                                                    request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                                                    request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "update_" + vName + ".apk");
-                                                    
-                                                    DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
-                                                    updateDownloadId = dm.enqueue(request);
-                                                    
-                                                    Toast.makeText(MainActivity.this, "Téléchargement de la mise à jour en arrière-plan...", Toast.LENGTH_LONG).show();
-                                                } catch (Exception e) {
-                                                    // Fallback to browser
-                                                    Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl));
-                                                    startActivity(browserIntent);
-                                                }
-                                            }
-                                        })
-                                        .setNegativeButton("Plus tard", null)
-                                        .setCancelable(false)
-                                        .show();
+                                              @Override
+                                              public void run() {
+                                                  Dialog dialog = new Dialog(MainActivity.this);
+                                                  dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                                                  dialog.setCancelable(false);
+                                                  dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+                                                  LinearLayout container = new LinearLayout(MainActivity.this);
+                                                  container.setOrientation(LinearLayout.VERTICAL);
+                                                  container.setGravity(Gravity.CENTER_HORIZONTAL);
+                                                  int dp24 = (int)(24 * getResources().getDisplayMetrics().density);
+                                                  int dp16 = (int)(16 * getResources().getDisplayMetrics().density);
+                                                  int dp12 = (int)(12 * getResources().getDisplayMetrics().density);
+                                                  container.setPadding(dp24, dp24, dp24, dp24);
+
+                                                  GradientDrawable bgShape = new GradientDrawable();
+                                                  bgShape.setColor(Color.WHITE);
+                                                  bgShape.setCornerRadius(dp16 * 1.5f);
+                                                  container.setBackground(bgShape);
+
+                                                  ImageView iconView = new ImageView(MainActivity.this);
+                                                  int iconId = getResources().getIdentifier("ic_launcher", "mipmap", getPackageName());
+                                                  if(iconId == 0) iconId = android.R.drawable.ic_dialog_info;
+                                                  iconView.setImageResource(iconId);
+                                                  int iconSize = (int)(64 * getResources().getDisplayMetrics().density);
+                                                  LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(iconSize, iconSize);
+                                                  iconParams.bottomMargin = dp16;
+                                                  container.addView(iconView, iconParams);
+
+                                                  TextView titleView = new TextView(MainActivity.this);
+                                                  titleView.setText("Mise à jour disponible");
+                                                  titleView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20);
+                                                  titleView.setTypeface(Typeface.DEFAULT_BOLD);
+                                                  titleView.setTextColor(Color.parseColor("#1F2937"));
+                                                  titleView.setGravity(Gravity.CENTER);
+                                                  LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
+                                                      LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                                                  titleParams.bottomMargin = dp12;
+                                                  container.addView(titleView, titleParams);
+
+                                                  TextView msgView = new TextView(MainActivity.this);
+                                                  msgView.setText("Une nouvelle version (v" + vName + ") de l'application est requise pour continuer à profiter de toutes les fonctionnalités.");
+                                                  msgView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 15);
+                                                  msgView.setTextColor(Color.parseColor("#4B5563"));
+                                                  msgView.setGravity(Gravity.CENTER);
+                                                  msgView.setLineSpacing(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4.0f,  getResources().getDisplayMetrics()), 1.0f);
+                                                  LinearLayout.LayoutParams msgParams = new LinearLayout.LayoutParams(
+                                                      LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                                                  msgParams.bottomMargin = dp24;
+                                                  container.addView(msgView, msgParams);
+
+                                                  Button updateBtn = new Button(MainActivity.this);
+                                                  updateBtn.setText("Mettre à jour maintenant");
+                                                  updateBtn.setTextColor(Color.WHITE);
+                                                  updateBtn.setAllCaps(false);
+                                                  updateBtn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+                                                  updateBtn.setTypeface(Typeface.DEFAULT_BOLD);
+                                                  GradientDrawable btnShape = new GradientDrawable();
+                                                  try { btnShape.setColor(Color.parseColor("${this.themeColor}")); } catch(Exception e) { btnShape.setColor(Color.BLUE); }
+                                                  btnShape.setCornerRadius(dp12);
+                                                  updateBtn.setBackground(btnShape);
+                                                  updateBtn.setPadding(dp16, dp12, dp16, dp12);
+                                                  LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(
+                                                      LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                                                  container.addView(updateBtn, btnParams);
+
+                                                  TextView laterView = new TextView(MainActivity.this);
+                                                  laterView.setText("Plus tard");
+                                                  laterView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+                                                  laterView.setTextColor(Color.parseColor("#9CA3AF"));
+                                                  laterView.setGravity(Gravity.CENTER);
+                                                  LinearLayout.LayoutParams laterParams = new LinearLayout.LayoutParams(
+                                                      LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                                                  laterParams.topMargin = dp16;
+                                                  container.addView(laterView, laterParams);
+
+                                                  dialog.setContentView(container);
+                                                  dialog.getWindow().setLayout((int)(getResources().getDisplayMetrics().widthPixels * 0.85), 
+                                                      android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+
+                                                  updateBtn.setOnClickListener(new View.OnClickListener() {
+                                                      @Override
+                                                      public void onClick(View v) {
+                                                          try {
+                                                              DownloadManager.Request request = new DownloadManager.Request(Uri.parse(downloadUrl));
+                                                              request.setTitle("Mise à jour de l'application");
+                                                              request.setDescription("Téléchargement de la nouvelle version...");
+                                                              request.setMimeType("application/vnd.android.package-archive");
+                                                              request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                                                              request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "update_" + vName + ".apk");
+                                                              
+                                                              DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                                                              updateDownloadId = dm.enqueue(request);
+                                                              
+                                                              Toast.makeText(MainActivity.this, "Téléchargement en arrière-plan...", Toast.LENGTH_LONG).show();
+                                                          } catch (Exception e) {
+                                                              Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl));
+                                                              startActivity(browserIntent);
+                                                          }
+                                                          dialog.dismiss();
+                                                      }
+                                                  });
+
+                                                  laterView.setOnClickListener(new View.OnClickListener() {
+                                                      @Override
+                                                      public void onClick(View v) {
+                                                          dialog.dismiss();
+                                                      }
+                                                  });
+
+                                                  dialog.show();
+                                  }
+                              });
                                 }
                             });
                         }
