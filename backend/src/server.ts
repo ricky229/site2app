@@ -63,6 +63,8 @@ interface BuildInfo {
     userId?: string
     versionCode?: number
     versionName?: string
+    publishedVersionCode?: number
+    publishedVersionName?: string
     activeUsers?: number
     downloadCount?: number
     builderConfig?: any
@@ -737,6 +739,36 @@ app.post('/node/internal/build/:buildId/fail', internalAuth, (req, res) => {
     res.json({ success: true });
 });
 
+app.post('/node/apps/:buildId/publish', authMiddleware, async (req: any, res) => {
+    const buildId = req.params.buildId;
+    const build = builds.get(buildId);
+    
+    if (!build) return res.status(404).json({ error: 'Build not found' });
+    if (build.userId && build.userId !== req.user.id) return res.status(403).json({ error: 'Unauthorized' });
+    if (!build.fileName || build.status !== 'completed') return res.status(400).json({ error: 'Build not completed' });
+
+    const buildDir = path.join(STORAGE_PATH, 'builds', buildId);
+    const draftApk = path.join(buildDir, build.fileName);
+    const publishedApk = path.join(buildDir, 'published.apk');
+
+    try {
+        if (!fsSync.existsSync(draftApk)) {
+            return res.status(404).json({ error: 'APK file not found on server' });
+        }
+        await fs.copyFile(draftApk, publishedApk);
+        
+        if (build.versionCode !== undefined) build.publishedVersionCode = build.versionCode;
+        if (build.versionName !== undefined) build.publishedVersionName = build.versionName;
+        saveBuilds();
+        
+        console.log(`[API] 🚀 Published build ${buildId} (v${build.publishedVersionCode})`);
+        res.json({ success: true, publishedVersionCode: build.publishedVersionCode });
+    } catch (e: any) {
+        console.error(`[API] ❌ Failed to publish APK:`, e);
+        res.status(500).json({ error: 'Failed to publish APK' });
+    }
+});
+
 // ─── Build Status & List ───────────────────────────
 app.get('/node/build/:buildId/status', authMiddleware, (req: any, res) => {
     const build = builds.get(req.params.buildId)
@@ -1361,8 +1393,8 @@ app.get('/node/analytics', authMiddleware, async (req: any, res) => {
 })
 
 // ─── Download APK ────────────────────────────────────
-app.get('/node/download/:buildId', async (req, res) => {
-    const { buildId } = req.params;
+app.get('/node/download/:buildId/:type?', async (req: any, res) => {
+    const { buildId, type } = req.params;
     const build = builds.get(buildId);
 
     // Fonction utilitaire pour envoyer le fichier avec les bons headers
@@ -1377,8 +1409,20 @@ app.get('/node/download/:buildId', async (req, res) => {
         return res.sendFile(filePath);
     };
 
-    // First: try the tracked build filename from in-memory map (most reliable)
     const buildDir = path.join(__dirname, '../storage/builds', buildId);
+    
+    // Serve published APK if requested
+    if (type === 'published') {
+        const publishedPath = path.join(buildDir, 'published.apk');
+        if (existsSync(publishedPath)) {
+            console.log(`[API] 📥 Download published: published.apk`);
+            return sendApk(publishedPath, `update_${build?.publishedVersionCode || 'latest'}.apk`);
+        } else {
+            return res.status(404).json({ error: 'Published APK not found.' });
+        }
+    }
+
+    // First: try the tracked build filename from in-memory map (most reliable)
     if (build && build.fileName && build.status === 'completed') {
         const expectedPath = path.join(buildDir, build.fileName);
         if (existsSync(expectedPath)) {
@@ -1453,7 +1497,7 @@ app.get('/node/download-latest', async (req, res) => {
 })
 
 // ─── App Updates (Called from Android device) ────────
-app.get('/node/apps/check-update', (req: any, res) => {
+const checkUpdateHandler = (req: any, res: any) => {
     const pkg = req.query.package as string;
     const currentVersionCode = parseInt(req.query.versionCode as string) || 1;
 
@@ -1462,20 +1506,20 @@ app.get('/node/apps/check-update', (req: any, res) => {
     }
 
     const completedBuilds = Array.from(builds.values())
-        .filter(b => b.packageName === pkg && b.status === 'completed' && b.fileName)
-        .sort((a, b) => (b.versionCode || 1) - (a.versionCode || 1));
+        .filter(b => b.packageName === pkg && b.status === 'completed' && b.publishedVersionCode)
+        .sort((a, b) => (b.publishedVersionCode || 1) - (a.publishedVersionCode || 1));
 
     if (completedBuilds.length > 0) {
         const latest = completedBuilds[0];
         if (latest) {
-            const latestVersionCode = latest.versionCode || 1;
+            const latestVersionCode = latest.publishedVersionCode || 1;
 
             if (latestVersionCode > currentVersionCode) {
-                const downloadUrl = `${req.protocol}://${req.get('host')}/node/download/${latest.id}`;
+                const downloadUrl = `${req.protocol}://${req.get('host')}/node/download/${latest.id}/published`;
                 return res.json({
                     updateAvailable: true,
                     versionCode: latestVersionCode,
-                    versionName: latest.versionName || `1.${latestVersionCode}`,
+                    versionName: latest.publishedVersionName || `1.${latestVersionCode}`,
                     downloadUrl: downloadUrl
                 });
             }
@@ -1483,7 +1527,10 @@ app.get('/node/apps/check-update', (req: any, res) => {
     }
 
     res.json({ updateAvailable: false });
-});
+};
+
+app.get('/node/apps/check-update', checkUpdateHandler);
+app.get('/apps/check-update', checkUpdateHandler);
 
 // ─── App Statistics ─────────────────────────────────
 app.get('/node/stats', authMiddleware, (req: any, res) => {

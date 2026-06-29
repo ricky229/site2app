@@ -17,7 +17,7 @@ import api from '../../lib/api'
 import { useAuthStore } from '../../store/authStore'
 import type { App, DashboardStats } from '../../types'
 
-import { getAppsByUser } from '../../lib/api'
+import { getAppsByUser, publishApp } from '../../lib/api'
 
 async function fetchBuilds(userId: string): Promise<App[]> {
     if (!userId) return [];
@@ -60,6 +60,18 @@ export default function AppsPage() {
             queryClient.invalidateQueries({ queryKey: ['builds'] })
         } catch (e) {
             toast.error('Erreur lors de la suppression')
+        }
+    }
+
+    const handlePublish = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation()
+        if (!confirm('Voulez-vous pousser cette version vers les appareils de vos utilisateurs ?')) return
+        try {
+            await publishApp(id)
+            toast.success('Mise à jour publiée avec succès !')
+            queryClient.invalidateQueries({ queryKey: ['builds'] })
+        } catch (e) {
+            toast.error('Erreur lors de la publication')
         }
     }
 
@@ -218,6 +230,18 @@ export default function AppsPage() {
                                 >
                                     Supprimer
                                 </Button>
+                                {app.status === 'completed' && (
+                                    <Button
+                                        variant="secondary"
+                                        size="sm"
+                                        className="flex-1 text-green-600 hover:bg-green-50"
+                                        icon={<Play size={13} />}
+                                        onClick={(e) => handlePublish(e, app.id)}
+                                        title="Publier la mise à jour aux utilisateurs"
+                                    >
+                                        Publier
+                                    </Button>
+                                )}
                                 {app.apkUrl && (
                                     <a href={app.apkUrl} onClick={(e) => e.stopPropagation()} className="btn btn-primary btn-sm" title="Télécharger">
                                         <Download size={13} />

@@ -98,16 +98,22 @@ export async function getDevices(appId?: string, customBaseUrl?: string) {
 // In production: targets /api 
 const getBaseUrl = () => {
     // If we're on site2app.online/site2app/, we want to hit site2app.online/node
-    if (window.location.hostname !== 'localhost') {
-        return window.location.origin + '/node';
+    if (window.location.hostname === 'site2app.online') {
+        return 'https://site2app.online/node'
     }
-    return '/node';
+    // For local development or other environments
+    return window.location.origin + '/node'
 }
 
 export const nodeApi = axios.create({
     baseURL: getBaseUrl(),
     headers: { 'Content-Type': 'application/json' },
 })
+
+export async function publishApp(appId: string) {
+    const res = await nodeApi.post(`/apps/${appId}/publish`);
+    return res.data;
+}
 
 nodeApi.interceptors.request.use(config => {
     const token = localStorage.getItem('site2app_token')
