@@ -57,20 +57,47 @@ const compressImageForPayload = (
         img.crossOrigin = 'anonymous';
         img.onload = () => {
             try {
+                let width = img.width;
+                let height = img.height;
+                
+                // Preserve aspect ratio
+                if (width > height) {
+                    if (width > size) {
+                        height = Math.round(height * (size / width));
+                        width = size;
+                    }
+                } else {
+                    if (height > size) {
+                        width = Math.round(width * (size / height));
+                        height = size;
+                    }
+                }
+                
                 const canvas = document.createElement('canvas');
-                canvas.width = size;
-                canvas.height = size;
+                canvas.width = width;
+                canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return resolve(null);
                 
-                // Add a small padding (10%) to prevent "too zoomed" look if it's an icon (192px)
-                const padding = size === 192 ? Math.round(size * 0.1) : 0;
-                const drawSize = size - (padding * 2);
+                if (size === 192) {
+                    // For icon, force square canvas with padding
+                    canvas.width = size;
+                    canvas.height = size;
+                    const padding = Math.round(size * 0.1);
+                    const scale = (size - padding * 2) / Math.max(width, height);
+                    const drawW = Math.round(width * scale);
+                    const drawH = Math.round(height * scale);
+                    const offsetX = (size - drawW) / 2;
+                    const offsetY = (size - drawH) / 2;
+                    ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+                } else {
+                    // For splash screen, preserve exact aspect ratio without padding
+                    ctx.drawImage(img, 0, 0, width, height);
+                }
                 
-                ctx.drawImage(img, padding, padding, drawSize, drawSize);
                 const dataUrl = canvas.toDataURL(format, quality);
                 const base64 = dataUrl.split(',')[1] || null;
-                console.log(`[Build] Image compressed to ${size}x${size} ${format}: ${base64 ? base64.length : 0} chars`);
+                console.log(`[Build] Image compressed to ${width}x${height} ${format}: ${base64 ? base64.length : 0} chars`);
                 resolve(base64);
             } catch (e) {
                 console.warn('[Build] Failed to compress image:', e);
@@ -141,8 +168,8 @@ export default function Step5Build() {
             
             const compressedIconBase64 = await compressImageForPayload(config.icon, 192, 'image/png');
             
-            // Reduced splash size further to 320x320 and 0.6 quality to guarantee it stays under 65KB limit
-            const compressedSplashBase64 = await compressImageForPayload(config.splashScreen, 320, 'image/jpeg', 0.6);
+            // Preserve aspect ratio for splash screen. 800px max dimension ensures high quality while keeping size reasonable.
+            const compressedSplashBase64 = await compressImageForPayload(config.splashScreen, 800, 'image/jpeg', 0.5);
             
             // If icon is already a URL (from a previous build), keep it for Bubble
             const iconIsUrl = config.icon && (config.icon.startsWith('http') || config.icon.startsWith('//'));
