@@ -1265,16 +1265,14 @@ ${this.features.deepLinking ? `
                                                   });
 
                                                   dialog.show();
+                                              }
+                                          });
+                                      }
                                   }
-                              });
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-        }
-    } catch (Exception e) {
+                              }
+                          }
+                      }
+                  } catch (Exception e) {
         // Fail silently
     }
             }
