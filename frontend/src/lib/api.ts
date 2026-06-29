@@ -123,8 +123,17 @@ export async function publishApp(appId: string) {
         downloadUrl: app.apkFile
     };
 
-    const res = await updateApp(appId, payload);
-    return res;
+    try {
+        const res = await updateApp(appId, payload);
+        return res;
+    } catch (error: any) {
+        if (error.response?.data?.body?.message?.includes("Unrecognized field")) {
+            throw new Error(
+                "ACTION REQUISE SUR BUBBLE : Veuillez créer les champs 'publishedVersionCode' (number), 'publishedVersionName' (text) et 'downloadUrl' (text) dans votre base de données Bubble (Data Type 'app') pour activer la publication manuelle."
+            );
+        }
+        throw error;
+    }
 }
 
 nodeApi.interceptors.request.use(config => {
