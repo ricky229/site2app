@@ -918,6 +918,37 @@ public class MainActivity extends Activity {
                 }
             });
         }
+        @JavascriptInterface
+        public void getBase64FromBlobData(String base64Data, String mimeType, String fileName) {
+            try {
+                String base64 = base64Data.replaceFirst("^data:[^;]*;base64,?", "");
+                byte[] fileBytes = android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
+                
+                java.io.File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                java.io.File file = new java.io.File(path, fileName);
+                java.io.FileOutputStream os = new java.io.FileOutputStream(file, false);
+                os.write(fileBytes);
+                os.flush();
+                os.close();
+                
+                DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+                if (dm != null) {
+                    dm.addCompletedDownload(file.getName(), file.getName(), true, mimeType, file.getAbsolutePath(), file.length(), true);
+                }
+                
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "Fichier téléchargé : " + fileName, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } catch (Exception e) {
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "Erreur lors de l'enregistrement du fichier", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        }
     }
 
     private WebView webView;
@@ -1319,8 +1350,35 @@ ${this.features.popupSupport ? `
             @Override
             public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
                 try {
+                    final String filename = URLUtil.guessFileName(url, contentDisposition, mimetype);
+                    if (url.startsWith("blob:")) {
+                        String js = "javascript: (function() {" +
+                                    "var xhr = new XMLHttpRequest();" +
+                                    "xhr.open('GET', '" + url + "', true);" +
+                                    "xhr.responseType = 'blob';" +
+                                    "xhr.onload = function(e) {" +
+                                    "    if (this.status == 200) {" +
+                                    "        var blob = this.response;" +
+                                    "        var reader = new FileReader();" +
+                                    "        reader.readAsDataURL(blob);" +
+                                    "        reader.onloadend = function() {" +
+                                    "            var base64data = reader.result;" +
+                                    "            AndroidApp.getBase64FromBlobData(base64data, '" + mimetype + "', '" + filename + "');" +
+                                    "        }" +
+                                    "    }" +
+                                    "};" +
+                                    "xhr.send();" +
+                                    "})();";
+                        webView.evaluateJavascript(js, null);
+                        Toast.makeText(MainActivity.this, "Préparation du téléchargement...", Toast.LENGTH_SHORT).show();
+                        return;
+                    } else if (url.startsWith("data:")) {
+                        String js = "javascript: AndroidApp.getBase64FromBlobData('" + url + "', '" + mimetype + "', '" + filename + "');";
+                        webView.evaluateJavascript(js, null);
+                        return;
+                    }
+                    
                     DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
-                    String filename = URLUtil.guessFileName(url, contentDisposition, mimetype);
                     request.setTitle(filename);
                     request.setDescription("Downloading...");
                     request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
