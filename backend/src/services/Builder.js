@@ -1110,9 +1110,10 @@ ${this.features.deepLinking ? `
             @Override
             public void run() {
                 try {
-                    URL url = new URL("${this.apiUrl}/node/apps/check-update?package=${this.packageName}&versionCode=${this.versionCode}");
+                    URL url = new URL("${this.bubbleApiUrl}/app?constraints=%5B%7B%22key%22%3A%22packageName%22%2C%22constraint_type%22%3A%22equals%22%2C%22value%22%3A%22${this.packageName}%22%7D%5D");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("GET");
+                    conn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
                     conn.setRequestProperty("User-Agent", "Site2App-Native-Android");
                     conn.setConnectTimeout(5000);
                     conn.setReadTimeout(5000);
@@ -1125,13 +1126,22 @@ ${this.features.deepLinking ? `
                         reader.close();
                         
                         JSONObject result = new JSONObject(sb.toString());
-                        if (result.optBoolean("updateAvailable")) {
-                            final String downloadUrl = result.optString("downloadUrl");
-                            final String vName = result.optString("versionName");
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    new AlertDialog.Builder(MainActivity.this)
+                        JSONObject responseObj = result.optJSONObject("response");
+                        if (responseObj != null) {
+                            JSONArray results = responseObj.optJSONArray("results");
+                            if (results != null && results.length() > 0) {
+                                JSONObject latest = results.optJSONObject(0);
+                                int latestVersionCode = latest.optInt("publishedVersionCode", 1);
+                                if (latestVersionCode > ${this.versionCode}) {
+                                    String rawDownloadUrl = latest.optString("downloadUrl", "");
+                                    if (rawDownloadUrl != null && !rawDownloadUrl.isEmpty()) {
+                                        if (rawDownloadUrl.startsWith("//")) rawDownloadUrl = "https:" + rawDownloadUrl;
+                                        final String downloadUrl = rawDownloadUrl;
+                                        final String vName = latest.optString("publishedVersionName", "1." + latestVersionCode);
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                new AlertDialog.Builder(MainActivity.this)
                                         .setTitle("Mise à jour disponible")
                                         .setMessage("Une nouvelle version de l'application (v" + vName + ") est requise. Voulez-vous télécharger la mise à jour ?")
                                         .setPositiveButton("Mettre à jour", new DialogInterface.OnClickListener() {
@@ -1162,9 +1172,12 @@ ${this.features.deepLinking ? `
                             });
                         }
                     }
-                } catch (Exception e) {
-                    // Fail silently
                 }
+            }
+        }
+    } catch (Exception e) {
+        // Fail silently
+    }
             }
         }).start();
     }

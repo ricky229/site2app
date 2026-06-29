@@ -111,8 +111,20 @@ export const nodeApi = axios.create({
 })
 
 export async function publishApp(appId: string) {
-    const res = await nodeApi.post(`/apps/${appId}/publish`);
-    return res.data;
+    const app = await getAppById(appId);
+    if (!app) throw new Error('App not found in Bubble');
+    if (app.status !== 'completed' || !app.apkFile) {
+        throw new Error('App not completed or missing APK');
+    }
+
+    const payload = {
+        publishedVersionCode: app.versionCode || 1,
+        publishedVersionName: app.versionName || `1.${app.versionCode || 1}`,
+        downloadUrl: app.apkFile
+    };
+
+    const res = await updateApp(appId, payload);
+    return res;
 }
 
 nodeApi.interceptors.request.use(config => {
