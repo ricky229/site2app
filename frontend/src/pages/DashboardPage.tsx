@@ -80,11 +80,7 @@ async function fetchBuilds(userId: string): Promise<any[]> {
     }
 }
 
-// Keep recent activity for visual touch
-const recentActivity = [
-    { icon: Zap, color: '#3461f5', text: 'Bienvenue sur Site2App !', time: '1m' },
-    { icon: Smartphone, color: '#7c3aed', text: 'Commencez par créer votre première app.', time: '1m' },
-]
+
 
 const AppCard = ({ app }: { app: App }) => {
     const navigate = useNavigate()
@@ -345,78 +341,7 @@ export default function DashboardPage() {
                         </div>
                     </motion.div>
 
-                    {/* Activity Feed */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="card p-3 sm:p-5"
-                    >
-                        <h3 className="font-bold mb-4">Activité récente</h3>
-                        <div className="space-y-3">
-                            {recentActivity.map((a, i) => (
-                                <div key={i} className="flex items-start gap-3">
-                                    <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-                                        style={{ background: `${a.color}18` }}>
-                                        <a.icon size={13} style={{ color: a.color }} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm truncate">{a.text}</p>
-                                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>il y a {a.time}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
 
-                    {/* Storage Widget */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className="card p-3 sm:p-5"
-                        style={{ background: 'linear-gradient(135deg, rgba(52,97,245,0.05), rgba(124,58,237,0.05))' }}
-                    >
-                        <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-bold">Stockage utilisé</h3>
-                            <span className="badge badge-brand text-xs">{user?.plan?.toUpperCase()}</span>
-                        </div>
-                        <div className="progress-bar mb-2">
-                            <div className="progress-fill" style={{ width: `${((stats?.storageUsed || 0) / (stats?.storageLimit || 1024 * 1024 * 1024)) * 100}%` }} />
-                        </div>
-                        <div className="flex justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
-                            <span>{Math.round((stats?.storageUsed || 0) / 1024 / 1024)} MB utilisés</span>
-                            <span>1 GB disponible</span>
-                        </div>
-                        <Button variant="ghost" size="sm" className="w-full mt-3" iconRight={<ArrowRight size={14} />}
-                            onClick={() => navigate('/settings/billing')}>
-                            Augmenter le stockage
-                        </Button>
-                    </motion.div>
-
-                    {/* Plan Upgrade CTA */}
-                    {user?.plan === 'free' && (
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.6 }}
-                            className="rounded-2xl p-5 text-white overflow-hidden relative"
-                            style={{ background: 'linear-gradient(135deg, #1e40af, #6d28d9)' }}
-                        >
-                            <div className="absolute top-0 right-0 w-24 h-24 rounded-full"
-                                style={{ background: 'rgba(255,255,255,0.05)', transform: 'translate(30%, -30%)' }} />
-                            <Zap size={24} color="white" className="mb-3" />
-                            <h3 className="font-bold mb-1">Passez au plan Starter</h3>
-                            <p className="text-sm text-blue-200 mb-4">5 apps, builds illimités, sans branding</p>
-                            <Button
-                                onClick={() => navigate('/settings/billing')}
-                                className="w-full"
-                                style={{ background: 'white', color: '#1e40af', fontWeight: 700 }}
-                            >
-                                Upgrader — 19€/mois
-                            </Button>
-                        </motion.div>
-                    )}
                 </div>
             </div>
         </div>

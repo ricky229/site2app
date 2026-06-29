@@ -16,18 +16,12 @@ import { useEffect } from 'react'
 
 const tabs = [
     { id: 'profile', label: 'Profil', icon: User },
-    { id: 'billing', label: 'Facturation', icon: CreditCard },
     { id: 'integrations', label: 'Intégrations', icon: Globe },
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Sécurité', icon: Shield },
 ]
 
-const plans = [
-    { id: 'free', name: 'Gratuit', price: 0, apps: 1, builds: 2 },
-    { id: 'starter', name: 'Starter', price: 19, apps: 5, builds: 20 },
-    { id: 'pro', name: 'Pro', price: 49, apps: -1, builds: -1 },
-    { id: 'enterprise', name: 'Enterprise', price: 149, apps: -1, builds: -1 },
-]
+
 
 export default function SettingsPage() {
     const navigate = useNavigate()
@@ -154,73 +148,7 @@ export default function SettingsPage() {
                         </motion.div>
                     )}
 
-                    {/* Billing */}
-                    {activeTab === 'billing' && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <div className="card p-6 mb-5">
-                                <h2 className="font-bold text-lg mb-5">Plan actuel</h2>
-                                <div className="flex items-center justify-between p-4 rounded-xl mb-5"
-                                    style={{ background: 'rgba(52,97,245,0.08)', border: '1px solid rgba(52,97,245,0.2)' }}>
-                                    <div>
-                                        <p className="font-bold text-lg capitalize">{user?.plan}</p>
-                                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                                            {plans.find(p => p.id === user?.plan)?.price === 0 ? 'Gratuit' : `${plans.find(p => p.id === user?.plan)?.price}€/mois`}
-                                        </p>
-                                    </div>
-                                    <CheckCircle size={22} style={{ color: '#10b981' }} />
-                                </div>
 
-                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                                    {plans.map(plan => (
-                                        <div
-                                            key={plan.id}
-                                            className="p-4 rounded-xl border-2 cursor-pointer transition-all"
-                                            style={{
-                                                borderColor: user?.plan === plan.id ? 'var(--brand-500)' : 'var(--border)',
-                                                background: user?.plan === plan.id ? 'rgba(52,97,245,0.08)' : 'var(--surface-1)',
-                                            }}
-                                        >
-                                            <p className="font-bold">{plan.name}</p>
-                                            <p className="text-lg font-bold mt-1"
-                                                style={{ color: user?.plan === plan.id ? 'var(--brand-500)' : 'var(--text-primary)' }}>
-                                                {plan.price === 0 ? 'Gratuit' : `${plan.price}€`}
-                                            </p>
-                                            <div className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                                                <p>{plan.apps === -1 ? '∞' : plan.apps} app{plan.apps !== 1 ? 's' : ''}</p>
-                                                <p>{plan.builds === -1 ? '∞' : plan.builds} builds/mois</p>
-                                            </div>
-                                            {user?.plan !== plan.id && (
-                                                <button
-                                                    className="btn btn-primary btn-sm w-full mt-3 text-xs"
-                                                    onClick={() => toast.success(`Passage au plan ${plan.name}...`)}
-                                                >
-                                                    {plan.price > (plans.find(p => p.id === user?.plan)?.price || 0) ? 'Upgrader' : 'Choisir'}
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="card p-6">
-                                <h2 className="font-bold text-lg mb-5">Moyen de paiement</h2>
-                                <div className="flex items-center gap-4 p-4 rounded-xl mb-4"
-                                    style={{ background: 'var(--surface-1)', border: '1px solid var(--border)' }}>
-                                    <div className="w-10 h-7 rounded bg-gradient-to-r from-blue-600 to-blue-800 flex items-center justify-center text-white text-xs font-bold">
-                                        VISA
-                                    </div>
-                                    <div>
-                                        <p className="font-semibold text-sm">•••• •••• •••• 4242</p>
-                                        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Expire 12/27</p>
-                                    </div>
-                                    <button className="ml-auto text-xs" style={{ color: 'var(--brand-500)' }}>Modifier</button>
-                                </div>
-                                <Button variant="secondary" size="sm" icon={<Plus size={14} />}>
-                                    Ajouter un moyen de paiement
-                                </Button>
-                            </div>
-                        </motion.div>
-                    )}
 
                     {/* Notifications settings */}
                     {activeTab === 'notifications' && (
