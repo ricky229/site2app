@@ -65,7 +65,7 @@ export default function SettingsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="mb-10"
             >
-                <h1 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight flex items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] mb-2 tracking-tight flex items-center gap-3">
                     <Settings className="text-[var(--text-muted)]" size={32} strokeWidth={2.5} />
                     Paramètres
                 </h1>

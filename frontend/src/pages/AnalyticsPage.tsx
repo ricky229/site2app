@@ -272,7 +272,7 @@ export default function AnalyticsPage() {
                 className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10"
             >
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight flex items-center gap-3">
+                    <h1 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] mb-2 tracking-tight flex items-center gap-3">
                         <BarChart2 className="text-blue-500" size={32} strokeWidth={2.5} />
                         Statistiques
                     </h1>

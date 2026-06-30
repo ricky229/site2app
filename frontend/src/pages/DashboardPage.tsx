@@ -86,17 +86,17 @@ const PremiumStatCard = ({ title, value, icon: Icon, color, delay }: any) => (
         <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-10 group-hover:scale-150 group-hover:opacity-20 transition-all duration-700 blur-2xl"
             style={{ background: color }} />
         
-        <div className="flex justify-between items-start mb-6 relative z-10">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-                style={{ background: `linear-gradient(135deg, ${color}dd, ${color})`, color: 'white' }}>
-                <Icon size={26} strokeWidth={2.5} />
+        <div className="flex justify-between items-start mb-4 relative z-10">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md text-white"
+                style={{ background: `linear-gradient(135deg, ${color}dd, ${color})` }}>
+                <Icon size={20} strokeWidth={2.5} />
             </div>
         </div>
         <div className="relative z-10">
-            <h3 className="text-3xl md:text-4xl font-black tracking-tight mb-2" style={{ color: 'var(--text-primary)' }}>
+            <h3 className="text-2xl md:text-3xl font-black tracking-tight mb-1" style={{ color: 'var(--text-primary)' }}>
                 {value}
             </h3>
-            <p className="text-sm font-semibold tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs font-semibold tracking-wide uppercase" style={{ color: 'var(--text-muted)' }}>
                 {title}
             </p>
         </div>
@@ -223,11 +223,11 @@ export default function DashboardPage() {
                 </div>
                 
                 <div className="relative z-10 text-center md:text-left">
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 tracking-tight leading-tight">
+                    <h1 className="text-2xl md:text-3xl font-black text-white mb-3 tracking-tight leading-tight">
                         Bonjour, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">{user?.name?.split(' ')[0] || 'Utilisateur'}</span> 👋
                     </h1>
-                    <p className="text-blue-100/80 text-lg md:text-xl max-w-2xl font-medium">
-                        Bienvenue sur votre espace de travail professionnel. Suivez les performances de vos applications en un coup d'œil.
+                    <p className="text-lg md:text-xl text-slate-300 font-medium max-w-2xl mx-auto md:mx-0">
+                        Prêt à transformer vos idées en applications exceptionnelles aujourd'hui ?
                     </p>
                 </div>
                 

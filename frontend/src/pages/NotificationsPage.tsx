@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Bell, Send, Clock, Users, BarChart2, Plus, Image as ImageIcon,
-    Link as LinkIcon, CheckCircle, Trash2, Smartphone, Apple, Play
+    Link as LinkIcon, CheckCircle, Trash2, Smartphone, Apple, Play, Copy, Globe, AlertCircle
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -18,7 +18,7 @@ import type { App } from '../types'
 
 export default function NotificationsPage() {
     const queryClient = useQueryClient()
-    const [tab, setTab] = useState<'compose' | 'history' | 'devices' | 'settings'>('compose')
+    const [tab, setTab] = useState<'compose' | 'history' | 'devices' | 'templates' | 'settings'>('compose')
     const [selectedApp, setSelectedApp] = useState('all')
     const [form, setForm] = useState({
         title: '',
@@ -262,7 +262,7 @@ export default function NotificationsPage() {
                 className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10"
             >
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight flex items-center gap-3">
+                    <h1 className="text-2xl md:text-3xl font-black text-[var(--text-primary)] mb-2 tracking-tight flex items-center gap-3">
                         <Bell className="text-blue-500" size={32} strokeWidth={2.5} />
                         Push Notifications
                     </h1>
@@ -274,6 +274,7 @@ export default function NotificationsPage() {
                         { id: 'compose', label: 'Rédiger', icon: Send },
                         { id: 'history', label: 'Historique', icon: Clock },
                         { id: 'devices', label: 'Appareils', icon: Users },
+                        { id: 'templates', label: 'Modèles', icon: Copy },
                         { id: 'settings', label: 'API & Config', icon: Smartphone }
                     ].map(t => (
                         <button
@@ -309,6 +310,66 @@ export default function NotificationsPage() {
                                     value={selectedApp}
                                     onChange={e => setSelectedApp(e.target.value)}
                                 />
+                                <Select
+                                    label="Mode d'envoi"
+                                    options={[
+                                        { value: 'all', label: '📢 Diffuser à tous les appareils' },
+                                        { value: 'specific', label: '🎯 Cibler des appareils spécifiques' }
+                                    ]}
+                                    value={targetMode}
+                                    onChange={e => setTargetMode(e.target.value as any)}
+                                />
+                                {targetMode === 'specific' && (() => {
+                                    const filteredDevices = registeredDevices.filter(d => selectedApp === 'all' || d.buildId === selectedApp);
+                                    const allSelected = filteredDevices.length > 0 && filteredDevices.every(d => selectedDevices.includes(d.pushToken));
+                                    return (
+                                        <div className="space-y-2 mt-4">
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-sm font-semibold text-[var(--text-primary)]">SǸlectionnez les appareils ({filteredDevices.length})</p>
+                                                {filteredDevices.length > 0 && (
+                                                    <label className="flex items-center gap-2 cursor-pointer text-sm text-blue-500 font-medium">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={allSelected}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) setSelectedDevices(filteredDevices.map(d => d.pushToken))
+                                                                else setSelectedDevices([])
+                                                            }}
+                                                        />
+                                                        Tout sǸlectionner
+                                                    </label>
+                                                )}
+                                            </div>
+                                            <div className="max-h-[200px] overflow-y-auto space-y-2 border border-[var(--border)] rounded-xl p-3 bg-[var(--surface-0)]">
+                                                {filteredDevices.map((device: any) => (
+                                                    <label key={device.id} className="flex items-start gap-3 p-2 hover:bg-[var(--surface-2)] rounded-lg cursor-pointer transition-colors">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedDevices.includes(device.pushToken)}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) setSelectedDevices(prev => [...prev, device.pushToken])
+                                                                else setSelectedDevices(prev => prev.filter(t => t !== device.pushToken))
+                                                            }}
+                                                            className="mt-1"
+                                                        />
+                                                        <div className="overflow-hidden">
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="text-sm font-bold truncate text-[var(--text-primary)]">📱 Appareil {device.os?.toUpperCase() || 'Android'}</p>
+                                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                                                                    {device.buildId?.substring(0,6) || 'Global'}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[10px] text-[var(--text-muted)] truncate font-mono mt-0.5" title={device.pushToken}>{device.pushToken}</p>
+                                                        </div>
+                                                    </label>
+                                                ))}
+                                                {filteredDevices.length === 0 && (
+                                                    <p className="text-sm text-[var(--text-muted)] p-2">Aucun appareil trouvǸ pour cette application.</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )
+                                })()}
                                 <Input
                                     label="Titre"
                                     placeholder="Offre spéciale !"
@@ -413,6 +474,32 @@ export default function NotificationsPage() {
                             </button>
                         </div>
                     </motion.div>
+                </div>
+            )}
+
+            {/* Templates Tab */}
+            {tab === 'templates' && (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[
+                        { emoji: '🔥', title: 'Offre flash', body: 'Jusqu\'à -50% pendant 24h ! Découvrez nos meilleures offres maintenant.' },
+                        { emoji: '📰', title: 'Nouveau contenu', body: 'Nous avons publié {X} nouveaux articles. Venez les découvrir !' },
+                        { emoji: '✅', title: 'Confirmation commande', body: 'Votre commande #{NUM} a été confirmée. Merci pour votre achat !' },
+                        { emoji: '⏰', title: 'Rappel', body: 'N\'oubliez pas de finaliser votre panier. Il vous attend !' },
+                        { emoji: '🎉', title: 'Evénement', body: 'Ne manquez pas notre événement spécial ce {DATE} !' },
+                        { emoji: '📦', title: 'Livraison', body: 'Votre colis #{NUM} est en chemin ! Livraison estimée : {DATE}.' },
+                    ].map(template => (
+                        <div key={template.title} className="bg-[var(--surface-1)] border border-[var(--border)] rounded-3xl p-6 shadow-sm hover:border-blue-500 hover:shadow-md cursor-pointer transition-all"
+                            onClick={() => { setForm(f => ({ ...f, title: template.title, body: template.body })); setTab('compose'); toast.success('Modèle chargé !') }}>
+                            <div className="text-4xl mb-4 bg-[var(--surface-2)] w-16 h-16 flex items-center justify-center rounded-2xl shadow-inner">{template.emoji}</div>
+                            <h3 className="font-bold mb-2 text-[var(--text-primary)] text-lg">{template.title}</h3>
+                            <p className="text-sm text-[var(--text-muted)] leading-relaxed">{template.body}</p>
+                            <button
+                                className="mt-4 text-sm font-bold text-blue-500 bg-blue-500/10 px-4 py-2 rounded-xl w-full hover:bg-blue-500 hover:text-white transition-colors"
+                            >
+                                Utiliser ce modèle →
+                            </button>
+                        </div>
+                    ))}
                 </div>
             )}
 
