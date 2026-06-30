@@ -97,12 +97,13 @@ export async function getDevices(appId?: string, customBaseUrl?: string) {
 // In development: proxied via vite.config.ts /api -> localhost:4000
 // In production: targets /api 
 const getBaseUrl = () => {
-    // If we're on site2app.online/site2app/, we want to hit site2app.online/node
-    if (window.location.hostname === 'site2app.online') {
-        return 'https://site2app.online/node'
+    // In local development, use the Vite proxy
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return window.location.origin + '/node'
     }
-    // For local development or other environments
-    return window.location.origin + '/node'
+    // In production (GitHub Pages, site2app.online, or any other host),
+    // always target the real Node backend on site2app.online
+    return 'https://site2app.online/node'
 }
 
 export const nodeApi = axios.create({

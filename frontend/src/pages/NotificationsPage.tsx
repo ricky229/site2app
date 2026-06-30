@@ -187,6 +187,7 @@ export default function NotificationsPage() {
             const headers: any = { 'Content-Type': 'application/json' }
             if (!user.bubbleApiUrl) headers['Authorization'] = `Bearer ${BUBBLE_TOKEN}`
 
+            // 1. Save to Bubble notification_queue (for history/audit)
             const res = await axios.post(`${baseUrl}/notification_queue`, {
                 title: String(payload.title || ''),
                 body: String(payload.body || ''),
@@ -195,8 +196,34 @@ export default function NotificationsPage() {
                 targetOs: targetStr,
                 targetToken: tokenStr,
                 image: String(payload.image || ''),
-                targetUrl: String(payload.actionUrl || '')
+                targetUrl: String(payload.actionUrl || ''),
+                status: 'Pending'
             }, { headers })
+
+            // 2. INSTANT SEND: Call the Node backend webhook directly to send the FCM push NOW
+            // This is critical because polling from GitHub Pages doesn't work (different origin)
+            try {
+                const token = localStorage.getItem('site2app_token')
+                await axios.post('https://site2app.online/node/notifications/webhook', {
+                    owner: String(user.id || ''),
+                    title: String(payload.title || ''),
+                    body: String(payload.body || ''),
+                    buildId: String(payload.buildId || 'all'),
+                    targetOs: targetStr,
+                    targetToken: tokenStr,
+                    image: String(payload.image || ''),
+                    actionUrl: String(payload.actionUrl || '')
+                }, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    }
+                })
+                console.log('[Notifications] FCM push sent via webhook')
+            } catch (webhookErr: any) {
+                console.warn('[Notifications] Webhook call failed, backend polling will handle it:', webhookErr?.message)
+            }
+
             return res.data;
         },
         onSuccess: () => {
