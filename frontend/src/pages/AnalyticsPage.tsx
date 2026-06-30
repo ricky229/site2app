@@ -2,37 +2,69 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
     BarChart2, TrendingUp, Users, Bell, Globe, Smartphone,
-    Send, CheckCircle, Package, Activity
+    Send, CheckCircle, Package, Activity, Calendar
 } from 'lucide-react'
 import {
     AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts'
-import { StatCard } from '../components/ui/Card'
-import { Select } from '../components/ui/FormControls'
 import { formatNumber, formatRelativeTime } from '../lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { getAppsByUser } from '../lib/api'
 import axios from 'axios'
 
-const CHART_COLORS = { primary: '#3461f5', secondary: '#7c3aed', success: '#10b981', warning: '#f59e0b' }
+const CHART_COLORS = { primary: '#3b82f6', secondary: '#8b5cf6', success: '#10b981', warning: '#f59e0b' }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null
     return (
-        <div className="card p-3" style={{ minWidth: '140px' }}>
-            <p className="text-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
+        <div className="bg-[var(--surface-0)] border border-[var(--border)] rounded-xl p-4 shadow-xl" style={{ minWidth: '160px' }}>
+            <p className="text-sm font-bold mb-3 text-[var(--text-primary)] border-b border-[var(--border)] pb-2">{label}</p>
             {payload.map((p: any, i: number) => (
-                <div key={i} className="flex items-center gap-2 text-sm">
-                    <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-                    <span style={{ color: 'var(--text-secondary)' }}>{p.name}:</span>
+                <div key={i} className="flex items-center justify-between gap-4 text-sm mb-1.5 last:mb-0">
+                    <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
+                        <span className="text-[var(--text-secondary)] font-medium">{p.name}</span>
+                    </div>
                     <span className="font-bold" style={{ color: p.color }}>{formatNumber(p.value)}</span>
                 </div>
             ))}
         </div>
     )
 }
+
+const PremiumStatCard = ({ title, value, icon: Icon, color, delay }: any) => (
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay, duration: 0.5, ease: "easeOut" }}
+        className="relative overflow-hidden rounded-3xl p-6 border group"
+        style={{
+            background: 'var(--surface-1)',
+            borderColor: 'var(--border)',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.04)',
+        }}
+    >
+        <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-10 group-hover:scale-150 group-hover:opacity-20 transition-all duration-700 blur-2xl"
+            style={{ background: color }} />
+        
+        <div className="flex justify-between items-start mb-6 relative z-10">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
+                style={{ background: `linear-gradient(135deg, ${color}dd, ${color})`, color: 'white' }}>
+                <Icon size={26} strokeWidth={2.5} />
+            </div>
+        </div>
+        <div className="relative z-10">
+            <h3 className="text-3xl md:text-4xl font-black tracking-tight mb-2 text-[var(--text-primary)]">
+                {value}
+            </h3>
+            <p className="text-sm font-semibold tracking-wide uppercase text-[var(--text-muted)]">
+                {title}
+            </p>
+        </div>
+    </motion.div>
+)
 
 // Helper to fetch notifications from Bubble Data API
 async function getUserNotifications(user: any) {
@@ -103,8 +135,6 @@ export default function AnalyticsPage() {
         queryKey: ['analytics', period, user?.id],
         queryFn: async () => {
              if (!user?.id) throw new Error('Not logged in')
-             
-             // Fetch real data from Bubble
              const [apps, notifs, devices] = await Promise.all([
                  getAppsByUser(user.id),
                  getUserNotifications(user),
@@ -115,11 +145,9 @@ export default function AnalyticsPage() {
              const now = new Date()
              const periodStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000)
              
-             // Filter by date
              const periodNotifs = notifs.filter((n: any) => new Date(n['Created Date'] || n.createdAt) >= periodStart)
              const periodDevices = devices.filter((d: any) => new Date(d['Created Date'] || d.createdAt) >= periodStart)
 
-             // Calculate stats
              const totalSent = periodNotifs.reduce((sum: number, n: any) => sum + (n.sentCount || n.sent || 0), 0)
              const totalDelivered = periodNotifs.reduce((sum: number, n: any) => sum + (n.deliveredCount || n.delivered || 0), 0)
              const avgDeliveryRate = totalSent > 0 ? Math.round((totalDelivered / totalSent) * 100) : 0
@@ -132,7 +160,6 @@ export default function AnalyticsPage() {
                  avgDeliveryRate
              }
              
-             // Daily timeline
              const dailyData: Record<string, { sent: number, delivered: number, devices: number }> = {}
              for (let i = 0; i < periodDays; i++) {
                  const day = new Date(now.getTime() - (periodDays - 1 - i) * 24 * 60 * 60 * 1000)
@@ -170,17 +197,15 @@ export default function AnalyticsPage() {
                  devices: data.devices
              }))
              
-             // Platform stats based on apps
              const androidApps = apps.filter((a: any) => a.platform === 'android' || a.platform === 'both').length
              const iosApps = apps.filter((a: any) => a.platform === 'ios' || a.platform === 'both').length
              const totalPlatforms = androidApps + iosApps || 1
              
              const platformData = [
-                 { name: 'Android', value: Math.round((androidApps / totalPlatforms) * 100), count: androidApps, color: '#3ddc84' },
-                 { name: 'iOS', value: Math.round((iosApps / totalPlatforms) * 100), count: iosApps, color: '#000000' }
+                 { name: 'Android', value: Math.round((androidApps / totalPlatforms) * 100), count: androidApps, color: '#3b82f6' },
+                 { name: 'iOS', value: Math.round((iosApps / totalPlatforms) * 100), count: iosApps, color: '#8b5cf6' }
              ]
              
-             // Apps stats mapping
              const appStats = apps.map((a: any) => {
                  const appNotifs = notifs.filter((n: any) => n.appId === a._id)
                  const aSent = appNotifs.reduce((sum: number, n: any) => sum + (n.sentCount || n.sent || 0), 0)
@@ -194,7 +219,6 @@ export default function AnalyticsPage() {
                  }
              })
              
-             // Top notifs
              const topNotifications = periodNotifs.sort((a: any, b: any) => new Date(b['Created Date'] || b.createdAt).getTime() - new Date(a['Created Date'] || a.createdAt).getTime()).slice(0, 5).map((n: any) => {
                  const nSent = n.sentCount || n.sent || 0;
                  const nDeliv = n.deliveredCount || n.delivered || 0;
@@ -208,8 +232,7 @@ export default function AnalyticsPage() {
                  }
              })
              
-             // Recent devices fallback
-             const recentDevices = periodDevices.slice(0, 5).map((d: any) => ({
+             const recentDevices = periodDevices.sort((a: any, b: any) => new Date(b['Created Date'] || b.createdAt).getTime() - new Date(a['Created Date'] || a.createdAt).getTime()).slice(0, 5).map((d: any) => ({
                  os: d.os || 'android',
                  buildName: d.appName || 'App',
                  id: (d.deviceId || d._id || '').slice(0, 15) + '...',
@@ -227,156 +250,168 @@ export default function AnalyticsPage() {
                  recentDevices
              }
         },
-        refetchInterval: 30000 // Rafraîchir toutes les 30s
+        refetchInterval: 30000
     })
 
-    const summary = analytics?.summary || { totalNotifications: 0, totalSent: 0, totalDelivered: 0, avgDeliveryRate: 0, totalDevices: 0, totalApps: 0 }
+    const summary = analytics?.summary || { totalSent: 0, totalDelivered: 0, avgDeliveryRate: 0, totalDevices: 0, totalApps: 0 }
     const sendTimeline = analytics?.sendTimeline || []
     const deviceTimeline = analytics?.deviceTimeline || []
-    const platformData = analytics?.platformData || [{ name: 'Android', value: 100, count: 0, color: '#3461f5' }]
+    const platformData = analytics?.platformData || [{ name: 'Android', value: 100, count: 0, color: '#3b82f6' }]
     const appStats = analytics?.appStats || []
     const topNotifications = analytics?.topNotifications || []
     const recentDevices = analytics?.recentDevices || []
 
     return (
-        <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto w-full overflow-x-hidden">
+        <div className="p-4 md:p-8 lg:p-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10"
+            >
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold mb-1 flex items-center gap-3 break-words">
-                        <BarChart2 size={24} className="md:w-7 md:h-7" style={{ color: 'var(--brand-500)' }} />
-                        Analytics
+                    <h1 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight flex items-center gap-3">
+                        <BarChart2 className="text-blue-500" size={32} strokeWidth={2.5} />
+                        Statistiques
                     </h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>
-                        Statistiques en temps réel de vos applications et notifications.
-                    </p>
+                    <p className="text-[var(--text-muted)] text-lg font-medium">Analysez les performances et l'engagement.</p>
                 </div>
-                <div className="flex items-center gap-3">
+                
+                <div className="flex items-center gap-4 bg-[var(--surface-1)] p-2 rounded-2xl border border-[var(--border)] shadow-sm">
                     {isLoading && (
-                        <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-                            <Activity size={14} className="animate-pulse" /> Chargement...
+                        <div className="flex items-center gap-2 text-sm text-blue-500 px-3 font-semibold">
+                            <Activity size={16} className="animate-pulse" /> Actualisation...
                         </div>
                     )}
-                    <Select
-                        options={[
-                            { value: '7', label: '7 derniers jours' },
-                            { value: '30', label: '30 derniers jours' },
-                            { value: '90', label: '90 derniers jours' },
-                        ]}
-                        value={period}
-                        onChange={e => setPeriod(e.target.value)}
-                    />
+                    <div className="flex items-center bg-[var(--surface-2)] p-1 rounded-xl">
+                        {[
+                            { value: '7', label: '7j' },
+                            { value: '30', label: '30j' },
+                            { value: '90', label: '90j' },
+                        ].map(opt => (
+                            <button
+                                key={opt.value}
+                                onClick={() => setPeriod(opt.value)}
+                                className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${period === opt.value ? 'bg-[var(--surface-0)] text-blue-500 shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            </motion.div>
 
             {/* KPI Stats */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <StatCard
-                    title="Notifications envoyées"
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 mb-10">
+                <PremiumStatCard
+                    title="Notifs Envoyées"
                     value={formatNumber(summary.totalSent)}
-                    change={0}
-                    icon={<Send size={20} />}
-                    color="#3461f5"
+                    icon={Send}
+                    color="#3b82f6"
+                    delay={0.1}
                 />
-                <StatCard
-                    title="Appareils enregistrés"
+                <PremiumStatCard
+                    title="Appareils Actifs"
                     value={formatNumber(summary.totalDevices)}
-                    change={0}
-                    icon={<Smartphone size={20} />}
-                    color="#7c3aed"
+                    icon={Smartphone}
+                    color="#8b5cf6"
+                    delay={0.2}
                 />
-                <StatCard
-                    title="Taux de livraison"
+                <PremiumStatCard
+                    title="Taux de Livraison"
                     value={`${summary.avgDeliveryRate}%`}
-                    change={0}
-                    icon={<CheckCircle size={20} />}
+                    icon={CheckCircle}
                     color="#10b981"
+                    delay={0.3}
                 />
-                <StatCard
-                    title="Applications actives"
+                <PremiumStatCard
+                    title="Applications"
                     value={formatNumber(summary.totalApps)}
-                    change={0}
-                    icon={<Package size={20} />}
+                    icon={Package}
                     color="#f59e0b"
+                    delay={0.4}
                 />
             </div>
 
             {/* Main Charts Row */}
-            <div className="grid lg:grid-cols-3 gap-6 mb-6">
-                {/* Notifications envoyées / livrées */}
+            <div className="grid lg:grid-cols-3 gap-8 mb-8">
+                {/* Notifications Area Chart */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                    className="lg:col-span-2 card p-5"
+                    className="lg:col-span-2 rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm"
                 >
-                    <div className="flex items-center justify-between mb-5">
-                        <h3 className="font-bold">Notifications envoyées vs livrées</h3>
-                        <div className="flex gap-4 text-xs">
-                            <span className="flex items-center gap-1.5">
-                                <span className="w-3 h-0.5 rounded" style={{ background: CHART_COLORS.primary, display: 'inline-block' }} />
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-xl font-black text-[var(--text-primary)]">Performances des Notifications</h3>
+                        <div className="flex gap-4 text-sm font-bold bg-[var(--surface-2)] px-4 py-2 rounded-xl">
+                            <span className="flex items-center gap-2 text-blue-500">
+                                <span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                                 Envoyées
                             </span>
-                            <span className="flex items-center gap-1.5">
-                                <span className="w-3 h-0.5 rounded" style={{ background: CHART_COLORS.success, display: 'inline-block' }} />
+                            <span className="flex items-center gap-2 text-emerald-500">
+                                <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                                 Livrées
                             </span>
                         </div>
                     </div>
-                    <ResponsiveContainer width="100%" height={220}>
-                        <AreaChart data={sendTimeline}>
-                            <defs>
-                                <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={CHART_COLORS.primary} stopOpacity={0.15} />
-                                    <stop offset="95%" stopColor={CHART_COLORS.primary} stopOpacity={0} />
-                                </linearGradient>
-                                <linearGradient id="colorDelivered" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor={CHART_COLORS.success} stopOpacity={0.15} />
-                                    <stop offset="95%" stopColor={CHART_COLORS.success} stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                            <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} interval={Math.max(Math.floor(sendTimeline.length / 8), 1)} />
-                            <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Area type="monotone" dataKey="sent" name="Envoyées" stroke={CHART_COLORS.primary} strokeWidth={2} fill="url(#colorSent)" dot={false} />
-                            <Area type="monotone" dataKey="delivered" name="Livrées" stroke={CHART_COLORS.success} strokeWidth={2} fill="url(#colorDelivered)" dot={false} />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                    <div className="h-[280px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={sendTimeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={CHART_COLORS.primary} stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor={CHART_COLORS.primary} stopOpacity={0} />
+                                    </linearGradient>
+                                    <linearGradient id="colorDelivered" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={CHART_COLORS.success} stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor={CHART_COLORS.success} stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                <XAxis dataKey="date" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={30} />
+                                <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Area type="monotone" dataKey="sent" name="Envoyées" stroke={CHART_COLORS.primary} strokeWidth={3} fill="url(#colorSent)" />
+                                <Area type="monotone" dataKey="delivered" name="Livrées" stroke={CHART_COLORS.success} strokeWidth={3} fill="url(#colorDelivered)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
                 </motion.div>
 
-                {/* Plateformes (Pie) */}
+                {/* Platforms Donut Chart */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                    className="card p-5"
+                    className="rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm flex flex-col"
                 >
-                    <h3 className="font-bold mb-5">Plateformes</h3>
-                    <ResponsiveContainer width="100%" height={160}>
-                        <PieChart>
-                            <Pie
-                                data={platformData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={45}
-                                outerRadius={70}
-                                paddingAngle={3}
-                                dataKey="value"
-                            >
-                                {platformData.map((entry: any, index: number) => (
-                                    <Cell key={index} fill={entry.color} />
-                                ))}
-                            </Pie>
-                            <Tooltip formatter={(v: any) => `${v}%`} />
-                        </PieChart>
-                    </ResponsiveContainer>
-                    <div className="space-y-2 mt-2">
+                    <h3 className="text-xl font-black text-[var(--text-primary)] mb-6">Plateformes</h3>
+                    <div className="flex-1 min-h-[200px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={platformData}
+                                    cx="50%" cy="50%"
+                                    innerRadius="65%" outerRadius="85%"
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    {platformData.map((entry: any, index: number) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip formatter={(v: any) => `${v}%`} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div className="space-y-3 mt-6">
                         {platformData.map((d: any) => (
-                            <div key={d.name} className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-sm" style={{ background: d.color }} />
-                                    <span className="text-sm">{d.name}</span>
+                            <div key={d.name} className="flex items-center justify-between bg-[var(--surface-2)] p-3 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-4 h-4 rounded-full shadow-sm" style={{ background: d.color }} />
+                                    <span className="font-bold text-[var(--text-primary)]">{d.name}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>({d.count} appareils)</span>
-                                    <span className="font-bold text-sm">{d.value}%</span>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm font-medium text-[var(--text-muted)]">{d.count} app{d.count > 1 ? 's' : ''}</span>
+                                    <span className="font-black text-lg" style={{ color: d.color }}>{d.value}%</span>
                                 </div>
                             </div>
                         ))}
@@ -385,84 +420,69 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Second Row */}
-            <div className="grid lg:grid-cols-3 gap-6 mb-6">
-                {/* Appareils inscrits over time */}
+            <div className="grid lg:grid-cols-3 gap-8 mb-8">
+                {/* Devices Bar Chart */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                    className="card p-5"
+                    className="rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm"
                 >
-                    <h3 className="font-bold mb-5">Appareils inscrits</h3>
-                    <ResponsiveContainer width="100%" height={180}>
-                        <BarChart data={deviceTimeline}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                            <XAxis dataKey="date" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} interval={Math.max(Math.floor(deviceTimeline.length / 6), 1)} />
-                            <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
-                            <Tooltip formatter={(v: any) => formatNumber(v)} />
-                            <Bar dataKey="devices" name="Appareils" fill={CHART_COLORS.secondary} radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </motion.div>
-
-                {/* Stats par application */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                    className="card p-5"
-                >
-                    <h3 className="font-bold mb-4">Statistiques par application</h3>
-                    <div className="space-y-3">
-                        {appStats.length === 0 ? (
-                            <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>
-                                Aucune application trouvée. Créez votre première app pour voir les stats.
-                            </p>
-                        ) : appStats.map((app: any) => (
-                            <div key={app.id} className="p-3 rounded-xl" style={{ background: 'var(--surface-1)' }}>
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-bold truncate">{app.name}</span>
-                                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                                        style={{ background: 'var(--brand-50)', color: 'var(--brand-500)' }}>
-                                        {app.devices} appareil{app.devices > 1 ? 's' : ''}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--text-muted)' }}>
-                                    <span>📤 {app.notificationsSent} envoyées</span>
-                                    <span>✅ {app.deliveryRate}% livrées</span>
-                                </div>
-                                <div className="progress-bar mt-2" style={{ height: '4px' }}>
-                                    <div className="progress-fill" style={{ width: `${app.deliveryRate}%`, background: CHART_COLORS.success }} />
-                                </div>
-                            </div>
-                        ))}
+                    <h3 className="text-xl font-black text-[var(--text-primary)] mb-8">Acquisition (Appareils)</h3>
+                    <div className="h-[220px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={deviceTimeline} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={20} />
+                                <YAxis tick={{ fontSize: 11, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--surface-2)' }} />
+                                <Bar dataKey="devices" name="Appareils" fill={CHART_COLORS.secondary} radius={[6, 6, 0, 0]} barSize={32} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </div>
                 </motion.div>
 
-                {/* Dernières notifications */}
+                {/* Top Notifications */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-                    className="card p-5"
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                    className="lg:col-span-2 rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm"
                 >
-                    <h3 className="font-bold mb-4">Dernières notifications</h3>
-                    <div className="space-y-2 max-h-[260px] overflow-y-auto">
+                    <h3 className="text-xl font-black text-[var(--text-primary)] mb-6">Campagnes récentes</h3>
+                    <div className="space-y-4">
                         {topNotifications.length === 0 ? (
-                            <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>
-                                Aucune notification envoyée durant cette période.
-                            </p>
+                            <div className="text-center py-12 border-2 border-dashed border-[var(--border)] rounded-3xl bg-[var(--surface-2)]">
+                                <Bell className="mx-auto text-[var(--text-muted)] mb-3" size={32} />
+                                <p className="text-[var(--text-muted)] font-medium">Aucune notification envoyée.</p>
+                            </div>
                         ) : topNotifications.map((notif: any) => (
-                            <div key={notif.id} className="flex items-start gap-3 p-2.5 rounded-lg" style={{ background: 'var(--surface-1)' }}>
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                                    style={{ background: notif.deliveryRate >= 80 ? '#dcfce7' : notif.deliveryRate > 0 ? '#fef3c7' : '#fee2e2' }}>
-                                    <Bell size={14} style={{ color: notif.deliveryRate >= 80 ? '#10b981' : notif.deliveryRate > 0 ? '#f59e0b' : '#ef4444' }} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold truncate">{notif.title}</p>
-                                    <div className="flex items-center gap-3 mt-0.5">
-                                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                            📤 {notif.sent} → ✅ {notif.delivered}
-                                        </span>
-                                        <span className="text-xs font-bold" style={{ color: notif.deliveryRate >= 80 ? '#10b981' : '#f59e0b' }}>
-                                            {notif.deliveryRate}%
-                                        </span>
+                            <div key={notif.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-[var(--surface-2)] border border-transparent hover:border-[var(--border)] transition-all">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
+                                        style={{ background: notif.deliveryRate >= 80 ? '#10b98122' : notif.deliveryRate > 0 ? '#f59e0b22' : '#ef444422' }}>
+                                        <Bell size={20} style={{ color: notif.deliveryRate >= 80 ? '#10b981' : notif.deliveryRate > 0 ? '#f59e0b' : '#ef4444' }} />
                                     </div>
-                                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{formatRelativeTime(notif.sentAt)}</p>
+                                    <div>
+                                        <p className="font-bold text-[var(--text-primary)] text-base">{notif.title}</p>
+                                        <p className="text-xs font-medium text-[var(--text-muted)] flex items-center gap-1 mt-1">
+                                            <Calendar size={12} /> {formatRelativeTime(notif.sentAt)}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-6 bg-[var(--surface-0)] px-5 py-3 rounded-xl border border-[var(--border)] self-start sm:self-auto">
+                                    <div className="text-center">
+                                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wide">Envoyées</p>
+                                        <p className="font-black text-blue-500">{formatNumber(notif.sent)}</p>
+                                    </div>
+                                    <div className="w-px h-8 bg-[var(--border)]" />
+                                    <div className="text-center">
+                                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wide">Livrées</p>
+                                        <p className="font-black text-emerald-500">{formatNumber(notif.delivered)}</p>
+                                    </div>
+                                    <div className="w-px h-8 bg-[var(--border)]" />
+                                    <div className="text-center">
+                                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wide">Taux</p>
+                                        <p className="font-black" style={{ color: notif.deliveryRate >= 80 ? '#10b981' : '#f59e0b' }}>
+                                            {notif.deliveryRate}%
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -470,42 +490,44 @@ export default function AnalyticsPage() {
                 </motion.div>
             </div>
 
-            {/* Appareils enregistrés récemment */}
+            {/* Devices Table */}
             {recentDevices.length > 0 && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                    className="card p-5"
+                    className="rounded-[2rem] bg-[var(--surface-1)] border border-[var(--border)] shadow-sm overflow-hidden"
                 >
-                    <h3 className="font-bold mb-4">Appareils enregistrés récemment</h3>
+                    <div className="p-6 md:p-8 border-b border-[var(--border)]">
+                        <h3 className="text-xl font-black text-[var(--text-primary)]">Appareils Récemment Inscrits</h3>
+                    </div>
                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
-                                    <th className="text-left py-2 px-3 font-semibold" style={{ color: 'var(--text-muted)' }}>OS</th>
-                                    <th className="text-left py-2 px-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Application</th>
-                                    <th className="text-left py-2 px-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Token FCM</th>
-                                    <th className="text-left py-2 px-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Inscrit le</th>
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-[var(--surface-2)]">
+                                <tr>
+                                    <th className="py-4 px-6 font-bold text-[var(--text-muted)] uppercase tracking-wider text-xs">OS</th>
+                                    <th className="py-4 px-6 font-bold text-[var(--text-muted)] uppercase tracking-wider text-xs">Application</th>
+                                    <th className="py-4 px-6 font-bold text-[var(--text-muted)] uppercase tracking-wider text-xs">Identifiant (Token)</th>
+                                    <th className="py-4 px-6 font-bold text-[var(--text-muted)] uppercase tracking-wider text-xs">Date d'inscription</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-[var(--border)]">
                                 {recentDevices.map((device: any, i: number) => (
-                                    <tr key={i} className="border-b" style={{ borderColor: 'var(--border)' }}>
-                                        <td className="py-2.5 px-3">
-                                            <span className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full font-semibold"
+                                    <tr key={i} className="hover:bg-[var(--surface-2)] transition-colors">
+                                        <td className="py-4 px-6">
+                                            <span className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full font-bold"
                                                 style={{
-                                                    background: device.os === 'android' ? '#e0e7ff' : '#f3e8ff',
-                                                    color: device.os === 'android' ? '#3461f5' : '#7c3aed'
+                                                    background: device.os === 'android' ? 'rgba(59,130,246,0.1)' : 'rgba(139,92,246,0.1)',
+                                                    color: device.os === 'android' ? '#3b82f6' : '#8b5cf6'
                                                 }}>
-                                                {device.os === 'android' ? '🤖' : '🍎'} {device.os?.toUpperCase()}
+                                                {device.os === 'android' ? '🤖 Android' : '🍎 iOS'}
                                             </span>
                                         </td>
-                                        <td className="py-2.5 px-3 font-medium">{device.buildName}</td>
-                                        <td className="py-2.5 px-3">
-                                            <code className="text-xs px-2 py-1 rounded" style={{ background: 'var(--surface-1)' }} title={device.fullId}>
+                                        <td className="py-4 px-6 font-bold text-[var(--text-primary)]">{device.buildName}</td>
+                                        <td className="py-4 px-6">
+                                            <code className="text-xs px-3 py-1.5 rounded-lg font-mono text-[var(--text-secondary)] bg-[var(--surface-0)] border border-[var(--border)]">
                                                 {device.id}
                                             </code>
                                         </td>
-                                        <td className="py-2.5 px-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                                        <td className="py-4 px-6 font-medium text-[var(--text-muted)]">
                                             {formatRelativeTime(device.registeredAt)}
                                         </td>
                                     </tr>

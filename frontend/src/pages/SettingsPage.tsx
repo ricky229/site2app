@@ -1,27 +1,24 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
-    Settings, User, CreditCard, Bell, Shield, Globe, Plus, Pencil,
-    Save, LogOut, Trash2, Eye, EyeOff, CheckCircle, Upload
+    Settings, User, Bell, Shield, Globe, Upload, Save,
+    LogOut, Trash2, Smartphone
 } from 'lucide-react'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
-import { Toggle, Select } from '../components/ui/FormControls'
+import { Toggle } from '../components/ui/FormControls'
 import { useAuthStore } from '../store/authStore'
 import { getInitials } from '../lib/utils'
 import toast from 'react-hot-toast'
 import api from '../lib/api'
-import { useEffect } from 'react'
 
 const tabs = [
-    { id: 'profile', label: 'Profil', icon: User },
-    { id: 'integrations', label: 'Intégrations', icon: Globe },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'security', label: 'Sécurité', icon: Shield },
+    { id: 'profile', label: 'Profil', icon: User, color: 'blue' },
+    { id: 'integrations', label: 'Intégrations', icon: Globe, color: 'purple' },
+    { id: 'notifications', label: 'Alertes', icon: Bell, color: 'emerald' },
+    { id: 'security', label: 'Sécurité', icon: Shield, color: 'red' },
 ]
-
-
 
 export default function SettingsPage() {
     const navigate = useNavigate()
@@ -52,7 +49,7 @@ export default function SettingsPage() {
         await new Promise(r => setTimeout(r, 1000))
         updateUser({ name: form.name, email: form.email })
         setSaving(false)
-        toast.success('Profil mis à jour !')
+        toast.success('Profil mis à jour avec succès !')
     }
 
     const handleLogout = () => {
@@ -61,263 +58,272 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="p-3 sm:p-4 md:p-6 max-w-5xl mx-auto w-full overflow-x-hidden">
-            <div className="mb-8">
-                <h1 className="text-2xl md:text-3xl font-bold mb-1 flex items-center gap-3 break-words">
-                    <Settings size={24} className="md:w-7 md:h-7" style={{ color: 'var(--brand-500)' }} />
+        <div className="p-4 md:p-8 lg:p-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
+            {/* Header */}
+            <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-10"
+            >
+                <h1 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight flex items-center gap-3">
+                    <Settings className="text-[var(--text-muted)]" size={32} strokeWidth={2.5} />
                     Paramètres
                 </h1>
-                <p style={{ color: 'var(--text-secondary)' }}>Gérez votre compte et vos préférences.</p>
-            </div>
+                <p className="text-[var(--text-muted)] text-lg font-medium">Gérez votre compte, vos intégrations et votre sécurité.</p>
+            </motion.div>
 
-            <div className="flex flex-col md:flex-row gap-6">
-                {/* Sidebar tabs */}
-                <div className="md:w-52 flex-shrink-0">
-                    <nav className="space-y-1">
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+                {/* Sidebar Navigation */}
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="w-full lg:w-64 flex-shrink-0"
+                >
+                    <div className="bg-[var(--surface-1)] border border-[var(--border)] rounded-[2rem] p-3 shadow-sm flex lg:flex-col gap-2 overflow-x-auto hide-scroll">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className="sidebar-item w-full"
-                                style={{
-                                    background: activeTab === tab.id ? 'rgba(52,97,245,0.1)' : '',
-                                    color: activeTab === tab.id ? 'var(--brand-500)' : 'var(--text-secondary)',
-                                }}
+                                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold transition-all whitespace-nowrap lg:whitespace-normal ${
+                                    activeTab === tab.id 
+                                    ? `bg-[var(--surface-0)] text-${tab.color}-500 shadow-sm border border-[var(--border)]` 
+                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] border border-transparent'
+                                }`}
                             >
-                                <tab.icon size={17} />
+                                <tab.icon size={20} strokeWidth={activeTab === tab.id ? 2.5 : 2} />
                                 {tab.label}
                             </button>
                         ))}
-                        <div className="divider my-2" />
-                        <button onClick={handleLogout} className="sidebar-item w-full" style={{ color: '#ef4444' }}>
-                            <LogOut size={17} />
+                        <div className="hidden lg:block w-full h-px bg-[var(--border)] my-2" />
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all border border-transparent whitespace-nowrap lg:whitespace-normal"
+                        >
+                            <LogOut size={20} strokeWidth={2} />
                             Déconnexion
                         </button>
-                    </nav>
-                </div>
+                    </div>
+                </motion.div>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0 space-y-5">
-                    {/* Profile */}
-                    {activeTab === 'profile' && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <div className="card p-6">
-                                <h2 className="font-bold text-lg mb-5">Informations personnelles</h2>
-
-                                {/* Avatar */}
-                                <div className="flex items-center gap-5 mb-6">
-                                    <div className="relative">
-                                        <div className="w-20 h-20 rounded-full avatar flex items-center justify-center text-xl font-bold text-white"
-                                            style={{ background: 'linear-gradient(135deg, #3461f5, #7c3aed)' }}>
-                                            {user?.avatar ? (
-                                                <img src={user.avatar} alt="avatar" className="w-20 h-20 rounded-full" />
-                                            ) : getInitials(user?.name || 'U')}
+                {/* Content Area */}
+                <div className="flex-1 min-w-0 w-full">
+                    <AnimatePresence mode="wait">
+                        {/* PROFILE */}
+                        {activeTab === 'profile' && (
+                            <motion.div
+                                key="profile"
+                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <div className="bg-[var(--surface-1)] border border-[var(--border)] rounded-[2rem] p-6 md:p-8 shadow-sm">
+                                    <h2 className="text-2xl font-black mb-8 text-[var(--text-primary)]">Informations du Compte</h2>
+                                    
+                                    <div className="flex flex-col md:flex-row gap-8 mb-10">
+                                        <div className="relative group self-start">
+                                            <div className="w-24 h-24 rounded-[2rem] flex items-center justify-center text-3xl font-black text-white shadow-xl bg-gradient-to-br from-blue-500 to-purple-600">
+                                                {user?.avatar ? (
+                                                    <img src={user.avatar} alt="avatar" className="w-full h-full rounded-[2rem] object-cover" />
+                                                ) : getInitials(user?.name || 'U')}
+                                            </div>
+                                            <button className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                                                <Upload size={18} strokeWidth={2.5} />
+                                            </button>
                                         </div>
-                                        <button className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center"
-                                            style={{ background: 'var(--brand-500)', color: 'white' }}>
-                                            <Upload size={12} />
+                                        <div className="flex-1 space-y-5">
+                                            <div className="grid sm:grid-cols-2 gap-5">
+                                                <Input
+                                                    label="Nom Complet"
+                                                    value={form.name}
+                                                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                                                    className="font-medium"
+                                                />
+                                                <Input
+                                                    label="Adresse Email"
+                                                    type="email"
+                                                    value={form.email}
+                                                    onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                                                    className="font-medium"
+                                                />
+                                            </div>
+                                            <div className="pt-2">
+                                                <label className="text-sm font-bold text-[var(--text-primary)] mb-2 block">Plan d'abonnement</label>
+                                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-200 to-yellow-400 text-yellow-900 rounded-lg font-black text-sm shadow-sm">
+                                                    👑 {user?.plan || 'PRO'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-6 border-t border-[var(--border)] flex justify-end">
+                                        <button
+                                            onClick={handleSaveProfile}
+                                            disabled={saving}
+                                            className="px-8 py-3.5 bg-[var(--text-primary)] text-[var(--surface-0)] rounded-xl font-bold flex items-center gap-2 hover:opacity-90 transition-opacity"
+                                        >
+                                            {saving ? 'Sauvegarde...' : <><Save size={18} /> Sauvegarder</>}
                                         </button>
                                     </div>
-                                    <div>
-                                        <p className="font-semibold">{user?.name}</p>
-                                        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{user?.email}</p>
-                                        <span className="badge badge-brand text-xs mt-1 capitalize">{user?.plan}</span>
-                                    </div>
                                 </div>
+                            </motion.div>
+                        )}
 
-                                <div className="grid sm:grid-cols-2 gap-4 mb-5">
-                                    <Input
-                                        label="Nom complet"
-                                        value={form.name}
-                                        onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                                    />
-                                    <Input
-                                        label="Email"
-                                        type="email"
-                                        value={form.email}
-                                        onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                                    />
-                                </div>
-
-                                <Button onClick={handleSaveProfile} loading={saving} icon={<Save size={16} />}>
-                                    Sauvegarder
-                                </Button>
-                            </div>
-
-
-                        </motion.div>
-                    )}
-
-
-
-                    {/* Notifications settings */}
-                    {activeTab === 'notifications' && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <div className="card p-6">
-                                <h2 className="font-bold text-lg mb-5">Préférences de notifications</h2>
-                                <div className="space-y-4">
-                                    <Toggle
-                                        label="Build terminé"
-                                        description="Recevoir un email quand votre app est prête"
-                                        checked={notifSettings.buildComplete}
-                                        onChange={v => setNotifSettings(s => ({ ...s, buildComplete: v }))}
-                                    />
-                                    <div className="divider" />
-                                    <Toggle
-                                        label="Build échoué"
-                                        description="Recevoir un email en cas d'erreur de compilation"
-                                        checked={notifSettings.buildFailed}
-                                        onChange={v => setNotifSettings(s => ({ ...s, buildFailed: v }))}
-                                    />
-                                    <div className="divider" />
-                                    <Toggle
-                                        label="Rapport hebdomadaire"
-                                        description="Résumé des performances de vos apps chaque lundi"
-                                        checked={notifSettings.weeklyReport}
-                                        onChange={v => setNotifSettings(s => ({ ...s, weeklyReport: v }))}
-                                    />
-                                    <div className="divider" />
-                                    <Toggle
-                                        label="Communications marketing"
-                                        description="Nouveautés, tutoriels et offres spéciales"
-                                        checked={notifSettings.marketing}
-                                        onChange={v => setNotifSettings(s => ({ ...s, marketing: v }))}
-                                    />
-                                </div>
-                                <Button className="mt-5" loading={saving} onClick={async () => {
-                                    setSaving(true)
-                                    await new Promise(r => setTimeout(r, 800))
-                                    setSaving(false)
-                                    toast.success('Préférences sauvegardées !')
-                                }}>
-                                    Enregistrer
-                                </Button>
-                            </div>
-                        </motion.div>
-                    )}
-                    {/* Integrations (Firebase) */}
-                    {activeTab === 'integrations' && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <div className="card p-6">
-                                <h2 className="font-bold text-lg mb-2">Clé Firebase Cloud Messaging</h2>
-                                <p className="text-sm mb-5" style={{ color: 'var(--text-secondary)' }}>
-                                    Pour envoyer des notifications push en marque blanche à vos utilisateurs, veuillez renseigner votre clé de compte de service Firebase.
-                                </p>
-                                <div className="space-y-4 max-w-lg mb-5">
-                                    <Input
-                                        label="Service Account JSON"
-                                        placeholder='{"type": "service_account", "project_id": "..."}'
-                                        value={firebaseKey}
-                                        onChange={e => setFirebaseKey(e.target.value)}
-                                        type="password"
-                                    />
-                                </div>
-                                <Button loading={saving} onClick={async () => {
-                                    if (!firebaseKey) return toast.error('Veuillez entrer une clé valide');
-                                    setSaving(true)
-                                    try {
-                                        await api.post('/user/firebase', { key: firebaseKey })
-                                        toast.success('Clé Firebase sauvegardée. Les push sont activés !')
-                                    } catch (e: any) {
-                                        toast.error(e.error || 'Erreur lors de la sauvegarde')
-                                    } finally {
-                                        setSaving(false)
-                                    }
-                                }}>
-                                    Connecter Firebase
-                                </Button>
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {/* Security */}
-                    {activeTab === 'security' && (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                            <div className="card p-6 mb-5">
-                                <h2 className="font-bold text-lg mb-5">Changer le mot de passe</h2>
-                                <div className="space-y-4 max-w-md">
-                                    <Input label="Mot de passe actuel" type="password" placeholder="••••••••" />
-                                    <Input label="Nouveau mot de passe" type="password" placeholder="••••••••" />
-                                    <Input label="Confirmer le nouveau" type="password" placeholder="••••••••" />
-                                    <Button icon={<Shield size={16} />}>Modifier le mot de passe</Button>
-                                </div>
-                            </div>
-
-                            <div className="card p-6 mb-5">
-                                <h2 className="font-bold text-lg mb-2">Sessions actives</h2>
-                                <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                    Appareils actuellement connectés à votre compte.
-                                </p>
-                                {[
-                                    { device: 'Chrome sur Windows', location: 'Paris, France', current: true, time: 'Maintenant' },
-                                    { device: 'Safari sur iPhone', location: 'Lyon, France', current: false, time: 'il y a 2 jours' },
-                                ].map((session, i) => (
-                                    <div key={i} className="flex items-center justify-between p-3 rounded-xl mb-2"
-                                        style={{ background: 'var(--surface-1)' }}>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <p className="font-semibold text-sm">{session.device}</p>
-                                                {session.current && <span className="badge badge-success text-xs">Actuelle</span>}
-                                            </div>
-                                            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{session.location} · {session.time}</p>
+                        {/* INTEGRATIONS */}
+                        {activeTab === 'integrations' && (
+                            <motion.div
+                                key="integrations"
+                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <div className="bg-[var(--surface-1)] border border-[var(--border)] rounded-[2rem] p-6 md:p-8 shadow-sm">
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <div className="w-12 h-12 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
+                                            <Smartphone size={24} />
                                         </div>
-                                        {!session.current && (
-                                            <button className="text-xs font-medium" style={{ color: '#ef4444' }}>Révoquer</button>
-                                        )}
+                                        <div>
+                                            <h2 className="text-2xl font-black text-[var(--text-primary)]">Firebase Cloud Messaging</h2>
+                                            <p className="text-[var(--text-secondary)] font-medium">Connectez FCM pour envoyer des Push en marque blanche.</p>
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
 
-                            <div className="card p-6">
-                                <h2 className="font-bold text-lg mb-2">Double authentification (2FA)</h2>
-                                <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                    Ajoutez une couche de sécurité supplémentaire à votre compte.
-                                </p>
-                                <Button variant="secondary" icon={<Shield size={16} />}>Activer la 2FA</Button>
-                            </div>
-
-                            <div className="card p-6 mt-6 overflow-hidden relative">
-                                <div className="absolute inset-0 bg-red-500/5 dark:bg-red-500/10 pointer-events-none" />
-                                <div className="absolute inset-y-0 left-0 w-1 bg-red-500" />
-                                <div className="relative z-10">
-                                    <h2 className="font-bold text-xl mb-2 flex items-center gap-2 text-red-600 dark:text-red-400">
-                                        <Trash2 size={20} />
-                                        Zone de danger extrême
-                                    </h2>
-                                    <p className="text-sm mb-5 text-red-800/70 dark:text-red-200/60 font-medium">
-                                        Attention : La suppression de votre compte est définitive. Toutes vos données, y compris vos applications générées et statistiques, seront effacées à tout jamais. Cette action est irréversible.
-                                    </p>
-                                    <div className="flex items-center gap-3 p-4 rounded-xl border" style={{ background: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.1)' }}>
-                                        <Button
-                                            loading={saving}
+                                    <div className="space-y-6">
+                                        <Input
+                                            label="Service Account JSON"
+                                            placeholder='{"type": "service_account", "project_id": "..."}'
+                                            value={firebaseKey}
+                                            onChange={e => setFirebaseKey(e.target.value)}
+                                            type="password"
+                                        />
+                                        <button
                                             onClick={async () => {
-                                                if (confirm('Êtes-vous absolument sûr de vouloir supprimer votre compte définitivement ?\n\nCette action ne peut pas être annulée.')) {
-                                                    setSaving(true);
+                                                if (!firebaseKey) return toast.error('Veuillez entrer une clé valide');
+                                                setSaving(true)
+                                                try {
+                                                    await api.post('/user/firebase', { key: firebaseKey })
+                                                    toast.success('Clé Firebase sauvegardée !')
+                                                } catch (e: any) {
+                                                    toast.error(e.error || 'Erreur')
+                                                } finally {
+                                                    setSaving(false)
+                                                }
+                                            }}
+                                            disabled={saving}
+                                            className="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold transition-colors"
+                                        >
+                                            Connecter Firebase
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* NOTIFICATIONS */}
+                        {activeTab === 'notifications' && (
+                            <motion.div
+                                key="notifications"
+                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <div className="bg-[var(--surface-1)] border border-[var(--border)] rounded-[2rem] p-6 md:p-8 shadow-sm">
+                                    <h2 className="text-2xl font-black mb-8 text-[var(--text-primary)]">Préférences d'Alertes</h2>
+                                    
+                                    <div className="space-y-6">
+                                        <div className="bg-[var(--surface-0)] border border-[var(--border)] rounded-2xl p-5">
+                                            <Toggle
+                                                label="Build terminé"
+                                                description="Recevoir un email quand votre application est compilée et prête."
+                                                checked={notifSettings.buildComplete}
+                                                onChange={v => setNotifSettings(s => ({ ...s, buildComplete: v }))}
+                                            />
+                                        </div>
+                                        <div className="bg-[var(--surface-0)] border border-[var(--border)] rounded-2xl p-5">
+                                            <Toggle
+                                                label="Erreur de compilation"
+                                                description="Recevoir une alerte immédiate si le build échoue."
+                                                checked={notifSettings.buildFailed}
+                                                onChange={v => setNotifSettings(s => ({ ...s, buildFailed: v }))}
+                                            />
+                                        </div>
+                                        <div className="bg-[var(--surface-0)] border border-[var(--border)] rounded-2xl p-5">
+                                            <Toggle
+                                                label="Rapport hebdomadaire"
+                                                description="Recevoir un résumé des statistiques de vos apps chaque lundi."
+                                                checked={notifSettings.weeklyReport}
+                                                onChange={v => setNotifSettings(s => ({ ...s, weeklyReport: v }))}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-8 flex justify-end">
+                                        <button
+                                            onClick={async () => {
+                                                setSaving(true)
+                                                await new Promise(r => setTimeout(r, 800))
+                                                setSaving(false)
+                                                toast.success('Préférences enregistrées !')
+                                            }}
+                                            disabled={saving}
+                                            className="px-8 py-3.5 bg-[var(--text-primary)] text-[var(--surface-0)] rounded-xl font-bold hover:opacity-90 transition-opacity"
+                                        >
+                                            {saving ? 'Enregistrement...' : 'Enregistrer'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* SECURITY */}
+                        {activeTab === 'security' && (
+                            <motion.div
+                                key="security"
+                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                                className="space-y-8"
+                            >
+                                <div className="bg-[var(--surface-1)] border border-[var(--border)] rounded-[2rem] p-6 md:p-8 shadow-sm">
+                                    <h2 className="text-2xl font-black mb-6 text-[var(--text-primary)]">Mot de passe</h2>
+                                    <div className="space-y-4 max-w-md mb-6">
+                                        <Input label="Mot de passe actuel" type="password" />
+                                        <Input label="Nouveau mot de passe" type="password" />
+                                        <Input label="Confirmer le nouveau" type="password" />
+                                    </div>
+                                    <button className="px-6 py-3 bg-[var(--surface-2)] text-[var(--text-primary)] rounded-xl font-bold border border-[var(--border)] hover:bg-[var(--border)] transition-colors">
+                                        Modifier le mot de passe
+                                    </button>
+                                </div>
+
+                                <div className="bg-[var(--surface-1)] border-2 border-red-500/20 rounded-[2rem] p-6 md:p-8 shadow-sm relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-red-500/5 pointer-events-none" />
+                                    <div className="relative z-10">
+                                        <h2 className="text-2xl font-black mb-3 text-red-600 flex items-center gap-2">
+                                            <Trash2 size={24} /> Danger Zone
+                                        </h2>
+                                        <p className="text-red-800/80 dark:text-red-200/80 font-medium mb-6">
+                                            La suppression de votre compte est irréversible. Toutes vos applications et données seront effacées.
+                                        </p>
+                                        <button
+                                            onClick={async () => {
+                                                if (confirm('Êtes-vous absolument sûr ?')) {
                                                     try {
                                                         await api.delete('/user');
-                                                        toast.success('Votre compte a été supprimé avec succès.');
+                                                        toast.success('Compte supprimé.');
                                                         logout();
                                                         navigate('/auth/login');
                                                     } catch (e) {
-                                                        toast.error('Erreur lors de la suppression du compte.');
+                                                        toast.error('Erreur lors de la suppression.');
                                                     }
-                                                    setSaving(false);
                                                 }
                                             }}
-                                            style={{ background: '#ef4444', color: 'white', borderColor: 'transparent', boxShadow: '0 4px 14px 0 rgba(239, 68, 68, 0.39)', border: 'none' }}
-                                            icon={<Trash2 size={16} />}
+                                            className="px-8 py-4 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black shadow-[0_10px_20px_rgba(239,68,68,0.2)] transition-all"
                                         >
-                                            Oui, Supprimer mon compte
-                                        </Button>
+                                            Supprimer mon compte
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-                        </motion.div>
-                    )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
         </div>
     )
 }
-
-

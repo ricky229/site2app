@@ -1,6 +1,6 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { DashboardLayout, AuthLayout, PublicLayout } from './components/layout/Layouts'
+import { DashboardLayout, AuthLayout } from './components/layout/Layouts'
 
 // Pages
 import LandingPage from './pages/LandingPage'
@@ -29,9 +29,7 @@ export default function App() {
       <HashRouter>
         <Routes>
           {/* Public */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<LandingPage />} />
-          </Route>
+          <Route path="/" element={<LandingPage />} />
 
           {/* Auth */}
           <Route element={<AuthLayout />}>

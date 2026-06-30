@@ -1,23 +1,16 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
-    Smartphone, Plus, Search, Filter, Download, Users, Clock,
-    MoreHorizontal, Settings, RefreshCw, Trash2, Eye, Package,
-    Globe, Play
+    Smartphone, Plus, Search, Download, Users, Clock,
+    Package, Filter, LayoutGrid, List
 } from 'lucide-react'
-import Button from '../../components/ui/Button'
-import Input from '../../components/ui/Input'
 import { StatusBadge } from '../../components/ui/Badge'
-import { Select } from '../../components/ui/FormControls'
 import { formatRelativeTime, formatNumber, platformLabel } from '../../lib/utils'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'react-hot-toast'
-import api from '../../lib/api'
+import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
-import type { App, DashboardStats } from '../../types'
-
-import { getAppsByUser, publishApp } from '../../lib/api'
+import type { App } from '../../types'
+import { getAppsByUser } from '../../lib/api'
 
 async function fetchBuilds(userId: string): Promise<App[]> {
     if (!userId) return [];
@@ -41,39 +34,82 @@ async function fetchBuilds(userId: string): Promise<App[]> {
     }
 }
 
+const PremiumAppCard = ({ app, delay }: any) => {
+    const navigate = useNavigate()
+    const colors: Record<string, string> = {
+        '1': '#3b82f6', '2': '#8b5cf6', '3': '#10b981',
+    }
+    const color = colors[app.id] || '#3b82f6'
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay, duration: 0.4 }}
+            whileHover={{ y: -4, scale: 1.01 }}
+            onClick={() => navigate(`/apps/${app.id}`)}
+            className="group cursor-pointer rounded-3xl p-5 md:p-6 relative overflow-hidden"
+            style={{
+                background: 'var(--surface-1)',
+                border: '1px solid var(--border)',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.03)'
+            }}
+        >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.03] transition-opacity duration-500"
+                 style={{ background: `linear-gradient(135deg, ${color}, transparent)` }} />
+                 
+            <div className="flex justify-between items-start mb-6 relative z-10">
+                <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-white shadow-xl flex-shrink-0"
+                        style={{ background: `linear-gradient(135deg, ${color}, ${color}dd)` }}>
+                        {app.icon ? (
+                            <img src={app.icon.startsWith('//') ? 'https:' + app.icon : app.icon} alt="App icon" className="w-full h-full object-cover rounded-2xl" />
+                        ) : (
+                            <span className="text-2xl">{(app.name || 'A').slice(0, 2).toUpperCase()}</span>
+                        )}
+                    </div>
+                    <div className="overflow-hidden">
+                        <h3 className="font-extrabold text-xl text-[var(--text-primary)] group-hover:text-blue-500 transition-colors truncate">{app.name}</h3>
+                        <p className="text-sm font-medium text-[var(--text-muted)] mt-1 truncate">{app.url}</p>
+                    </div>
+                </div>
+                <StatusBadge status={app.status} />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-6 relative z-10">
+                {[
+                    { label: 'Téléchargements', value: formatNumber(app.downloadCount) },
+                    { label: 'Utilisateurs', value: formatNumber(app.activeUsers) },
+                    { label: 'Version', value: app.version },
+                ].map((s, i) => (
+                    <div key={i} className="rounded-2xl p-3 md:p-4 text-center border border-[var(--border)]" style={{ background: 'var(--surface-2)' }}>
+                        <p className="text-xl md:text-2xl font-black text-[var(--text-primary)] mb-1">{s.value}</p>
+                        <p className="text-[10px] md:text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{s.label}</p>
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex items-center justify-between relative z-10 pt-5 border-t border-[var(--border)]">
+                <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-[var(--text-muted)]">
+                    <Clock size={16} />
+                    {app.lastBuiltAt ? formatRelativeTime(app.lastBuiltAt) : 'Jamais buildé'}
+                </div>
+                <div className="flex items-center gap-3">
+                    <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] tracking-wide">
+                        {platformLabel(app.platform)}
+                    </span>
+                </div>
+            </div>
+        </motion.div>
+    )
+}
+
 export default function AppsPage() {
     const navigate = useNavigate()
     const [search, setSearch] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
-    const queryClient = useQueryClient()
     const [view, setView] = useState<'grid' | 'list'>('grid')
-    
-    // Assuming useAuthStore gives you the logged in user
     const { user } = useAuthStore()
-
-    const handleDelete = async (e: React.MouseEvent, id: string) => {
-        e.stopPropagation()
-        if (!confirm('Êtes-vous sûr de vouloir supprimer cette application ?')) return
-        try {
-            await api.delete(`/app/${id}`)
-            toast.success('Application supprimée')
-            queryClient.invalidateQueries({ queryKey: ['builds'] })
-        } catch (e) {
-            toast.error('Erreur lors de la suppression')
-        }
-    }
-
-    const handlePublish = async (e: React.MouseEvent, id: string) => {
-        e.stopPropagation()
-        if (!confirm('Voulez-vous pousser cette version vers les appareils de vos utilisateurs ?')) return
-        try {
-            await publishApp(id)
-            toast.success('Mise à jour publiée avec succès !')
-            queryClient.invalidateQueries({ queryKey: ['builds'] })
-        } catch (e) {
-            toast.error('Erreur lors de la publication')
-        }
-    }
 
     const { data: apps, isLoading } = useQuery({ 
         queryKey: ['builds', user?.id], 
@@ -83,7 +119,7 @@ export default function AppsPage() {
     })
 
     if (isLoading) {
-        return <div className="p-20 text-center">Chargement...</div>
+        return <div className="p-20 text-center text-blue-500 font-semibold flex items-center justify-center gap-3"><span className="animate-spin text-2xl">⏳</span> Chargement...</div>
     }
 
     const filtered = (apps || []).filter(app => {
@@ -94,227 +130,107 @@ export default function AppsPage() {
     })
 
     return (
-        <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto w-full overflow-x-hidden">
+        <div className="p-4 md:p-8 lg:p-10 max-w-[1400px] mx-auto w-full overflow-x-hidden">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10"
+            >
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold mb-1 flex items-center gap-3 break-words">
-                        <Smartphone size={24} className="md:w-7 md:h-7" style={{ color: 'var(--brand-500)' }} />
+                    <h1 className="text-3xl md:text-4xl font-black text-[var(--text-primary)] mb-2 tracking-tight flex items-center gap-3">
+                        <Smartphone className="text-blue-500" size={32} strokeWidth={2.5} />
                         Mes Applications
                     </h1>
-                    <p className="text-sm md:text-base break-words" style={{ color: 'var(--text-secondary)' }}>
-                        {(apps || []).length} application{(apps || []).length > 1 ? 's' : ''} créée{(apps || []).length > 1 ? 's' : ''}
-                    </p>
+                    <p className="text-[var(--text-muted)] text-lg font-medium">Gérez et suivez vos applications mobiles</p>
                 </div>
-                <Button className="w-full md:w-auto" icon={<Plus size={16} />} onClick={() => navigate('/apps/create')}>
-                    Nouvelle App
-                </Button>
-            </div>
+                <button
+                    onClick={() => navigate('/apps/create')}
+                    className="flex items-center justify-center gap-3 bg-blue-600 text-white rounded-full px-8 py-4 font-bold hover:bg-blue-700 transition-all shadow-lg hover:shadow-blue-500/25 hover:scale-105"
+                >
+                    <Plus size={20} strokeWidth={3} />
+                    Nouvelle Application
+                </button>
+            </motion.div>
 
             {/* Filters */}
-            <div className="flex flex-col md:flex-row flex-wrap gap-3 mb-6">
-                <div className="w-full md:flex-1 md:min-w-48">
-                    <Input
-                        placeholder="Rechercher..."
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-[var(--surface-1)] border border-[var(--border)] rounded-[2rem] p-4 flex flex-col md:flex-row gap-4 items-center justify-between mb-8 shadow-sm"
+            >
+                <div className="relative w-full md:w-96 flex-shrink-0">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={20} />
+                    <input
+                        type="text"
+                        placeholder="Rechercher une application..."
                         value={search}
                         onChange={e => setSearch(e.target.value)}
-                        icon={<Search size={16} />}
+                        className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-full pl-12 pr-4 py-3 text-[var(--text-primary)] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-medium"
                     />
                 </div>
-                <Select
-                    options={[
-                        { value: 'all', label: 'Tous les statuts' },
-                        { value: 'completed', label: 'Terminés' },
-                        { value: 'building', label: 'En cours' },
-                        { value: 'pending', label: 'En attente' },
-                        { value: 'failed', label: 'Échoués' },
-                    ]}
-                    value={statusFilter}
-                    onChange={e => setStatusFilter(e.target.value)}
-                />
-                <div className="flex justify-end w-full md:w-auto">
-                    {['grid', 'list'].map(v => (
+                
+                <div className="flex items-center justify-between w-full md:w-auto gap-4 overflow-x-auto hide-scroll">
+                    <div className="flex items-center gap-2 bg-[var(--surface-2)] p-1.5 rounded-full border border-[var(--border)]">
+                        {['all', 'completed', 'building', 'failed'].map(status => (
+                            <button
+                                key={status}
+                                onClick={() => setStatusFilter(status)}
+                                className={`px-4 py-2 rounded-full text-sm font-bold capitalize transition-all ${statusFilter === status ? 'bg-[var(--surface-0)] text-blue-500 shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+                            >
+                                {status === 'all' ? 'Tous' : status === 'completed' ? 'Actives' : status === 'building' ? 'Builds' : 'Erreurs'}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex items-center bg-[var(--surface-2)] p-1.5 rounded-full border border-[var(--border)]">
                         <button
-                            key={v}
-                            onClick={() => setView(v as any)}
-                            className="px-3 py-2 text-sm transition-all border first:rounded-l-lg last:rounded-r-lg"
-                            style={{
-                                background: view === v ? 'var(--brand-500)' : 'var(--surface-0)',
-                                color: view === v ? 'white' : 'var(--text-secondary)',
-                                borderColor: 'var(--border)',
-                            }}
+                            onClick={() => setView('grid')}
+                            className={`p-2 rounded-full transition-all ${view === 'grid' ? 'bg-[var(--surface-0)] text-blue-500 shadow-sm' : 'text-[var(--text-muted)]'}`}
                         >
-                            {v === 'grid' ? '⊞' : '⊟'}
+                            <LayoutGrid size={18} />
                         </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Apps Grid */}
-            {filtered.length === 0 ? (
-                <div className="text-center py-20">
-                    <Smartphone size={48} className="mx-auto mb-4" style={{ color: 'var(--text-muted)' }} />
-                    <h3 className="text-xl font-bold mb-2">Aucune application</h3>
-                    <p className="mb-4 text-sm md:text-base" style={{ color: 'var(--text-secondary)' }}>
-                        {search ? 'Aucun résultat pour votre recherche.' : 'Créez votre première application dès maintenant.'}
-                    </p>
-                    <Button onClick={() => navigate('/apps/create')} icon={<Plus size={16} />}>
-                        Créer une application
-                    </Button>
-                </div>
-            ) : view === 'grid' ? (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {filtered.map((app, i) => (
-                        <motion.div
-                            key={app.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.05 }}
-                            whileHover={{ y: -4 }}
-                            className="card p-5 cursor-pointer group"
-                            style={{ transition: 'all 0.2s' }}
+                        <button
+                            onClick={() => setView('list')}
+                            className={`p-2 rounded-full transition-all ${view === 'list' ? 'bg-[var(--surface-0)] text-blue-500 shadow-sm' : 'text-[var(--text-muted)]'}`}
                         >
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                    <div
-                                        className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-                                        style={{ background: `linear-gradient(135deg, var(--brand-500), var(--brand-600))` }}
-                                    >
-                                        {String(app.name || 'Ap').slice(0, 2).toUpperCase()}
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold leading-tight">{app.name}</h3>
-                                        <p className="text-xs truncate max-w-28" style={{ color: 'var(--text-muted)' }}>{app.url}</p>
-                                    </div>
-                                </div>
-                                <StatusBadge status={app.status} />
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-2 mb-4">
-                                {[
-                                    { icon: Download, v: formatNumber(app.downloadCount) },
-                                    { icon: Users, v: formatNumber(app.activeUsers) },
-                                    { icon: Package, v: `v${app.version}` },
-                                ].map((s, j) => (
-                                    <div key={j} className="text-center p-2 rounded-lg" style={{ background: 'var(--surface-1)' }}>
-                                        <p className="text-sm font-bold">{s.v}</p>
-                                        <s.icon size={11} className="mx-auto mt-0.5" style={{ color: 'var(--text-muted)' }} />
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="flex items-center justify-between text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-                                <span className="flex items-center gap-1">
-                                    <Clock size={11} />
-                                    {app.lastBuiltAt ? formatRelativeTime(app.lastBuiltAt) : 'Jamais'}
-                                </span>
-                                <span className="badge badge-muted">{platformLabel(app.platform)}</span>
-                            </div>
-
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="flex-1"
-                                    icon={<Eye size={13} />}
-                                    onClick={(e) => { e.stopPropagation(); navigate(`/apps/${app.id}`) }}
-                                >
-                                    Modifier
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    className="flex-1 text-red-500 hover:bg-red-50"
-                                    icon={<Trash2 size={13} />}
-                                    onClick={(e) => handleDelete(e, app.id)}
-                                >
-                                    Supprimer
-                                </Button>
-                                {app.status === 'completed' && (
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        className="flex-1 text-green-600 hover:bg-green-50"
-                                        icon={<Play size={13} />}
-                                        onClick={(e) => handlePublish(e, app.id)}
-                                        title="Publier la mise à jour aux utilisateurs"
-                                    >
-                                        Publier
-                                    </Button>
-                                )}
-                                {app.apkUrl && (
-                                    <a href={app.apkUrl} onClick={(e) => e.stopPropagation()} className="btn btn-primary btn-sm" title="Télécharger">
-                                        <Download size={13} />
-                                    </a>
-                                )}
-                            </div>
-                        </motion.div>
-                    ))}
-
-                    {/* Add new card */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: filtered.length * 0.05 }}
-                        onClick={() => navigate('/apps/create')}
-                        className="card p-5 cursor-pointer flex flex-col items-center justify-center border-dashed border-2 min-h-52 hover:border-[var(--brand-400)] transition-colors group"
-                        style={{ borderColor: 'var(--border-strong)' }}
-                    >
-                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"
-                            style={{ background: 'var(--surface-2)' }}>
-                            <Plus size={22} style={{ color: 'var(--text-muted)' }} />
-                        </div>
-                        <p className="font-semibold" style={{ color: 'var(--text-secondary)' }}>Nouvelle application</p>
-                        <p className="text-sm text-center mt-1" style={{ color: 'var(--text-muted)' }}>
-                            Convertir un site web en app mobile
-                        </p>
-                    </motion.div>
+                            <List size={18} />
+                        </button>
+                    </div>
                 </div>
+            </motion.div>
+
+            {/* Apps Grid/List */}
+            {filtered.length === 0 ? (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-[var(--surface-1)] border border-dashed border-[var(--border)] rounded-[2rem] p-12 text-center"
+                >
+                    <div className="w-24 h-24 bg-[var(--surface-2)] rounded-full flex items-center justify-center mx-auto mb-6">
+                        {search ? <Search size={40} className="text-[var(--text-muted)]" /> : <Smartphone size={40} className="text-[var(--text-muted)]" />}
+                    </div>
+                    <h3 className="text-2xl font-bold mb-3">{search ? 'Aucun résultat' : 'Vous n\'avez pas encore d\'application'}</h3>
+                    <p className="text-[var(--text-muted)] mb-8 max-w-md mx-auto text-lg">
+                        {search ? 'Modifiez votre recherche ou vos filtres.' : 'Transformez votre premier site web en application mobile dès aujourd\'hui !'}
+                    </p>
+                    {!search && (
+                        <button
+                            onClick={() => navigate('/apps/create')}
+                            className="bg-blue-600 text-white rounded-full px-8 py-4 font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 mx-auto"
+                        >
+                            <Plus size={20} strokeWidth={3} />
+                            Créer ma première app
+                        </button>
+                    )}
+                </motion.div>
             ) : (
-                /* List view */
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                    <table className="table">
-                        <thead>
-                            <tr>
-                                <th>Application</th>
-                                <th>Statut</th>
-                                <th>Plateforme</th>
-                                <th>Downloads</th>
-                                <th>Dernier build</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map((app, i) => (
-                                <tr key={app.id} className="cursor-pointer" onClick={() => navigate(`/apps/${app.id}`)}>
-                                    <td>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                                                style={{ background: 'var(--brand-500)' }}>
-                                                {String(app.name || 'Ap').slice(0, 2).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-sm">{app.name}</p>
-                                                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{app.url}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td><StatusBadge status={app.status} /></td>
-                                    <td><span className="badge badge-muted">{platformLabel(app.platform)}</span></td>
-                                    <td className="font-semibold">{formatNumber(app.downloadCount)}</td>
-                                    <td style={{ color: 'var(--text-muted)', fontSize: '0.8125rem' }}>
-                                        {app.lastBuiltAt ? formatRelativeTime(app.lastBuiltAt) : '—'}
-                                    </td>
-                                    <td>
-                                        <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                                            <button className="btn btn-ghost btn-sm p-2" title="Modifier" onClick={() => navigate(`/apps/${app.id}`)}><Eye size={14} /></button>
-                                            <button className="btn btn-ghost btn-sm p-2 text-red-500 hover:bg-red-50" title="Supprimer" onClick={(e) => handleDelete(e, app.id)}><Trash2 size={14} /></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                <div className={`grid gap-6 ${view === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                    <AnimatePresence>
+                        {filtered.map((app, i) => (
+                            <PremiumAppCard key={app.id} app={app} delay={i * 0.05} />
+                        ))}
+                    </AnimatePresence>
                 </div>
             )}
         </div>
