@@ -49,17 +49,17 @@ const PremiumStatCard = ({ title, value, icon: Icon, color, delay }: any) => (
         <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full opacity-10 group-hover:scale-150 group-hover:opacity-20 transition-all duration-700 blur-2xl"
             style={{ background: color }} />
         
-        <div className="flex justify-between items-start mb-6 relative z-10">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
+        <div className="flex justify-between items-start mb-4 relative z-10">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
                 style={{ background: `linear-gradient(135deg, ${color}dd, ${color})`, color: 'white' }}>
-                <Icon size={26} strokeWidth={2.5} />
+                <Icon size={20} strokeWidth={2.5} />
             </div>
         </div>
         <div className="relative z-10">
-            <h3 className="text-3xl md:text-4xl font-black tracking-tight mb-2 text-[var(--text-primary)]">
+            <h3 className="text-2xl md:text-3xl font-black tracking-tight mb-1 text-[var(--text-primary)]">
                 {value}
             </h3>
-            <p className="text-sm font-semibold tracking-wide uppercase text-[var(--text-muted)]">
+            <p className="text-xs font-semibold tracking-wide uppercase text-[var(--text-muted)]">
                 {title}
             </p>
         </div>
@@ -76,13 +76,14 @@ async function getUserNotifications(user: any) {
             if (parts.length > 0) baseUrl = parts[0] + '/api/1.1/obj'
         }
 
-        const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
-        const headers: any = {}
+        let constraints = '';
+        const headers: any = {};
         if (!user.bubbleApiUrl) {
+            constraints = `?constraints=${encodeURIComponent(JSON.stringify([{ key: 'userId', constraint_type: 'equals', value: user.id }]))}`;
             headers['Authorization'] = `Bearer 59ef5eb57d786ff8eced03244342f32e`
         }
 
-        const res = await axios.get(`${baseUrl}/notification?constraints=${encodeURIComponent(constraints)}`, { headers })
+        const res = await axios.get(`${baseUrl}/notification${constraints}`, { headers })
         return res.data?.response?.results || []
     } catch {
         return []
@@ -98,13 +99,14 @@ async function getUserDevices(user: any) {
             if (parts.length > 0) baseUrl = parts[0] + '/api/1.1/obj'
         }
 
-        const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
-        const headers: any = {}
+        let constraints = '';
+        const headers: any = {};
         if (!user.bubbleApiUrl) {
+            constraints = `?constraints=${encodeURIComponent(JSON.stringify([{ key: 'userId', constraint_type: 'equals', value: user.id }]))}`;
             headers['Authorization'] = `Bearer 59ef5eb57d786ff8eced03244342f32e`
         }
 
-        const res = await axios.get(`${baseUrl}/device?constraints=${encodeURIComponent(constraints)}`, { headers })
+        const res = await axios.get(`${baseUrl}/device${constraints}`, { headers })
         
         // Deduplicate devices by pushToken
         const rawResults = res.data?.response?.results || []

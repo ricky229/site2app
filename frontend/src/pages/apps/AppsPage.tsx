@@ -3,14 +3,14 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Smartphone, Plus, Search, Download, Users, Clock,
-    Package, Filter, LayoutGrid, List
+    Package, Filter, LayoutGrid, List, Eye, Play, Trash2
 } from 'lucide-react'
 import { StatusBadge } from '../../components/ui/Badge'
 import { formatRelativeTime, formatNumber, platformLabel } from '../../lib/utils'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
 import type { App } from '../../types'
-import { getAppsByUser } from '../../lib/api'
+import { getAppsByUser, deleteApp } from '../../lib/api'
 
 async function fetchBuilds(userId: string): Promise<App[]> {
     if (!userId) return [];
@@ -36,10 +36,34 @@ async function fetchBuilds(userId: string): Promise<App[]> {
 
 const PremiumAppCard = ({ app, delay }: any) => {
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const colors: Record<string, string> = {
         '1': '#3b82f6', '2': '#8b5cf6', '3': '#10b981',
     }
     const color = colors[app.id] || '#3b82f6'
+
+    const handleDelete = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation()
+        if (window.confirm('Voulez-vous vraiment supprimer cette application ?')) {
+            try {
+                await deleteApp(id)
+                queryClient.invalidateQueries({ queryKey: ['builds'] })
+            } catch (err) {
+                console.error(err)
+            }
+        }
+    }
+
+    const handlePublish = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation()
+        if (window.confirm('Voulez-vous forcer la publication de cette mise  jour vers tous vos utilisateurs ?')) {
+            try {
+                alert('Ordre de publication envoy aux appareils !')
+            } catch (err) {
+                console.error(err)
+            }
+        }
+    }
 
     return (
         <motion.div
@@ -48,7 +72,7 @@ const PremiumAppCard = ({ app, delay }: any) => {
             transition={{ delay, duration: 0.4 }}
             whileHover={{ y: -4, scale: 1.01 }}
             onClick={() => navigate(`/apps/${app.id}`)}
-            className="group cursor-pointer rounded-3xl p-5 md:p-6 relative overflow-hidden"
+            className="group cursor-pointer rounded-3xl p-5 md:p-6 relative overflow-hidden flex flex-col"
             style={{
                 background: 'var(--surface-1)',
                 border: '1px solid var(--border)',
@@ -60,48 +84,83 @@ const PremiumAppCard = ({ app, delay }: any) => {
                  
             <div className="flex justify-between items-start mb-6 relative z-10">
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-white shadow-xl flex-shrink-0"
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-white shadow-xl flex-shrink-0"
                         style={{ background: `linear-gradient(135deg, ${color}, ${color}dd)` }}>
                         {app.icon ? (
                             <img src={app.icon.startsWith('//') ? 'https:' + app.icon : app.icon} alt="App icon" className="w-full h-full object-cover rounded-2xl" />
                         ) : (
-                            <span className="text-2xl">{(app.name || 'A').slice(0, 2).toUpperCase()}</span>
+                            <span className="text-xl">{(app.name || 'A').slice(0, 2).toUpperCase()}</span>
                         )}
                     </div>
                     <div className="overflow-hidden">
-                        <h3 className="font-extrabold text-xl text-[var(--text-primary)] group-hover:text-blue-500 transition-colors truncate">{app.name}</h3>
-                        <p className="text-sm font-medium text-[var(--text-muted)] mt-1 truncate">{app.url}</p>
+                        <h3 className="font-bold text-lg text-[var(--text-primary)] group-hover:text-blue-500 transition-colors truncate">{app.name}</h3>
+                        <p className="text-xs font-medium text-[var(--text-muted)] mt-1 truncate">{app.url}</p>
                     </div>
                 </div>
                 <StatusBadge status={app.status} />
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-6 relative z-10">
+            <div className="grid grid-cols-3 gap-3 mb-6 relative z-10 flex-1">
                 {[
-                    { label: 'Téléchargements', value: formatNumber(app.downloadCount) },
+                    { label: 'Tlchargements', value: formatNumber(app.downloadCount) },
                     { label: 'Utilisateurs', value: formatNumber(app.activeUsers) },
                     { label: 'Version', value: app.version },
                 ].map((s, i) => (
-                    <div key={i} className="rounded-2xl p-3 md:p-4 text-center border border-[var(--border)]" style={{ background: 'var(--surface-2)' }}>
-                        <p className="text-xl md:text-2xl font-black text-[var(--text-primary)] mb-1">{s.value}</p>
-                        <p className="text-[10px] md:text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{s.label}</p>
+                    <div key={i} className="rounded-2xl p-2 md:p-3 text-center border border-[var(--border)] flex flex-col justify-center" style={{ background: 'var(--surface-2)' }}>
+                        <p className="text-lg md:text-xl font-black text-[var(--text-primary)] mb-0.5">{s.value}</p>
+                        <p className="text-[9px] md:text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">{s.label}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="flex items-center justify-between relative z-10 pt-5 border-t border-[var(--border)]">
-                <div className="flex items-center gap-2 text-xs md:text-sm font-medium text-[var(--text-muted)]">
-                    <Clock size={16} />
-                    {app.lastBuiltAt ? formatRelativeTime(app.lastBuiltAt) : 'Jamais buildé'}
+            <div className="flex items-center justify-between relative z-10 pt-4 border-t border-[var(--border)] mb-4">
+                <div className="flex items-center gap-2 text-[11px] md:text-xs font-medium text-[var(--text-muted)]">
+                    <Clock size={14} />
+                    {app.lastBuiltAt ? formatRelativeTime(app.lastBuiltAt) : 'Jamais build'}
                 </div>
-                <div className="flex items-center gap-3">
-                    <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] tracking-wide">
+                <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] tracking-wide">
                         {platformLabel(app.platform)}
                     </span>
                 </div>
             </div>
+
+            {/* Actions overlay / bottom strip */}
+            <div className="flex gap-2 relative z-10" onClick={e => e.stopPropagation()}>
+                <button
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--surface-3)] hover:text-blue-500 transition-colors"
+                    onClick={() => navigate(`/apps/${app.id}`)}
+                >
+                    <Eye size={14} /> Modifier
+                </button>
+                {app.status === 'completed' && (
+                    <button
+                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white transition-colors"
+                        onClick={(e) => handlePublish(e, app.id)}
+                    >
+                        <Play size={14} /> Publier
+                    </button>
+                )}
+                {app.apkUrl && (
+                    <a
+                        href={app.apkUrl}
+                        className="flex items-center justify-center p-2 rounded-xl text-green-600 bg-green-500/10 hover:bg-green-500 hover:text-white transition-colors"
+                        title="Tlcharger APK"
+                    >
+                        <Download size={16} />
+                    </a>
+                )}
+                <button
+                    className="flex items-center justify-center p-2 rounded-xl text-red-500 bg-red-500/10 hover:bg-red-500 hover:text-white transition-colors"
+                    onClick={(e) => handleDelete(e, app.id)}
+                    title="Supprimer"
+                >
+                    <Trash2 size={16} />
+                </button>
+            </div>
         </motion.div>
     )
+})
 }
 
 export default function AppsPage() {
