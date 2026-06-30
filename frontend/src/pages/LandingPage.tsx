@@ -127,7 +127,7 @@ export default function LandingPage() {
                             v2.0 est en ligne
                         </motion.div>
 
-                        <motion.h1 variants={fadeUp} className="text-5xl lg:text-7xl font-black mb-6 leading-[1.1] tracking-tight">
+                        <motion.h1 variants={fadeUp} className="text-2xl md:text-4xl font-black mb-6 leading-[1.1] tracking-tight">
                             Transformez votre site en <br className="hidden lg:block"/>
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">App Native.</span>
                         </motion.h1>
@@ -211,7 +211,7 @@ export default function LandingPage() {
             <section id="features" className="py-24 bg-[var(--surface-1)] relative z-10">
                 <div className="max-w-7xl mx-auto px-6">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-5xl font-black mb-4">La puissance du Natif. <br className="hidden md:block"/> La simplicité du Web.</h2>
+                        <h2 className="text-2xl md:text-4xl font-black mb-4">La puissance du Natif. <br className="hidden md:block"/> La simplicité du Web.</h2>
                         <p className="text-lg text-[var(--text-secondary)] font-medium max-w-2xl mx-auto">Toutes les fonctionnalités dont vous avez besoin pour engager vos utilisateurs.</p>
                     </div>
 
@@ -239,7 +239,7 @@ export default function LandingPage() {
                     <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-[3rem] p-12 md:p-20 text-center text-white relative overflow-hidden shadow-2xl">
                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
                         <div className="relative z-10">
-                            <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">Prêt à lancer <br/>votre app ?</h2>
+                            <h2 className="text-3xl md:text-4xl font-black mb-6 tracking-tight">Prêt à lancer <br/>votre app ?</h2>
                             <p className="text-xl text-blue-100 font-medium max-w-2xl mx-auto mb-10">Rejoignez des milliers de créateurs. Créez votre compte gratuitement et générez votre première application en 3 minutes.</p>
                             <Link to="/auth/register" className="inline-block bg-white text-blue-900 px-10 py-5 rounded-full font-black text-lg shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform">
                                 Démarrer gratuitement

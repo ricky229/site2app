@@ -1327,6 +1327,91 @@
       right: 1rem;
     }
   }
+
+  /* ============ MOBILE RESPONSIVE (all pages) ============ */
+  @media (max-width: 640px) {
+    /* Reduce oversized border-radius on mobile */
+    [class*="rounded-[2rem]"],
+    [class*="rounded-[3rem]"] {
+      border-radius: 1.25rem !important;
+    }
+
+    /* Scale down oversized stat values */
+    h3[class*="text-2xl"],
+    h3[class*="text-3xl"] {
+      font-size: 1.375rem !important;
+    }
+
+    /* Page headers smaller on mobile */
+    h1[class*="text-2xl"] {
+      font-size: 1.25rem !important;
+    }
+
+    /* Cards tighter on mobile */
+    [class*="p-6 md:p-8"],
+    [class*="p-8"] {
+      padding: 1rem !important;
+    }
+
+    /* Grid gaps smaller */
+    [class*="gap-8"] {
+      gap: 1rem !important;
+    }
+    [class*="gap-6"] {
+      gap: 0.75rem !important;
+    }
+
+    /* Mobile phone mockup in notifications */
+    [class*="w-[300px]"][class*="h-[600px]"] {
+      width: 240px !important;
+      height: 480px !important;
+    }
+
+    /* Tabs overflow scroll */
+    [class*="overflow-x-auto"] {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Icon containers smaller */
+    [class*="w-10 h-10"] {
+      width: 2rem !important;
+      height: 2rem !important;
+    }
+
+    /* Hide preview panel on mobile */
+    .sticky.top-24 {
+      position: relative !important;
+      top: 0 !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    /* Extra compact for very small phones */
+    [class*="rounded-[2rem]"],
+    [class*="rounded-[3rem]"] {
+      border-radius: 1rem !important;
+    }
+
+    [class*="text-lg"] {
+      font-size: 0.9375rem !important;
+    }
+
+    [class*="text-xl"] {
+      font-size: 1.0625rem !important;
+    }
+
+    /* Stat cards even more compact */
+    [class*="p-5"],
+    [class*="p-6"] {
+      padding: 0.875rem !important;
+    }
+
+    /* Grid to single column */
+    [class*="sm:grid-cols-2"],
+    [class*="grid-cols-2"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
 }
 @layer utilities {
   .pb-safe { padding-bottom: env(safe-area-inset-bottom); }

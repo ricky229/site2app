@@ -50,14 +50,13 @@ export default function NotificationsPage() {
                 if (parts.length > 0) baseUrl = parts[0] + '/api/1.1/obj';
             }
 
-            let constraints = '';
-            const headers: any = {};
+            const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
+            const headers: any = {}
             if (!user.bubbleApiUrl) {
-                constraints = `?constraints=${encodeURIComponent(JSON.stringify([{ key: 'userId', constraint_type: 'equals', value: user.id }]))}`;
                 headers['Authorization'] = `Bearer ${BUBBLE_TOKEN}`
             }
 
-            const res = await axios.get(`${baseUrl}/notification${constraints}${constraints ? '&' : '?'}sort_field=Created%20Date&descending=true`, { headers })
+            const res = await axios.get(`${baseUrl}/notification?constraints=${encodeURIComponent(constraints)}&sort_field=Created%20Date&descending=true`, { headers })
             
             const results = res.data?.response?.results || []
             return results.map((n: any) => ({
