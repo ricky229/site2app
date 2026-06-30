@@ -160,7 +160,6 @@ const PremiumAppCard = ({ app, delay }: any) => {
             </div>
         </motion.div>
     )
-})
 }
 
 export default function AppsPage() {
