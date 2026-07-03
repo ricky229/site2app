@@ -1928,11 +1928,6 @@ ${this.features.offlineMode ? `
             srcContent = srcContent.split('\n').filter(line => !line.includes('PushJobService')).join('\n');
             // Inject Firebase topic subscriptions AND token registration
             const tokenRegCode = `super.onCreate(savedInstanceState);
-if (android.os.Build.VERSION.SDK_INT >= 33) {
-    if (androidx.core.content.ContextCompat.checkSelfPermission(this, "android.permission.POST_NOTIFICATIONS") != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-        androidx.core.app.ActivityCompat.requestPermissions(this, new String[]{ "android.permission.POST_NOTIFICATIONS"}, 101);
-    }
-}
 try {
     com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("all-all");
     com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("${this.buildId}-all");
