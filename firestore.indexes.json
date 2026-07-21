@@ -31,6 +31,23 @@
         { "fieldPath": "packageName", "order": "ASCENDING" },
         { "fieldPath": "publishedVersionCode", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "builds",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "packageName", "order": "ASCENDING" },
+        { "fieldPath": "versionCode", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "buildId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
