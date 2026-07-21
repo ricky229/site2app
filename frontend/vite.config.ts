@@ -4,7 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 export default defineConfig({
-  base: '/site2app/',
   plugins: [
     react(),
     tailwindcss(),
@@ -16,15 +15,5 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    proxy: {
-      '/node': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-      },
-      '/socket.io': {
-        target: 'http://localhost:4000',
-        ws: true,
-      },
-    },
   },
 })

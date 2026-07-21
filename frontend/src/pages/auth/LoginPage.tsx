@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { Eye, EyeOff, Mail, Lock, Loader2, Zap, Github, Chrome } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { bubbleLogin } from '../../lib/api'
+import { apiLogin } from '../../lib/api'
 import { useAuthStore } from '../../store/authStore'
 import Input from '../../components/ui/Input'
 import Button from '../../components/ui/Button'
@@ -30,15 +30,15 @@ export default function LoginPage() {
 
     const onSubmit = async (data: LoginForm) => {
         try {
-            const res = await bubbleLogin(data.email, data.password)
-            const r = res.response || res
+            const res = await apiLogin(data.email, data.password)
+            const r = res.user || res
             login({
-                id: r.user_id || 'unknown',
+                id: r.uid || r.id || 'unknown',
                 name: r.name || 'Utilisateur',
                 email: r.email || data.email,
                 plan: r.plan || 'free',
-                role: 'user',
-            } as any, r.token)
+                role: r.role || 'user',
+            } as any, res.token)
             toast.success(`Bienvenue ${r.name || ''} ! 👋`)
             navigate('/dashboard')
         } catch (err: any) {

@@ -10,7 +10,7 @@ import { formatRelativeTime, formatNumber, platformLabel } from '../../lib/utils
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
 import type { App } from '../../types'
-import { getAppsByUser, deleteApp } from '../../lib/api'
+import { getBuilds as getAppsByUser, deleteBuild as deleteApp } from '../../lib/api'
 
 async function fetchBuilds(userId: string): Promise<App[]> {
     if (!userId) return [];

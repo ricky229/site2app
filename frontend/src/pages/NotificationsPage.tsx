@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import {
     Bell, Send, Clock, Users, BarChart2, Plus, Image,
@@ -14,8 +14,8 @@ import { StatCard } from '../components/ui/Card'
 import { formatRelativeTime, formatNumber } from '../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
-import api, { getUserById, updateUser, getDevices, getAppsByUser, dataApi, nodeApi, BUBBLE_TOKEN } from '../lib/api'
+
+import api, { apiGetMe, getDevices, getBuilds, getNotifications, sendNotification, deleteAllNotifications, deleteNotification, pollNotifications, saveFirebaseConfig } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import type { App } from '../types'
 
@@ -40,35 +40,14 @@ export default function NotificationsPage() {
 
     const { data: apps = [] } = useQuery<App[]>({ 
         queryKey: ['apps', user?.id], 
-        queryFn: async () => user?.id ? await getAppsByUser(user.id) : [],
+        queryFn: async () => user?.id ? await getBuilds(user.id) : [],
         enabled: !!user?.id
     })
     const { data: notifications = [] } = useQuery<any[]>({ 
         queryKey: ['notifications', user?.id], 
         queryFn: async () => {
             if (!user?.id) return []
-            
-            // Priority: User's custom URL, then default dataApi
-            let baseUrl = 'https://site2app.online/api/1.1/obj'
-            if (user.bubbleApiUrl) {
-                const parts = user.bubbleApiUrl.split('/api/1.1/obj');
-                if (parts.length > 0) baseUrl = parts[0] + '/api/1.1/obj';
-            }
-
-            const constraints = JSON.stringify([{ key: 'owner', constraint_type: 'equals', value: user.id }])
-            
-            // If custom URL, try without token or with user's token (if we had one)
-            // Bubble often rejects the platform token on other apps
-            const headers: any = {}
-            if (!user.bubbleApiUrl) {
-                headers['Authorization'] = `Bearer ${BUBBLE_TOKEN}`
-            }
-
-            const res = await axios.get(`${baseUrl}/notification?constraints=${encodeURIComponent(constraints)}&sort_field=Created%20Date&descending=true`, {
-                headers
-            })
-            
-            const results = res.data?.response?.results || []
+            const results = await getNotifications(selectedApp)
             return results.map((n: any) => ({
                 ...n,
                 stats: n.stats || {
@@ -86,27 +65,20 @@ export default function NotificationsPage() {
         queryKey: ['userProfile', user?.id], 
         queryFn: async () => {
             if (!user?.id) return null;
-            return await getUserById(user.id);
+            return await apiGetMe();
         },
         enabled: !!user?.id
     })
     const { data: registeredDevices = [] } = useQuery<any[]>({ 
-        queryKey: ['devices', user?.bubbleApiUrl], 
+        queryKey: ['devices', selectedApp], 
         queryFn: async () => {
-            // Use user's custom Bubble URL if configured
-            let customBaseUrl = '';
-            if (user?.bubbleApiUrl) {
-                const parts = user.bubbleApiUrl.split('/api/1.1/obj');
-                if (parts.length > 0) customBaseUrl = parts[0] + '/api/1.1/obj';
-            }
-            const results = await getDevices(undefined, customBaseUrl);
+            const results = await getDevices(selectedApp === 'all' ? undefined : selectedApp);
             const mapped = results.map((d: any) => ({
                 ...d,
                 id: d._id || d.id,
                 pushToken: d.pushToken || d.push_token || d.id
-            })).filter((d: any) => d.pushToken && d.pushToken.includes(':')); // Only valid FCM tokens
+            })).filter((d: any) => d.pushToken && d.pushToken.includes(':')); 
             
-            // Deduplicate by pushToken (keep the most recent entry)
             const seen = new Map<string, any>();
             for (const d of mapped) {
                 const existing = seen.get(d.pushToken);
@@ -134,53 +106,27 @@ export default function NotificationsPage() {
         }
     }, [userProfile])
 
-    // ÔöÇÔöÇÔöÇ Auto-sync: Trigger Node backend to read client's notification_queue ÔöÇÔöÇÔöÇ
-    // The Node backend has the working polling logic (server-to-server, no CORS issues)
-    // We just need to trigger it periodically when the dashboard is open
     useEffect(() => {
-        if (!user?.bubbleApiUrl || !user?.id) return;
+        if (!user?.id) return;
 
         const triggerSync = async () => {
             try {
-                // Call the Node backend's polling endpoint (it reads the client's notification_queue)
-                await nodeApi.get('/notifications/poll');
-                // Refresh the notification list after sync
+                await pollNotifications(selectedApp);
                 queryClient.invalidateQueries({ queryKey: ['notifications'] });
             } catch (err) {
-                // Node backend might not be available - that's OK
-                // The Bubble Database Trigger handles push sending directly
-                console.warn('[Sync] Node polling not available, Bubble handles push directly');
+                console.warn('Poll error');
             }
         };
 
-        // Run sync immediately, then every 30 seconds
         triggerSync();
         const interval = setInterval(triggerSync, 30000);
         return () => clearInterval(interval);
-    }, [user?.bubbleApiUrl, user?.id])
+    }, [user?.id, selectedApp])
 
     const firebaseMutation = useMutation({
         mutationFn: async (payload: any) => {
-            if (!user?.id) throw new Error("Non authentifi├®")
-            
-            // Save directly on Bubble (no Node backend needed)
-            // 1. Try to save on Node Backend (if available), but don't fail if unavailable
-            try {
-                await nodeApi.post('/auth/firebase-config', {
-                    adminSdkJson: payload.adminSdkJson,
-                    googleServicesJson: payload.googleServicesJson,
-                    bubbleApiUrl: payload.bubbleApiUrl
-                })
-            } catch (nodeErr) {
-                console.warn('Node backend not available, saving directly to Bubble only');
-            }
-            
-            // 2. Save on Bubble (this is the primary storage)
-            return await updateUser(user.id, {
-                bubbleApiUrl: payload.bubbleApiUrl,
-                firebaseKey: payload.adminSdkJson,
-                googleServicesJson: payload.googleServicesJson
-            })
+            if (!user?.id) throw new Error("Non authentifié")
+            return await saveFirebaseConfig(selectedApp === 'all' ? 'default' : selectedApp, payload)
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['userProfile'] })
@@ -194,51 +140,12 @@ export default function NotificationsPage() {
 
     const sendMutation = useMutation({
         mutationFn: async (payload: any) => {
-            if (!user?.id) throw new Error("Non authentifi├®")
+            if (!user?.id) throw new Error("Non authentifié")
             
-            // Priority: User's custom URL, then default dataApi
-            let baseUrl = 'https://site2app.online/api/1.1/obj'
-            if (user.bubbleApiUrl) {
-                const parts = user.bubbleApiUrl.split('/api/1.1/obj');
-                if (parts.length > 0) baseUrl = parts[0] + '/api/1.1/obj';
-            }
-
-            // Pr├®pare le payload pour Bubble
             const isSpecific = Array.isArray(payload.target);
-            const targetStr = isSpecific ? 'specific' : String(payload.target || 'all');
+            const targetStr = isSpecific ? payload.target.join(',') : String(payload.target || 'all');
             
-            // IMPORTANT: When sending to 'all', we need to collect ALL device tokens
-            // so the Bubble Database Trigger has actual tokens to iterate over
-            let tokenStr = '';
-            if (isSpecific) {
-                tokenStr = payload.target.join(',');
-            } else {
-                // Fetch all valid device tokens for "send to all"
-                const allTokens = registeredDevices
-                    .map((d: any) => d.pushToken)
-                    .filter((t: string) => t && t.includes(':'));
-                tokenStr = allTokens.join(',');
-            }
-
-            // If custom URL, try without token
-            const headers: any = { 'Content-Type': 'application/json' }
-            if (!user.bubbleApiUrl) {
-                headers['Authorization'] = `Bearer ${BUBBLE_TOKEN}`
-            }
-
-            const res = await axios.post(`${baseUrl}/notification_queue`, {
-                title: String(payload.title || ''),
-                body: String(payload.body || ''),
-                owner: String(user.id || ''),
-                targetApp: String(payload.buildId || 'all'),
-                targetOs: targetStr,
-                targetToken: tokenStr,
-                image: String(payload.image || ''),
-                targetUrl: String(payload.actionUrl || '')
-            }, {
-                headers
-            })
-            return res.data;
+            return await sendNotification(payload.buildId || 'all', payload.title, payload.body, payload.actionUrl, targetStr)
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
@@ -276,7 +183,7 @@ export default function NotificationsPage() {
     }
 
     const deleteMutation = useMutation({
-        mutationFn: async (id: string) => await dataApi.delete(`/notification/${id}`),
+        mutationFn: async (id: string) => await deleteNotification(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
             toast.success('Notification supprim├®e')
@@ -284,10 +191,7 @@ export default function NotificationsPage() {
     })
 
     const clearAllMutation = useMutation({
-        mutationFn: async () => {
-            toast.error("La suppression en masse n'est pas support├®e par l'API Bubble par d├®faut.")
-            throw new Error("Action non support├®e")
-        },
+        mutationFn: async () => await deleteAllNotifications(selectedApp),
         onSuccess: () => {
         }
     })

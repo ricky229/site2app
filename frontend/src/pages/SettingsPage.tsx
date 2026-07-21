@@ -11,7 +11,7 @@ import { Toggle } from '../components/ui/FormControls'
 import { useAuthStore } from '../store/authStore'
 import { getInitials } from '../lib/utils'
 import toast from 'react-hot-toast'
-import api from '../lib/api'
+import api, { deleteAccount } from '../lib/api'
 
 const tabs = [
     { id: 'profile', label: 'Profil', icon: User, color: 'blue' },
@@ -304,7 +304,7 @@ export default function SettingsPage() {
                                             onClick={async () => {
                                                 if (confirm('Êtes-vous absolument sûr ?')) {
                                                     try {
-                                                        await api.delete('/user');
+                                                        await deleteAccount();
                                                         toast.success('Compte supprimé.');
                                                         logout();
                                                         navigate('/auth/login');

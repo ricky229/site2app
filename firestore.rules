@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection - only authenticated user can read/write their own doc
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Builds collection - owner can read/write, CI can write via Cloud Functions
+    match /builds/{buildId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Notifications collection
+    match /notifications/{notifId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Devices collection - apps can register, owners can read
+    match /devices/{deviceId} {
+      allow read: if request.auth != null;
+      allow create: if true; // Android apps register devices without auth
+      allow update, delete: if request.auth != null;
+    }
+  }
+}

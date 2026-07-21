@@ -11,9 +11,7 @@ import {
 import { formatNumber, formatRelativeTime } from '../lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
-import { getAppsByUser } from '../lib/api'
-import axios from 'axios'
-
+import { getBuilds as getAppsByUser, getNotifications, getDevices } from '../lib/api'
 const CHART_COLORS = { primary: '#3b82f6', secondary: '#8b5cf6', success: '#10b981', warning: '#f59e0b' }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -66,68 +64,7 @@ const PremiumStatCard = ({ title, value, icon: Icon, color, delay }: any) => (
     </motion.div>
 )
 
-// Helper to fetch notifications from Bubble Data API
-async function getUserNotifications(user: any) {
-    if (!user?.id) return []
-    try {
-        let baseUrl = 'https://site2app.online/api/1.1/obj'
-        if (user.bubbleApiUrl) {
-            const parts = user.bubbleApiUrl.split('/api/1.1/obj')
-            if (parts.length > 0) baseUrl = parts[0] + '/api/1.1/obj'
-        }
 
-        let constraints = '';
-        const headers: any = {};
-        if (!user.bubbleApiUrl) {
-            constraints = `?constraints=${encodeURIComponent(JSON.stringify([{ key: 'userId', constraint_type: 'equals', value: user.id }]))}`;
-            headers['Authorization'] = `Bearer 59ef5eb57d786ff8eced03244342f32e`
-        }
-
-        const res = await axios.get(`${baseUrl}/notification${constraints}`, { headers })
-        return res.data?.response?.results || []
-    } catch {
-        return []
-    }
-}
-
-async function getUserDevices(user: any) {
-    if (!user?.id) return []
-    try {
-        let baseUrl = 'https://site2app.online/api/1.1/obj'
-        if (user.bubbleApiUrl) {
-            const parts = user.bubbleApiUrl.split('/api/1.1/obj')
-            if (parts.length > 0) baseUrl = parts[0] + '/api/1.1/obj'
-        }
-
-        let constraints = '';
-        const headers: any = {};
-        if (!user.bubbleApiUrl) {
-            constraints = `?constraints=${encodeURIComponent(JSON.stringify([{ key: 'userId', constraint_type: 'equals', value: user.id }]))}`;
-            headers['Authorization'] = `Bearer 59ef5eb57d786ff8eced03244342f32e`
-        }
-
-        const res = await axios.get(`${baseUrl}/device${constraints}`, { headers })
-        
-        // Deduplicate devices by pushToken
-        const rawResults = res.data?.response?.results || []
-        const mapped = rawResults.map((d: any) => ({
-            ...d,
-            id: d._id || d.id,
-            pushToken: d.pushToken || d.push_token || d.id
-        })).filter((d: any) => d.pushToken && d.pushToken.includes(':'));
-        
-        const seen = new Map<string, any>();
-        for (const d of mapped) {
-            const existing = seen.get(d.pushToken);
-            if (!existing || new Date(d.Modified_Date || d.Created_Date || 0) > new Date(existing.Modified_Date || existing.Created_Date || 0)) {
-                seen.set(d.pushToken, d);
-            }
-        }
-        return Array.from(seen.values());
-    } catch {
-        return []
-    }
-}
 
 export default function AnalyticsPage() {
     const [period, setPeriod] = useState('30')
@@ -139,8 +76,8 @@ export default function AnalyticsPage() {
              if (!user?.id) throw new Error('Not logged in')
              const [apps, notifs, devices] = await Promise.all([
                  getAppsByUser(user.id),
-                 getUserNotifications(user),
-                 getUserDevices(user)
+                 getNotifications('all'),
+                 getDevices('all')
              ])
              
              const periodDays = parseInt(period) || 30

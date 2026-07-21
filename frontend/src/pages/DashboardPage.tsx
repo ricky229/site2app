@@ -11,7 +11,7 @@ import { useAuthStore } from '../store/authStore'
 import { formatRelativeTime, formatNumber, platformLabel } from '../lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import type { DashboardStats } from '../types'
-import { getAppsByUser } from '../lib/api'
+import { getBuilds as getAppsByUser } from '../lib/api'
 
 async function fetchStats(userId: string): Promise<DashboardStats> {
     const defaultStats = {

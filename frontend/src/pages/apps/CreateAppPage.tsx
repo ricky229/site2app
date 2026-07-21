@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { useWizardStore } from '../../store/wizardStore'
-import { getAppById } from '../../lib/api'
+import { getBuildStatus as getAppById } from '../../lib/api'
 
 // Steps
 import Step1Url from './wizard/Step1Url'

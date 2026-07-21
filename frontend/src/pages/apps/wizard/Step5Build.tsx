@@ -12,7 +12,7 @@ import Button from '../../../components/ui/Button'
 import { platformLabel } from '../../../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
-import { createApp, getAppById, updateApp, getUserById, getAppsByUser } from '../../../lib/api'
+import api, { startBuild, getBuildStatus, apiGetMe, getBuilds } from '../../../lib/api'
 
 type BuildStepStatus = 'pending' | 'running' | 'done' | 'failed'
 
@@ -130,7 +130,7 @@ export default function Step5Build() {
 
     const { data: userProfile } = useQuery({
         queryKey: ['userProfile', user?.id],
-        queryFn: () => user?.id ? getUserById(user.id) : null,
+        queryFn: () => user?.id ? apiGetMe() : null,
         enabled: !!user?.id
     })
 
@@ -180,7 +180,7 @@ export default function Step5Build() {
             let currentVersionCode = 1;
             try {
                 if (user?.id) {
-                    const userApps = await getAppsByUser(user.id);
+                    const userApps = await getBuilds(user.id);
                     const matchingApps = userApps.filter((a: any) => a.packageName === generatedPackageName);
                     const maxCode = matchingApps.reduce((max: number, a: any) => Math.max(max, parseInt(a.versionCode) || 0), 0);
                     
@@ -220,14 +220,14 @@ export default function Step5Build() {
 
             if (appId) {
                 // Update existing app
-                await updateApp(appId, appData)
-                console.log('[Build] App updated in Bubble:', appId)
+                await api.patch(`/builds/${appId}`, appData)
+                console.log('[Build] App updated:', appId)
             } else {
                 // Create new app
-                const createRes = await createApp(appData)
-                appId = createRes.id
+                const createRes = await startBuild(appData)
+                appId = createRes.id || createRes._id
                 setBuildId(appId)
-                console.log('[Build] App created in Bubble:', appId)
+                console.log('[Build] App created:', appId)
             }
 
             // Step 2: Trigger GitHub Actions
@@ -285,7 +285,7 @@ export default function Step5Build() {
             const detailedError = error?.response?.data ? JSON.stringify(error.response.data) : error?.message
             setBuildError(detailedError || "Impossible de démarrer la compilation.")
             if (appId) {
-                try { await updateApp(appId, { status: 'failed', errorMessage: error?.message }) } catch (_) {}
+                try { await api.patch(`/builds/${appId}`, { status: 'failed', errorMessage: error?.message }) } catch (_) {}
             }
             return
         }
@@ -296,7 +296,7 @@ export default function Step5Build() {
 
         while (!isDone) {
             try {
-                const appStatus = await getAppById(appId!)
+                const appStatus = await getBuildStatus(appId!)
 
                 if (appStatus?.status === 'completed') {
                     isDone = true
