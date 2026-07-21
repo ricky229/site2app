@@ -677,7 +677,7 @@ api.get('/stats', authMiddleware, async (req, res) => {
 // ----------------------------------------------------------------------
 // DOWNLOAD
 // ----------------------------------------------------------------------
-api.get('/download/:buildId/:type?', async (req, res) => {
+api.get(['/download/:buildId', '/download/:buildId/:type'], async (req, res) => {
   try {
     const doc = await db.collection('builds').doc(req.params.buildId).get();
     if (!doc.exists) return res.status(404).send('Not found');
