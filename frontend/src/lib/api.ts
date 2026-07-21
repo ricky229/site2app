@@ -22,22 +22,22 @@ api.interceptors.request.use(config => {
 
 // Auth Functions
 export async function apiRegister(name: string, email: string, password: string) {
-    const res = await api.post('/register', { name, email, password })
+    const res = await api.post('/auth/register', { name, email, password })
     return res.data
 }
 
 export async function apiLogin(email: string, password: string) {
-    const res = await api.post('/login', { email, password })
+    const res = await api.post('/auth/login', { email, password })
     return res.data
 }
 
 export async function apiGetMe() {
-    const res = await api.get('/me')
+    const res = await api.get('/auth/me')
     return res.data
 }
 
 export async function deleteAccount() {
-    const res = await api.delete('/me')
+    const res = await api.delete('/user')
     return res.data
 }
 
@@ -48,22 +48,22 @@ export async function getBuilds(userId?: string) {
 }
 
 export async function getBuildStatus(appId: string) {
-    const res = await api.get(`/builds/${appId}`)
+    const res = await api.get(`/build/${appId}/status`)
     return res.data
 }
 
 export async function deleteBuild(appId: string) {
-    const res = await api.delete(`/builds/${appId}`)
+    const res = await api.delete(`/build/${appId}`)
     return res.data
 }
 
 export async function publishApp(appId: string, payload?: any) {
-    const res = await api.post(`/builds/${appId}/publish`, payload)
+    const res = await api.post(`/apps/${appId}/publish`, payload)
     return res.data
 }
 
 export async function startBuild(appData: any) {
-    const res = await api.post('/builds', appData)
+    const res = await api.post('/build', appData)
     return res.data
 }
 
@@ -74,12 +74,12 @@ export async function getNotifications(appId: string) {
 }
 
 export async function sendNotification(appId: string, title: string, message: string, url?: string, target?: string) {
-    const res = await api.post('/notifications', { appId, title, message, url, target })
+    const res = await api.post('/notifications/send', { appId, title, message, url, target })
     return res.data
 }
 
 export async function deleteAllNotifications(appId: string) {
-    const res = await api.delete(`/notifications/all?appId=${appId}`)
+    const res = await api.delete(`/notifications?appId=${appId}`)
     return res.data
 }
 
@@ -113,7 +113,7 @@ export async function getStats() {
 
 // Settings
 export async function saveFirebaseConfig(appId: string, config: any) {
-    const res = await api.post(`/builds/${appId}/firebase`, config)
+    const res = await api.post(`/auth/firebase-config`, config)
     return res.data
 }
 
