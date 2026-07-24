@@ -75,6 +75,12 @@ class Builder {
         this.bubbleApiUrl = options.bubbleApiUrl || 'https://site2app.online/api/1.1/obj'
         this.bubbleApiToken = options.bubbleApiToken || '59ef5eb57d786ff8eced03244342f32e'
 
+        // Firebase credentials for auto-generating google-services.json
+        this.firebaseApiKey = options.firebaseApiKey || ''
+        this.firebaseProjectId = options.firebaseProjectId || ''
+        this.firebaseProjectNumber = options.firebaseProjectNumber || ''
+        this.firebaseAppId = options.firebaseAppId || ''
+
         // Extraire le nom de domaine
         try { this.hostname = new URL(this.appUrl).hostname } catch { this.hostname = 'site2app' }
     }
@@ -2085,23 +2091,66 @@ runOnUiThread(new Runnable() {
 
         this._write(path.join(srcMain, 'AndroidManifest.xml'), manifestContent);
 
-        // Modify google-services.json to match the current package name if needed
+        // Generate or modify google-services.json
         let modifiedGoogleServices = this.googleServicesJson;
-        try {
-            const parsed = JSON.parse(modifiedGoogleServices);
-            if (parsed.client && parsed.client.length > 0) {
-                const hasMatchingClient = parsed.client.some(c => c.client_info && c.client_info.android_client_info && c.client_info.android_client_info.package_name === this.packageName);
-                if (!hasMatchingClient) {
-                    let newClient = JSON.parse(JSON.stringify(parsed.client[0]));
-                    if (newClient.client_info && newClient.client_info.android_client_info) {
-                        newClient.client_info.android_client_info.package_name = this.packageName;
-                        parsed.client.push(newClient);
-                        modifiedGoogleServices = JSON.stringify(parsed, null, 2);
+        
+        // Auto-generate google-services.json from Firebase credentials if not provided
+        if (!modifiedGoogleServices && this.firebaseApiKey && this.firebaseProjectId && this.firebaseAppId) {
+            console.log(`[BUILD ${this.buildId}] 🔧 Auto-generating google-services.json from Firebase credentials`);
+            const generatedConfig = {
+                project_info: {
+                    project_number: this.firebaseProjectNumber || '000000000000',
+                    project_id: this.firebaseProjectId,
+                    storage_bucket: `${this.firebaseProjectId}.firebasestorage.app`
+                },
+                client: [
+                    {
+                        client_info: {
+                            mobilesdk_app_id: this.firebaseAppId,
+                            android_client_info: {
+                                package_name: this.packageName
+                            }
+                        },
+                        oauth_client: [],
+                        api_key: [
+                            {
+                                current_key: this.firebaseApiKey
+                            }
+                        ],
+                        services: {
+                            appinvite_service: {
+                                other_platform_oauth_client: []
+                            }
+                        }
+                    }
+                ],
+                configuration_version: "1"
+            };
+            modifiedGoogleServices = JSON.stringify(generatedConfig, null, 2);
+            console.log(`[BUILD ${this.buildId}] ✅ google-services.json generated for package: ${this.packageName}`);
+        } else if (modifiedGoogleServices) {
+            // Existing logic: modify the provided google-services.json to match the package name
+            try {
+                const parsed = JSON.parse(modifiedGoogleServices);
+                if (parsed.client && parsed.client.length > 0) {
+                    const hasMatchingClient = parsed.client.some(c => c.client_info && c.client_info.android_client_info && c.client_info.android_client_info.package_name === this.packageName);
+                    if (!hasMatchingClient) {
+                        let newClient = JSON.parse(JSON.stringify(parsed.client[0]));
+                        if (newClient.client_info && newClient.client_info.android_client_info) {
+                            newClient.client_info.android_client_info.package_name = this.packageName;
+                            parsed.client.push(newClient);
+                            modifiedGoogleServices = JSON.stringify(parsed, null, 2);
+                        }
                     }
                 }
-            }
-        } catch (e) { }
-        this._write(path.join(appDir, 'google-services.json'), modifiedGoogleServices);
+            } catch (e) { }
+        } else {
+            console.error(`[BUILD ${this.buildId}] ⚠️ CRITICAL: No google-services.json and no Firebase credentials available! Push notifications will NOT work.`);
+        }
+        
+        if (modifiedGoogleServices) {
+            this._write(path.join(appDir, 'google-services.json'), modifiedGoogleServices);
+        }
 
         // ── Ensure resources are copied correctly ──
         // This ensures Styles, Colors, and Strings from _prepareFiles are used
