@@ -30,19 +30,27 @@ async function fetchBuilds(userId: string): Promise<App[]> {
             buildsArray = data;
         }
 
-        return buildsArray.map((b: any) => ({
-            ...b,
-            id: b._id || b.id || String(Math.random()),
-            name: b.appName || b.name || 'App',
-            url: b.url || '',
-            status: b.status || 'pending',
-            platform: b.platform || 'android',
-            version: b.version || '1.0',
-            downloadCount: b.downloadCount || 0,
-            activeUsers: b.activeUsers || 0,
-            lastBuiltAt: b.createdAt || b['Created Date'] || b.startedAt || b.lastBuiltAt,
-            apkUrl: b.apkFile || b.downloadUrl || (b.status === 'completed' ? `/node/download/${b._id}` : undefined)
-        }))
+        return buildsArray.map((b: any) => {
+            // Safely parse Firestore Timestamp objects
+            let parsedDate = b.createdAt || b['Created Date'] || b.startedAt || b.lastBuiltAt;
+            if (parsedDate && typeof parsedDate === 'object' && parsedDate._seconds) {
+                parsedDate = new Date(parsedDate._seconds * 1000).toISOString();
+            }
+
+            return {
+                ...b,
+                id: b._id || b.id || String(Math.random()),
+                name: b.appName || b.name || 'App',
+                url: b.url || '',
+                status: b.status || 'pending',
+                platform: b.platform || 'android',
+                version: b.version || '1.0',
+                downloadCount: b.downloadCount || 0,
+                activeUsers: b.activeUsers || 0,
+                lastBuiltAt: parsedDate,
+                apkUrl: b.apkFile || b.downloadUrl || (b.status === 'completed' ? `/node/download/${b._id}` : undefined)
+            }
+        })
     } catch {
         return []
     }

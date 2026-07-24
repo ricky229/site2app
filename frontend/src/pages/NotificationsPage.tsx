@@ -498,8 +498,8 @@ export default function NotificationsPage() {
                                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{notif.body}</p>
                                     <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                                         {notif.status === 'scheduled'
-                                            ? `Programm├®e pour le ${new Date(notif.scheduledAt || Date.now()).toLocaleDateString('fr-FR')}`
-                                            : `Envoy├®e ${formatRelativeTime(notif.sentAt || notif['Created Date'])}`
+                                            ? `Programmée pour le ${new Date((notif.scheduledAt && notif.scheduledAt._seconds) ? notif.scheduledAt._seconds * 1000 : (notif.scheduledAt || Date.now())).toLocaleDateString('fr-FR')}`
+                                            : `Envoyée ${formatRelativeTime((notif.createdAt && notif.createdAt._seconds) ? notif.createdAt._seconds * 1000 : (notif.createdAt || notif.sentAt || notif['Created Date'] || Date.now()))}`
                                         }
                                     </p>
                                 </div>
@@ -567,17 +567,19 @@ export default function NotificationsPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {registeredDevices.map((device: any) => (
+                                    {registeredDevices.map((device: any) => {
+                                        const dateTs = (device.createdAt && device.createdAt._seconds) ? device.createdAt._seconds * 1000 : (device.createdAt || device['Created Date'] || Date.now());
+                                        return (
                                         <tr key={device.id} className="border-b last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" style={{ borderColor: 'var(--border)' }}>
                                             <td className="py-3 px-4 font-semibold text-emerald-600 flex items-center gap-2">
                                                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                                                 {device.os?.toUpperCase() || 'ANDROID'}
                                             </td>
                                             <td className="py-3 px-4 font-mono text-xs">{device.buildId || 'N/A'}</td>
-                                            <td className="py-3 px-4">{new Date(device.createdAt || device['Created Date']).toLocaleDateString()} ├á {new Date(device.createdAt || device['Created Date']).toLocaleTimeString()}</td>
+                                            <td className="py-3 px-4">{new Date(dateTs).toLocaleDateString()} ├á {new Date(dateTs).toLocaleTimeString()}</td>
                                             <td className="py-3 px-4 font-mono text-[10px] text-slate-500 max-w-[200px] overflow-hidden text-ellipsis" title={device.pushToken || device.id}>{device.pushToken || device.id}</td>
                                         </tr>
-                                    ))}
+                                    )})}
                                 </tbody>
                             </table>
                         </div>
