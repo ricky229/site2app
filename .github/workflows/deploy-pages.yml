@@ -56,7 +56,13 @@ jobs:
       - name: Deploy Backend (Functions, Firestore, Storage)
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GITHUB_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_REPO: ${{ github.repository }}
+          BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}
         run: |
+          echo "GITHUB_PAT=$GITHUB_PAT" > functions/.env
+          echo "GITHUB_REPO=$GITHUB_REPO" >> functions/.env
+          echo "BUILDER_SECRET=$BUILDER_SECRET" >> functions/.env
           echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
           export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
           npx firebase-tools deploy --only functions,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} --force --non-interactive
