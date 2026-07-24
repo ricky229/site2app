@@ -205,6 +205,7 @@ api.post('/build', authMiddleware, async (req, res) => {
       packageName: finalPackage,
       status: 'building',
       startedAt: new Date().toISOString(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
       userId: req.user.id,
       versionCode: finalVersionCode,
       versionName: finalVersionName,

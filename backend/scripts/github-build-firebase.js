@@ -109,7 +109,7 @@ async function run() {
     const versionCode = parseInt(buildData.versionCode) || 1;
     const versionName = buildData.versionName || '1.0';
     const parsedFeatures = buildData.features || {};
-    const parsedGoogleServices = buildData.googleServices || null;
+    const parsedGoogleServices = buildData.googleServicesJson || buildData.googleServices || null;
 
     if (!buildId) {
         console.error('Missing BUILD_ID in BUILD_DATA');
