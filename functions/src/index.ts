@@ -675,8 +675,29 @@ api.get('/notifications/poll', (req, res) => res.json({ success: true, message: 
 // ----------------------------------------------------------------------
 api.post('/devices/register', async (req, res) => {
   try {
-    const { pushToken, buildId, userId, platform } = req.body;
-    if (!pushToken || !userId) return res.status(400).json({ error: 'pushToken and userId required' });
+    // Android Builder app sends deviceId and buildId
+    // New versions could send pushToken and userId
+    const pushToken = req.body.pushToken || req.body.deviceId;
+    const buildId = req.body.buildId;
+    const platform = req.body.platform || req.body.os || 'android';
+    
+    if (!pushToken || !buildId) {
+        return res.status(400).json({ error: 'pushToken and buildId required' });
+    }
+    
+    // Auto-discover userId from the build to ensure backward compatibility
+    let userId = req.body.userId;
+    if (!userId) {
+        const buildDoc = await db.collection('builds').doc(buildId).get();
+        if (buildDoc.exists) {
+            userId = buildDoc.data()?.userId;
+        }
+    }
+    
+    // If we STILL don't have a userId, we can't tie it to a dashboard
+    if (!userId) {
+        return res.status(400).json({ error: 'Could not determine userId for this device' });
+    }
     
     const id = crypto.createHash('md5').update(`${userId}_${pushToken}`).digest('hex');
     await db.collection('devices').doc(id).set({
@@ -684,6 +705,7 @@ api.post('/devices/register', async (req, res) => {
       buildId,
       userId,
       platform,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     

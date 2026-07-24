@@ -21,7 +21,7 @@ import type { App } from '../types'
 
 export default function NotificationsPage() {
     const queryClient = useQueryClient()
-    const [tab, setTab] = useState<'compose' | 'history' | 'devices'>('compose')
+    const [tab, setTab] = useState<'compose' | 'history' | 'devices' | 'templates' | 'settings' | 'api'>('compose')
     const [selectedApp, setSelectedApp] = useState('all')
     const [form, setForm] = useState({
         title: '',
@@ -150,7 +150,7 @@ export default function NotificationsPage() {
         },
         onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ['userProfile'] })
-            toast.success('Configuration sauvegard├®e !')
+            toast.success('Configuration sauvegardée !')
         },
         onError: (err: any) => {
             const msg = err?.response?.data?.error || err?.message || 'Erreur lors de la sauvegarde'
@@ -169,7 +169,7 @@ export default function NotificationsPage() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
-            toast.success(form.scheduled ? '­ƒôà Notification programm├®e !' : '­ƒÜÇ Notification enregistr├®e !')
+            toast.success(form.scheduled ? '📅 Notification programmée !' : '🚀 Notification enregistrée !')
             setForm(f => ({ ...f, title: '', body: '' }))
             setSelectedDevices([]) 
             if (!form.scheduled) setTab('history')
@@ -195,7 +195,7 @@ export default function NotificationsPage() {
         };
 
         if (targetMode === 'specific' && selectedDevices.length === 0) {
-            toast.error('S├®lectionnez au moins un appareil');
+            toast.error('Sélectionnez au moins un appareil');
             return;
         }
 
@@ -206,7 +206,7 @@ export default function NotificationsPage() {
         mutationFn: async (id: string) => await deleteNotification(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
-            toast.success('Notification supprim├®e')
+            toast.success('Notification supprimée')
         }
     })
 
@@ -253,15 +253,15 @@ export default function NotificationsPage() {
             {/* Stats */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <StatCard title="Notifications envoyées" value={formatNumber(totalSent)} change={0} icon={<Send size={20} />} color="#3461f5" />
-                <StatCard title="Appareils actifs" value={formatNumber(devicesCount)} change={0} icon={<CheckCircle size={20} />} color="#10b981" />
-            </div>
+            <StatCard title="Appareils actifs" value={formatNumber(devicesCount)} change={0} icon={<CheckCircle size={20} />} color="#10b981" />
+        </div>
 
             {/* Tabs */}
             <div className="flex gap-2 mb-6 border-b overflow-x-auto whitespace-nowrap hide-scroll" style={{ borderColor: 'var(--border)' }}>
                 {[
                     { id: 'compose', label: 'Composer', icon: Plus },
                     { id: 'history', label: 'Historique', icon: Clock },
-                    { id: 'devices', label: 'Appareils', icon: Smartphone },
+                    { id: 'devices', label: 'Appareils (Tokens FCM)', icon: Smartphone },
                 ].map(t => (
                     <button
                         key={t.id}
@@ -306,7 +306,7 @@ export default function NotificationsPage() {
                                     onChange={e => setForm(f => ({ ...f, image: e.target.value }))}
                                     placeholder="https://..."
                                     icon={<ImageIcon size={16} />}
-                                    hint="900├ù300px recommand├®"
+                                    hint="900x300px recommandé"
                                 />
                                 <Input
                                     label="URL de destination"
@@ -325,8 +325,8 @@ export default function NotificationsPage() {
                                 <Select
                                     label="Mode d'envoi"
                                     options={[
-                                        { value: 'all', label: "­ƒôó Diffuser ├á tous les appareils de l'application" },
-                                        { value: 'specific', label: '­ƒÄ» Cibler des appareils sp├®cifiques' }
+                                        { value: 'all', label: "📢 Diffuser à tous les appareils de l'application" },
+                                        { value: 'specific', label: '🎯 Cibler des appareils spécifiques' }
                                     ]}
                                     value={targetMode}
                                     onChange={e => setTargetMode(e.target.value as any)}
@@ -338,7 +338,7 @@ export default function NotificationsPage() {
                                     return (
                                         <div className="space-y-2 mt-4">
                                             <div className="flex items-center justify-between">
-                                                <p className="text-sm font-semibold">S├®lectionnez les appareils ({filteredDevices.length} disponibles)</p>
+                                                <p className="text-sm font-semibold">Sélectionnez les appareils ({filteredDevices.length} disponibles)</p>
                                                 {filteredDevices.length > 0 && (
                                                     <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--brand-500)' }}>
                                                         <input
@@ -349,7 +349,7 @@ export default function NotificationsPage() {
                                                                 else setSelectedDevices([])
                                                             }}
                                                         />
-                                                        Tout s├®lectionner
+                                                        Tout sélectionner
                                                     </label>
                                                 )}
                                             </div>
@@ -377,7 +377,7 @@ export default function NotificationsPage() {
                                                     </label>
                                                 ))}
                                                 {filteredDevices.length === 0 && (
-                                                    <p className="text-sm text-gray-400 p-2">Aucun appareil trouv├® pour cette application.</p>
+                                                    <p className="text-sm text-gray-400 p-2">Aucun appareil trouvé pour cette application.</p>
                                                 )}
                                             </div>
                                         </div>
@@ -391,7 +391,7 @@ export default function NotificationsPage() {
                             <div className="space-y-4">
                                 <Toggle
                                     label="Programmer l'envoi"
-                                    description="D├®finir une date et heure d'envoi automatique"
+                                    description="Définir une date et heure d'envoi automatique"
                                     checked={form.scheduled}
                                     onChange={v => setForm(f => ({ ...f, scheduled: v }))}
                                 />
@@ -409,7 +409,7 @@ export default function NotificationsPage() {
                                         onClick={() => setPreview(true)}
                                         icon={<Bell size={16} />}
                                     >
-                                        Pr├®visualiser
+                                        Prévisualiser
                                     </Button>
                                     <Button
                                         onClick={handleSend}
@@ -427,7 +427,7 @@ export default function NotificationsPage() {
                     {/* Preview */}
                     <div className="lg:col-span-2">
                         <div className="sticky top-24">
-                            <p className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>Aper├ºu</p>
+                            <p className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>Aperçu</p>
 
                             {/* Android notification */}
                             <div className="card mb-4">
@@ -446,7 +446,7 @@ export default function NotificationsPage() {
                                             <span className="text-xs ml-2 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>maintenant</span>
                                         </div>
                                         <p className="text-sm truncate-2" style={{ color: 'var(--text-secondary)' }}>
-                                            {form.body || 'Votre message appara├«tra ici'}
+                                            {form.body || 'Votre message apparaîtra ici'}
                                         </p>
                                         {form.image && (
                                             <div className="mt-2 h-24 rounded-lg bg-gray-100 overflow-hidden">
@@ -459,7 +459,7 @@ export default function NotificationsPage() {
 
                             {form.actionUrl && (
                                 <div className="mt-3 card p-3 shadow-none bg-blue-50/50">
-                                    <p className="text-xs font-bold mb-1" style={{ color: 'var(--brand-500)' }}>Action pr├®vue :</p>
+                                    <p className="text-xs font-bold mb-1" style={{ color: 'var(--brand-500)' }}>Action prévue :</p>
                                     <p className="text-xs text-blue-900 truncate">{form.actionUrl}</p>
                                 </div>
                             )}
@@ -478,7 +478,7 @@ export default function NotificationsPage() {
                                 size="sm"
                                 icon={<Trash2 size={16} />}
                                 onClick={() => {
-                                    if (confirm('├ètes-vous s├╗r de vouloir effacer tout l\'historique ?')) {
+                                    if (confirm('Êtes-vous sûr de vouloir effacer tout l\'historique ?')) {
                                         clearAllMutation.mutate()
                                     }
                                 }}
@@ -545,10 +545,10 @@ export default function NotificationsPage() {
                             {notif.stats && (
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
                                     {[
-                                        { label: 'Envoyées', value: formatNumber(notif.stats.sent), color: '#3461f5' },
-                                        { label: 'Livrées', value: `${notif.stats.deliveryRate}%`, color: '#10b981' },
-                                        { label: 'Ouvertes', value: `${notif.stats.openRate}%`, color: '#f59e0b' },
-                                        { label: 'Cliquées', value: `${notif.stats.clickRate}%`, color: '#7c3aed' },
+                                        { label: 'Envoyées', value: formatNumber(notif.stats?.sent || notif.sentCount || 0), color: '#3461f5' },
+                                        { label: 'Livrées', value: `${notif.stats?.deliveryRate !== undefined ? notif.stats.deliveryRate : ((notif.stats?.sent || notif.sentCount || 0) > 0 ? Math.round((notif.stats?.delivered || notif.deliveredCount || 0) / (notif.stats?.sent || notif.sentCount || 0) * 100) : 0)}%`, color: '#10b981' },
+                                        { label: 'Ouvertes', value: `${notif.stats?.openRate || 0}%`, color: '#f59e0b' },
+                                        { label: 'Cliquées', value: `${notif.stats?.clickRate || 0}%`, color: '#7c3aed' },
                                     ].map(s => (
                                         <div key={s.label} className="text-center">
                                             <p className="text-lg font-bold" style={{ color: s.color }}>{s.value}</p>
@@ -603,6 +603,130 @@ export default function NotificationsPage() {
                             </table>
                         </div>
                     )}
+                </div>
+            )}
+
+
+
+            {/* Templates Tab */}
+            {tab === 'templates' && (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[
+                        { emoji: '🔥', title: 'Offre flash', body: 'Jusqu\'à -50% pendant 24h ! See nos meilleures offres maintenant.' },
+                        { emoji: '📰', title: 'Nouveau contenu', body: 'Nous avons publié {X} nouveaux articles. Venez les découvrir !' },
+                        { emoji: '✅', title: 'Confirmation commande', body: 'Votre commande #{NUM} a été confirmée. Merci pour votre achat !' },
+                        { emoji: '🛒', title: 'Rappel', body: 'N\'oubliez pas de finaliser votre panier. Il vous attend !' },
+                        { emoji: '🎉', title: 'Evénement', body: 'Ne manquez pas notre événement spécial ce {DATE} !' },
+                        { emoji: '📦', title: 'Livraison', body: 'Votre colis #{NUM} est en chemin ! Livraison estimée : {DATE}.' },
+                    ].map(template => (
+                        <div key={template.title} className="card p-5 card-hover cursor-pointer"
+                            onClick={() => setForm(f => ({ ...f, title: template.title, body: template.body }))}>
+                            <div className="text-3xl mb-3">{template.emoji}</div>
+                            <h3 className="font-bold mb-1">{template.title}</h3>
+                            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{template.body}</p>
+                            <button
+                                className="mt-3 text-xs font-medium"
+                                style={{ color: 'var(--brand-500)' }}
+                                onClick={() => {
+                                    setForm(f => ({ ...f, title: template.title, body: template.body }))
+                                    setTab('compose')
+                                    toast.success('Template chargé !')
+                                }}
+                            >
+                                Utiliser ce template ÔåÆ
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* API & Integration Tab */}
+            {tab === 'api' && (
+                <div className="card p-6 max-w-4xl mx-auto space-y-6">
+                    <div>
+                        <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
+                            <Link size={24} style={{ color: 'var(--brand-500)' }} />
+                            Documentation API : Notifications Automatiques
+                        </h2>
+                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                            Envoyez des notifications Push ciblées à vos utilisateurs directement depuis votre site web (WordPress, Bubble.io, Node.js, PHP, etc.) de façon 100% universelle.
+                        </p>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="border p-5 rounded-xl" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--body-bg)' }}>
+                            <h3 className="font-bold mb-3 flex items-center gap-2">
+                                <span className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: 'var(--brand-500)' }}>1</span>
+                                Intercepter le Push Token (Sur votre site)
+                            </h3>
+                            <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+                                L'application native Site2App est intelligente. Lorsqu'un visiteur ouvre votre application sur son téléphone, l'application modifie automatiquement l'URL de votre site pour y attacher son identifiant de notification (`s2a_token`).
+                                <br /><br />
+                                <strong>Exemple d'URL générée en arri├¿re-plan :</strong><br />
+                                <code className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded text-xs font-mono font-semibold border mt-1 inline-block" style={{ borderColor: 'var(--border)' }}>https://votre-site.com/?s2a_token=APA91bFoijuty...</code>
+                            </p>
+                            <p className="text-sm font-bold mt-4 mb-2">
+                                👉 Votre mission :
+                            </p>
+                            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                                Quand l'utilisateur s'inscrit ou se connecte sur votre site web, vérifiez si l'URL contient le param├¿tre <code>s2a_token</code>. Si oui, sauvegardez cette valeur dans votre base de données dans la fiche de votre utilisateur (créez une colonne "push_token").
+                                <br /><br />
+                                <em>Exemple sur Bubble.io : Dans un Workflow "Page is loaded" &rarr; Action: Make changes to User &rarr; push_token = Get data from page URL (parameter: s2a_token).</em>
+                            </p>
+                        </div>
+
+                        <div className="border p-5 rounded-xl" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--body-bg)' }}>
+                            <h3 className="font-bold mb-3 flex items-center gap-2">
+                                <span className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: 'var(--brand-500)' }}>2</span>
+                                Déclencher une notification 100% depuis Bubble (Recommandé)
+                            </h3>
+                            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+                                L'envoi direct depuis Bubble vers Firebase nécessite une clé cryptée (un token OAuth2 valide 1 heure). Voici comment configurer ça proprement dans Bubble pour un envoi instantané en 24h/24, sans aucun serveur intermédiaire.
+                            </p>
+
+                            <h4 className="font-bold text-sm mb-2">├ëtape A : Générer le Jeton (Token) Google</h4>
+                            <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
+                                <li>Installez le plugin gratuit <strong>Google Service Account</strong> sur Bubble (ou JWT Generator).</li>
+                                <li>Dans un <strong>Backend Workflow</strong> (ou sur une page), utilisez l'action de ce plugin pour générer un Token en utilisant votre fichier JSON Firebase (le m├¬me que celui fourni dans "Configuration Firebase").</li>
+                                <li>Scopes à utiliser : <code>https://www.googleapis.com/auth/cloud-platform</code></li>
+                            </ul>
+
+                            <h4 className="font-bold text-sm mb-2">├ëtape B : Créer l'Appel API vers Google (FCM)</h4>
+                            <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
+                                <li>Allez dans <strong>Plugins &gt; API Connector</strong>, et créez un appel API nommé "Firebase FCM API", puis un call (Action / POST) nommé "Send Push".</li>
+                            </ul>
+                            
+                            <code className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded text-xs font-mono font-semibold border mb-4 inline-block w-full" style={{ borderColor: 'var(--border)' }}>
+                                POST https://fcm.googleapis.com/v1/projects/VOTRE_FIREBASE_PROJECT_ID/messages:send
+                            </code>
+
+                            <h4 className="font-bold text-sm mb-2">Le Header et le Body :</h4>
+                            <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
+                                <li><strong>Header 1</strong> : <code>Content-Type: application/json</code></li>
+                                <li><strong>Header 2 (Décoché Private)</strong> : <code>Authorization: Bearer &lt;token&gt;</code></li>
+                                <li><strong>Body JSON</strong> :</li>
+                            </ul>
+                            
+                            <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs font-mono border mb-4 overflow-x-auto" style={{ borderColor: 'var(--border)' }}>
+{`{
+  "message": {
+    "token": "<device_token>",
+    "notification": {
+      "title": "<title>",
+      "body": "<body>"
+    },
+    "data": {
+      "actionUrl": "<url>"
+    }
+  }
+}`}
+                            </pre>
+                            
+                            <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>
+                                <strong>Important</strong> : Décochez "Private" sur tous les param├¿tres dynamiques en bas du call `&lt;param&gt;`. Vous pourrez ainsi appeler cette action dans n'importe quel Workflow Bubble, en passant dynamiquement le Token OAuth2 généré à l'étape A, et le Push partira en 1 seconde à votre utilisateur !
+                            </p>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
