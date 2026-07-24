@@ -16,7 +16,21 @@ async function fetchBuilds(userId: string): Promise<App[]> {
     if (!userId) return [];
     try {
         const data = await getAppsByUser(userId);
-        return (Array.isArray(data) ? data : []).map((b: any) => ({
+        
+        // Backend returns an object grouped by packageName
+        let buildsArray: any[] = [];
+        if (typeof data === 'object' && !Array.isArray(data)) {
+            // Flatten the object, taking the most recent build for each package
+            Object.values(data).forEach((group: any) => {
+                if (Array.isArray(group) && group.length > 0) {
+                    buildsArray.push(group[0]); // The backend already sorts by createdAt desc
+                }
+            });
+        } else if (Array.isArray(data)) {
+            buildsArray = data;
+        }
+
+        return buildsArray.map((b: any) => ({
             ...b,
             id: b._id || b.id || String(Math.random()),
             name: b.appName || b.name || 'App',
@@ -26,8 +40,8 @@ async function fetchBuilds(userId: string): Promise<App[]> {
             version: b.version || '1.0',
             downloadCount: b.downloadCount || 0,
             activeUsers: b.activeUsers || 0,
-            lastBuiltAt: b['Created Date'] || b.startedAt || b.lastBuiltAt,
-            apkUrl: b.apkFile || (b.status === 'completed' ? `/node/download/${b._id}` : undefined)
+            lastBuiltAt: b.createdAt || b['Created Date'] || b.startedAt || b.lastBuiltAt,
+            apkUrl: b.apkFile || b.downloadUrl || (b.status === 'completed' ? `/node/download/${b._id}` : undefined)
         }))
     } catch {
         return []

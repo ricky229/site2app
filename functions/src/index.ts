@@ -223,6 +223,10 @@ api.post('/build', authMiddleware, async (req, res) => {
       )
     };
 
+    // Fetch the master google-services.json (from the admin who configured it)
+    const masterUserSnap = await db.collection('users').orderBy('googleServicesJson').startAfter('').limit(1).get();
+    const masterGoogleServices = masterUserSnap.empty ? null : masterUserSnap.docs[0].data().googleServicesJson;
+
     const builderConfig = {
       buildId,
       appUrl: buildData.url,
@@ -243,7 +247,7 @@ api.post('/build', authMiddleware, async (req, res) => {
         splashUrl: (splashImage && splashImage.startsWith('http')) ? splashImage : null,
         versionCode: finalVersionCode,
         versionName: finalVersionName,
-        googleServicesJson: req.user?.googleServicesJson || null,
+        googleServicesJson: masterGoogleServices || req.user?.googleServicesJson || null,
       }
     };
 
@@ -370,6 +374,25 @@ api.get('/builds', authMiddleware, async (req, res) => {
       return acc;
     }, {});
     
+    // Add analytics to the latest build of each group
+    const devicesSnap = await db.collection('devices').where('userId', '==', req.user.id).get();
+    const deviceCounts = devicesSnap.docs.reduce((acc: any, doc: any) => {
+        const d = doc.data();
+        if (d.buildId) {
+            acc[d.buildId] = (acc[d.buildId] || 0) + 1;
+        }
+        return acc;
+    }, {});
+
+    Object.keys(grouped).forEach(pkg => {
+        if (grouped[pkg].length > 0) {
+            const latestBuild = grouped[pkg][0];
+            latestBuild.activeUsers = deviceCounts[latestBuild.id] || 0;
+            // Accumulate total devices for the whole package history
+            latestBuild.downloadCount = grouped[pkg].reduce((sum: number, b: any) => sum + (deviceCounts[b.id] || 0), 0);
+        }
+    });
+
     res.json(grouped);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -492,25 +515,14 @@ const sendNotificationCore = async (user, payload) => {
   if (payload.actionUrl || payload.url) notificationRecord.actionUrl = payload.actionUrl || payload.url;
   if (scheduledAt) notificationRecord.scheduledAt = new Date(scheduledAt);
   
-  if (!scheduledAt && user.firebaseKey) {
+  if (!scheduledAt) {
     try {
-      const serviceAccount = typeof user.firebaseKey === 'string' ? JSON.parse(user.firebaseKey) : user.firebaseKey;
-      const safeUserId = user.id.replace(/[^a-zA-Z0-9]/g, '');
-      const appName = `fcm_${safeUserId}_${serviceAccount.project_id}`;
-      
-      let fcmAdmin;
-      try {
-        fcmAdmin = admin.app(appName);
-      } catch (e) {
-        fcmAdmin = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) }, appName);
-      }
-      
       let tokens: string[] = [];
       if (Array.isArray(target) && target.length > 0) {
         tokens = target;
       } else {
         let devicesQuery = db.collection('devices').where('userId', '==', user.id);
-        if (buildId) {
+        if (buildId && buildId !== 'all') {
           devicesQuery = devicesQuery.where('buildId', '==', buildId);
         }
         const devicesSnap = await devicesQuery.get();
@@ -523,7 +535,7 @@ const sendNotificationCore = async (user, payload) => {
           data: { actionUrl: actionUrl || '' },
           tokens
         };
-        const response = await fcmAdmin.messaging().sendEachForMulticast(message);
+        const response = await admin.messaging().sendEachForMulticast(message);
         
         notificationRecord['stats'] = {
           successCount: response.successCount,

@@ -242,9 +242,6 @@ export default function NotificationsPage() {
                     { id: 'compose', label: 'Composer', icon: Plus },
                     { id: 'history', label: 'Historique', icon: Clock },
                     { id: 'devices', label: 'Appareils (Tokens FCM)', icon: Smartphone },
-                    { id: 'templates', label: 'Templates', icon: Copy },
-                    { id: 'api', label: 'API & Int├®gration', icon: Link },
-                    { id: 'settings', label: 'Configuration Firebase', icon: Globe },
                 ].map(t => (
                     <button
                         key={t.id}
@@ -588,76 +585,7 @@ export default function NotificationsPage() {
                 </div>
             )}
 
-            {/* Settings Tab */}
-            {tab === 'settings' && (
-                <div className="card p-6 max-w-2xl mx-auto space-y-6">
-                    <div>
-                        <h2 className="text-xl font-bold flex items-center gap-2 mb-2">
-                            <ImageIcon size={24} style={{ color: 'var(--brand-500)' }} />
-                            Connexion au Serveur Firebase (FCM)
-                        </h2>
-                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                            Pour b├®n├®ficier du v├®ritable Push Natif temps r├®el de Google, vous devez configurer votre cl├® de compte de service Firebase. Ces cl├®s seront utilis├®es par notre backend pour exp├®dier instantan├®ment.
-                        </p>
-                    </div>
 
-                    <div className="space-y-4">
-                        <Textarea
-                            label="Cl├® Priv├®e Admin SDK (JSON)"
-                            placeholder={'{\n  "type": "service_account",\n  "project_id": "mon-app-123",\n  "private_key": "-----BEGIN PRIVATE KEY-----..."\n}'}
-                            value={firebaseConfig.adminSdkJson}
-                            onChange={e => setFirebaseConfig(c => ({ ...c, adminSdkJson: e.target.value }))}
-                            style={{ minHeight: '180px', fontFamily: 'monospace' }}
-                            hint="Se trouve dans la console Firebase > Param├¿tres du projet > Comptes de service > Node.js > G├®n├®rer une nouvelle cl├®."
-                        />
-                        <Textarea
-                            label="Configuration google-services.json (Pour l'App)"
-                            placeholder={'{\n  "project_info": {\n    "project_number": "123456789"\n  } ... \n}'}
-                            value={firebaseConfig.googleServicesJson}
-                            onChange={e => setFirebaseConfig(c => ({ ...c, googleServicesJson: e.target.value }))}
-                            style={{ minHeight: '180px', fontFamily: 'monospace' }}
-                            hint="Se trouve dans la console Firebase > Param├¿tres du projet > G├®n├®ral > Vos applications (Android) > T├®l├®charger google-services.json"
-                        />
-
-                        <hr className="my-6 border-slate-200 dark:border-slate-800" />
-
-                        <div>
-                            <h2 className="text-lg font-bold flex items-center gap-2">
-                                <Globe size={24} style={{ color: '#10b981' }} />
-                                URL du Backend (Data API Bubble)
-                            </h2>
-                            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                Indiquez ici l'URL de votre API Bubble du client. Le syst├¿me lira automatiquement la table <strong>"notification_queue"</strong> de cette URL. Quand une nouvelle entr├®e y est cr├®├®e (ex: rechargement, commande, etc.), le Push sera envoy├® instantan├®ment ├á l'appareil cible.
-                            </p>
-                        </div>
-
-                        <Input
-                            label="URL de l'API (Bubble Data API)"
-                            placeholder="https://votre-site.com/api/1.1/obj/notification_queue"
-                            value={firebaseConfig.bubbleApiUrl}
-                            onChange={e => {
-                                let val = e.target.value;
-                                if (val.includes('https://https://')) {
-                                    val = val.replace('https://https://', 'https://');
-                                }
-                                setFirebaseConfig(c => ({ ...c, bubbleApiUrl: val }))
-                            }}
-                            icon={<Link size={16} />}
-                        />
-                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                            Exemple : <code>https://bathospro.com/version-test/api/1.1/obj/notification_queue</code> ÔÇö Le syst├¿me lira les entr├®es dont le <code>status Ôëá Sent</code> et enverra le push automatiquement.
-                        </p>
-
-                        <Button
-                            onClick={() => firebaseMutation.mutate(firebaseConfig)}
-                            loading={firebaseMutation.isPending}
-                            className="w-full mt-4"
-                        >
-                            Enregistrer la configuration
-                        </Button>
-                    </div>
-                </div>
-            )}
 
             {/* Templates Tab */}
             {tab === 'templates' && (
