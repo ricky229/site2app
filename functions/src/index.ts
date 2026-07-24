@@ -477,19 +477,20 @@ const sendNotificationCore = async (user, payload) => {
   const { title, body, buildId, target, image, actionUrl, scheduledAt } = payload;
   
   const notifId = uuidv4();
-  const notificationRecord = {
+  const notificationRecord: any = {
     id: notifId,
     userId: user.id,
-    title,
-    body,
-    buildId,
-    target,
-    image,
-    actionUrl,
-    scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+    title: payload.title || '',
+    body: payload.body || payload.message || '',
+    buildId: payload.buildId || payload.appId || null,
+    target: payload.target || 'all',
     status: scheduledAt ? 'scheduled' : 'sent',
     createdAt: admin.firestore.FieldValue.serverTimestamp()
   };
+  
+  if (payload.image) notificationRecord.image = payload.image;
+  if (payload.actionUrl || payload.url) notificationRecord.actionUrl = payload.actionUrl || payload.url;
+  if (scheduledAt) notificationRecord.scheduledAt = new Date(scheduledAt);
   
   if (!scheduledAt && user.firebaseKey) {
     try {
