@@ -364,42 +364,61 @@ api.get('/builds', authMiddleware, async (req, res) => {
       
     const builds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Sort builds in memory (descending by createdAt/startedAt)
+    // Safely sort builds in memory (descending by createdAt/startedAt)
     builds.sort((a: any, b: any) => {
-        const dateA = a.createdAt?.toDate?.()?.getTime() || new Date(a.startedAt).getTime() || 0;
-        const dateB = b.createdAt?.toDate?.()?.getTime() || new Date(b.startedAt).getTime() || 0;
+        let dateA = 0;
+        let dateB = 0;
+        try {
+            if (a.createdAt && typeof a.createdAt.toDate === 'function') dateA = a.createdAt.toDate().getTime();
+            else if (a.startedAt) dateA = new Date(a.startedAt).getTime() || 0;
+        } catch(e) {}
+        try {
+            if (b.createdAt && typeof b.createdAt.toDate === 'function') dateB = b.createdAt.toDate().getTime();
+            else if (b.startedAt) dateB = new Date(b.startedAt).getTime() || 0;
+        } catch(e) {}
+        
+        // Handle NaN gracefully
+        if (isNaN(dateA)) dateA = 0;
+        if (isNaN(dateB)) dateB = 0;
+        
         return dateB - dateA;
     });
     
-    // Group by packageName
+    // Group by packageName safely
     const grouped = builds.reduce((acc: any, current: any) => {
-      const pkg = current.packageName || current.id;
+      const pkg = current.packageName || current.id || 'unknown';
       if (!acc[pkg]) acc[pkg] = [];
       acc[pkg].push(current);
       return acc;
     }, {});
     
-    // Add analytics to the latest build of each group
-    const devicesSnap = await db.collection('devices').where('userId', '==', req.user.id).get();
-    const deviceCounts = devicesSnap.docs.reduce((acc: any, doc: any) => {
-        const d = doc.data();
-        if (d.buildId) {
-            acc[d.buildId] = (acc[d.buildId] || 0) + 1;
-        }
-        return acc;
-    }, {});
+    // Add analytics safely
+    try {
+        const devicesSnap = await db.collection('devices').where('userId', '==', req.user.id).get();
+        const deviceCounts = devicesSnap.docs.reduce((acc: any, doc: any) => {
+            const d = doc.data();
+            if (d.buildId) {
+                acc[d.buildId] = (acc[d.buildId] || 0) + 1;
+            }
+            return acc;
+        }, {});
 
-    Object.keys(grouped).forEach(pkg => {
-        if (grouped[pkg].length > 0) {
-            const latestBuild = grouped[pkg][0];
-            latestBuild.activeUsers = deviceCounts[latestBuild.id] || 0;
-            // Accumulate total devices for the whole package history
-            latestBuild.downloadCount = grouped[pkg].reduce((sum: number, b: any) => sum + (deviceCounts[b.id] || 0), 0);
-        }
-    });
+        Object.keys(grouped).forEach(pkg => {
+            if (grouped[pkg].length > 0) {
+                const latestBuild = grouped[pkg][0];
+                latestBuild.activeUsers = deviceCounts[latestBuild.id] || 0;
+                // Accumulate total devices for the whole package history
+                latestBuild.downloadCount = grouped[pkg].reduce((sum: number, b: any) => sum + (deviceCounts[b.id] || 0), 0);
+            }
+        });
+    } catch (analyticsError) {
+        console.error('Error fetching analytics for builds:', analyticsError);
+        // Continue even if analytics fails
+    }
 
     res.json(grouped);
   } catch (err) {
+    console.error('CRITICAL ERROR IN /builds:', err);
     res.status(500).json({ error: err.message });
   }
 });
