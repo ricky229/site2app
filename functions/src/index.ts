@@ -208,10 +208,18 @@ api.post('/build', authMiddleware, async (req, res) => {
       userId: req.user.id,
       versionCode: finalVersionCode,
       versionName: finalVersionName,
-      config: {
-        statusBarColor, themeColor, splashBgColor, enableFullscreen,
-        primaryColor, secondaryColor, orientation, features
-      }
+      config: Object.fromEntries(
+        Object.entries({
+          statusBarColor: statusBarColor || primaryColor || '#3461f5',
+          themeColor: themeColor || primaryColor || '#3461f5',
+          splashBgColor: splashBgColor || primaryColor || '#3461f5',
+          enableFullscreen: !!enableFullscreen,
+          primaryColor: primaryColor || '#3461f5',
+          secondaryColor: secondaryColor || '#3461f5',
+          orientation: orientation || 'portrait',
+          features: features || {}
+        }).filter(([_, v]) => v !== undefined)
+      )
     };
 
     const builderConfig = {
@@ -779,11 +787,19 @@ api.get('/analyze', async (req, res) => {
     }
     
     // Extract colors
-    const colors = new Set<string>();
+    const colorsCount = new Map<string, number>();
     
-    // Theme color
+    const addColor = (c: string, weight: number = 1) => {
+      const color = c.toLowerCase();
+      // Expanded filter for generic grays and whites
+      const genericColors = ['#ffffff', '#000000', '#fff', '#000', '#f4f5f6', '#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da', '#adb5bd', '#6c757d', '#495057', '#343a40', '#212529', '#111111', '#222222', '#333333', '#f0f0f0', '#fafafa'];
+      if (genericColors.includes(color)) return;
+      colorsCount.set(color, (colorsCount.get(color) || 0) + weight);
+    };
+
+    // Theme color gets a big weight
     const themeColorMatch = html.match(/<meta[^>]*name=["']theme-color["'][^>]*content=["']([^"']+)["'][^>]*>/i);
-    if (themeColorMatch) colors.add(themeColorMatch[1].toLowerCase());
+    if (themeColorMatch) addColor(themeColorMatch[1], 20);
     
     // Regex for colors
     const hexRegex = /#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})\b/g;
@@ -791,9 +807,9 @@ api.get('/analyze', async (req, res) => {
     const cssVarRegex = /--[\w-]+:\s*(#[A-Fa-f0-9]{3,8}|rgba?\([^)]+\))/gi;
     
     let match;
-    while ((match = hexRegex.exec(html)) !== null) colors.add(match[0].toLowerCase());
-    while ((match = rgbRegex.exec(html)) !== null) colors.add(match[0].toLowerCase());
-    while ((match = cssVarRegex.exec(html)) !== null) colors.add(match[1].toLowerCase());
+    while ((match = hexRegex.exec(html)) !== null) addColor(match[0]);
+    while ((match = rgbRegex.exec(html)) !== null) addColor(match[0]);
+    while ((match = cssVarRegex.exec(html)) !== null) addColor(match[1]);
     
     // Fetch external CSS up to 5
     const cssMatches = [...html.matchAll(/<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi)].slice(0, 5);
@@ -805,25 +821,24 @@ api.get('/analyze', async (req, res) => {
         const cssRes = await fetch(cssUrl, { timeout: 5000 });
         if (cssRes.ok) {
           const cssText = await cssRes.text();
-          while ((match = hexRegex.exec(cssText)) !== null) colors.add(match[0].toLowerCase());
-          while ((match = rgbRegex.exec(cssText)) !== null) colors.add(match[0].toLowerCase());
+          while ((match = hexRegex.exec(cssText)) !== null) addColor(match[0]);
+          while ((match = rgbRegex.exec(cssText)) !== null) addColor(match[0]);
         }
       } catch (e) {
         // ignore css fetch errors
       }
     }
     
-    // Filter generic colors
-    const filteredColors = Array.from(colors).filter(c => {
-      if (c === '#ffffff' || c === '#000000' || c === '#fff' || c === '#000') return false;
-      return true;
-    });
+    // Sort by frequency
+    const sortedColors = Array.from(colorsCount.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(entry => entry[0]);
     
     res.json({
       title,
       description,
       favicon,
-      colors: filteredColors.slice(0, 10), // Limit to top 10 unique colors
+      colors: sortedColors.slice(0, 10), // Limit to top 10 unique colors
       ssl: targetUrl.startsWith('https://')
     });
   } catch (err) {
