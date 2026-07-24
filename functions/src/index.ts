@@ -250,31 +250,55 @@ api.post('/build', authMiddleware, async (req, res) => {
     // Trigger GitHub Action
     if (GITHUB_PAT && GITHUB_REPO) {
       console.log(`[API] 🚀 Triggering GitHub Action for build ${buildId}...`);
-      const dispatchRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/dispatches`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          'Authorization': `token ${GITHUB_PAT}`,
-          'Content-Type': 'application/json',
-          'User-Agent': 'Site2App-Functions'
-        },
-        body: JSON.stringify({
-          event_type: 'build_apk',
-          client_payload: {
-            buildData: JSON.stringify({
-              ...builderConfig,
-              ...builderConfig.options,
-              url: buildData.url,
-              appUrl: buildData.url,
-            })
-          }
-        })
-      });
-      if (!dispatchRes.ok) {
-        console.error('[API] ❌ GitHub Action trigger failed:', dispatchRes.status);
-      } else {
-        console.log('[API] ✅ GitHub Action triggered');
+      console.log(`[API] GITHUB_REPO=${GITHUB_REPO}, PAT length=${GITHUB_PAT.length}`);
+      try {
+        const dispatchRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/dispatches`, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${GITHUB_PAT}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'Site2App-Functions'
+          },
+          body: JSON.stringify({
+            event_type: 'build_apk',
+            client_payload: {
+              buildData: JSON.stringify({
+                ...builderConfig,
+                ...builderConfig.options,
+                url: buildData.url,
+                appUrl: buildData.url,
+              })
+            }
+          })
+        });
+        if (!dispatchRes.ok) {
+          const errText = await dispatchRes.text();
+          console.error(`[API] ❌ GitHub Action trigger failed: ${dispatchRes.status} - ${errText}`);
+          // Mark build as failed so frontend stops waiting
+          await db.collection('builds').doc(buildId).update({
+            status: 'failed',
+            error: `GitHub Action trigger failed (${dispatchRes.status}): ${errText}`,
+          });
+          return res.json({ buildId, status: 'failed', error: 'GitHub Action trigger failed' });
+        } else {
+          console.log('[API] ✅ GitHub Action triggered');
+        }
+      } catch (dispatchErr: any) {
+        console.error('[API] ❌ GitHub dispatch error:', dispatchErr.message);
+        await db.collection('builds').doc(buildId).update({
+          status: 'failed',
+          error: `GitHub dispatch error: ${dispatchErr.message}`,
+        });
+        return res.json({ buildId, status: 'failed', error: dispatchErr.message });
       }
+    } else {
+      console.error(`[API] ❌ GITHUB_PAT or GITHUB_REPO not configured! PAT=${GITHUB_PAT ? 'SET' : 'EMPTY'}, REPO=${GITHUB_REPO || 'EMPTY'}`);
+      await db.collection('builds').doc(buildId).update({
+        status: 'failed',
+        error: 'Configuration serveur manquante: GITHUB_PAT ou GITHUB_REPO non configuré.',
+      });
+      return res.json({ buildId, status: 'failed', error: 'Server configuration missing: GITHUB_PAT or GITHUB_REPO not set' });
     }
 
     res.json({ buildId, status: 'building' });

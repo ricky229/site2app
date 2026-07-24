@@ -202,81 +202,47 @@ export default function Step5Build() {
                 url: config.url || siteAnalysis?.url || 'https://example.com',
                 platform: platform,
                 packageName: generatedPackageName,
+                statusBarColor: config.statusBar?.color || config.primaryColor || '#3461f5',
                 themeColor: config.statusBar?.color || config.primaryColor || '#3461f5',
                 splashBgColor: config.statusBar?.color || config.primaryColor || '#3461f5',
+                primaryColor: config.primaryColor || '#3461f5',
+                secondaryColor: config.secondaryColor || '#3461f5',
                 orientation: config.orientation || 'portrait',
                 enableFullscreen: config.features?.fullscreen || false,
-                status: 'building',
                 versionCode: currentVersionCode,
                 versionName: `1.${currentVersionCode}`,
+                icon: compressedIconBase64 || (iconIsUrl ? config.icon : null),
+                splashImage: compressedSplashBase64 || (splashIsUrl ? config.splashScreen : null),
+                features: config.features || {},
             }
             if (user?.id) appData.owner = user.id;
 
-            // Note: Bubble's 'icon' field is a file-type field that only accepts URLs.
-            // We cannot save base64 directly. If the icon was already a Bubble URL, save it.
-            if (iconIsUrl) {
-                appData.icon = config.icon;
-            }
-
+            let createRes: any
             if (appId) {
-                // Update existing app
-                await api.patch(`/builds/${appId}`, appData)
-                console.log('[Build] App updated:', appId)
+                // Update existing app - use startBuild to re-trigger
+                createRes = await startBuild({ ...appData, buildId: appId })
+                appId = createRes.buildId || appId
+                setBuildId(appId)
+                console.log('[Build] App rebuild triggered:', appId)
             } else {
                 // Create new app
-                const createRes = await startBuild(appData)
-                appId = createRes.id || createRes._id
+                createRes = await startBuild(appData)
+                appId = createRes.buildId || createRes.id || createRes._id
                 setBuildId(appId)
                 console.log('[Build] App created:', appId)
             }
 
-            // Step 2: Trigger GitHub Actions
-            const buildPayload = {
-                ...appData,
-                buildId: appId,
-                apiUrl: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-                    ? window.location.origin + "/node"
-                    : "https://site2app.online/node",
-                iconBase64: compressedIconBase64 || null,
-                iconUrl: iconIsUrl ? config.icon : null,
-                splashImageBase64: compressedSplashBase64 || null,
-                splashUrl: splashIsUrl ? config.splashScreen : null,
-                features: config.features || {},
-                googleServices: (config as any).googleServices || userProfile?.googleServicesJson || user?.googleServicesJson || null
-            };
-
-            const buildDataStr = JSON.stringify(buildPayload);
-            console.log(`[Build] Total payload size: ${buildDataStr.length} chars`);
-
-            // Safety check: if still too large, drop splashImageBase64
-            if (buildDataStr.length > 61000) {
-                console.warn('[Build] Payload still too large, dropping splashImageBase64 to ensure success');
-                (buildPayload as any).splashImageBase64 = null;
+            // Check if the Cloud Function reported an immediate failure
+            if (createRes.status === 'failed') {
+                setPhase('error')
+                setBuildError(createRes.error || 'Le serveur n\'a pas pu lancer la compilation.')
+                toast.error('Échec du lancement de la compilation')
+                return
             }
 
-            const ghPayload = {
-                event_type: 'build_apk',
-                client_payload: {
-                    buildData: JSON.stringify(buildPayload)
-                }
-            }
-
-            const triggerRes = await fetch(`https://api.github.com/repos/ricky229/site2app/dispatches`, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Authorization': `Bearer ` + `ghp_` + `nX9yeqGC00MKd8GiHjTriSU4igmGL21ZvTGa`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(ghPayload)
-            })
-
-            if (!triggerRes.ok) {
-                const errData = await triggerRes.text()
-                throw new Error(`Impossible de lancer la compilation Github (${triggerRes.status}): ${errData}`)
-            }
-
-            console.log('[Build] GitHub Action triggered with full payload!')
+            // The Cloud Function has already triggered the GitHub Action.
+            // No need to trigger it again from the frontend.
+            console.log('[Build] GitHub Action triggered by Cloud Function. Polling for status...')
 
         } catch (error: any) {
             console.error('Build start error:', error)
@@ -284,9 +250,6 @@ export default function Step5Build() {
             setPhase('error')
             const detailedError = error?.response?.data ? JSON.stringify(error.response.data) : error?.message
             setBuildError(detailedError || "Impossible de démarrer la compilation.")
-            if (appId) {
-                try { await api.patch(`/builds/${appId}`, { status: 'failed', errorMessage: error?.message }) } catch (_) {}
-            }
             return
         }
 
@@ -306,12 +269,12 @@ export default function Step5Build() {
                         BUILD_STEPS.forEach(step => next[step.id] = 'done')
                         return next
                     })
-                    if (appStatus.apkFile) {
-                        setDownloadUrl(appStatus.apkFile)
+                    if (appStatus.downloadUrl || appStatus.apkFile) {
+                        setDownloadUrl(appStatus.downloadUrl || appStatus.apkFile)
                     }
                 } else if (appStatus?.status === 'failed') {
                     setPhase('error')
-                    setBuildError(appStatus.errorMessage || 'Erreur inconnue')
+                    setBuildError(appStatus.error || appStatus.errorMessage || 'Erreur inconnue')
                     toast.error('Échec de la compilation')
                     return
                 } else {
