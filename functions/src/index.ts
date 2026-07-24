@@ -248,6 +248,7 @@ api.post('/build', authMiddleware, async (req, res) => {
         versionCode: finalVersionCode,
         versionName: finalVersionName,
         googleServicesJson: masterGoogleServices || req.user?.googleServicesJson || null,
+        apiUrl: 'https://us-central1-site2app-ba735.cloudfunctions.net/api/api',
       }
     };
 
@@ -700,16 +701,36 @@ api.post('/devices/register', async (req, res) => {
     }
     
     const id = crypto.createHash('md5').update(`${userId}_${pushToken}`).digest('hex');
-    await db.collection('devices').doc(id).set({
+    const deviceRef = db.collection('devices').doc(id);
+    const existingDevice = await deviceRef.get();
+    const isNewDevice = !existingDevice.exists;
+    
+    await deviceRef.set({
       pushToken,
       buildId,
       userId,
       platform,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: isNewDevice ? admin.firestore.FieldValue.serverTimestamp() : existingDevice.data()?.createdAt,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     
-    res.json({ success: true });
+    // Automatically send a welcome push notification to confirm integration
+    if (isNewDevice && pushToken) {
+        try {
+            const message = {
+                notification: {
+                    title: '🚀 Notifications Activées !',
+                    body: 'Vous recevrez désormais les notifications importantes de cette application.'
+                },
+                token: pushToken
+            };
+            await admin.messaging().send(message);
+        } catch (e) {
+            console.error('Failed to send welcome push notification:', e);
+        }
+    }
+    
+    res.json({ success: true, isNew: isNewDevice });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
