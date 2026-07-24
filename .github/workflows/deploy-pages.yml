@@ -35,6 +35,15 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
 
+      # ── Build Cloud Functions ──
+      - name: Install functions dependencies
+        working-directory: ./functions
+        run: npm ci || npm install
+
+      - name: Build functions
+        working-directory: ./functions
+        run: npm run build
+
       # ── Deploy to Firebase ──
       - name: Deploy to Firebase
         uses: FirebaseExtended/action-hosting-deploy@v0
@@ -42,4 +51,12 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
-          projectId: site2app-ba735
+          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
+
+      - name: Deploy Backend (Functions, Firestore, Storage)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
+          export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
+          npx firebase-tools deploy --only functions,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} --force --non-interactive
