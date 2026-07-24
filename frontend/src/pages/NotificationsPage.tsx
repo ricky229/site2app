@@ -21,7 +21,7 @@ import type { App } from '../types'
 
 export default function NotificationsPage() {
     const queryClient = useQueryClient()
-    const [tab, setTab] = useState<'compose' | 'history' | 'devices' | 'templates' | 'settings' | 'api'>('compose')
+    const [tab, setTab] = useState<'compose' | 'history' | 'devices'>('compose')
     const [selectedApp, setSelectedApp] = useState('all')
     const [form, setForm] = useState({
         title: '',
@@ -40,7 +40,25 @@ export default function NotificationsPage() {
 
     const { data: apps = [] } = useQuery<App[]>({ 
         queryKey: ['apps', user?.id], 
-        queryFn: async () => user?.id ? await getBuilds(user.id) : [],
+        queryFn: async () => {
+            if (!user?.id) return [];
+            const data = await getBuilds(user.id);
+            let buildsArray: any[] = [];
+            if (data && typeof data === 'object' && !Array.isArray(data)) {
+                Object.values(data).forEach((group: any) => {
+                    if (Array.isArray(group) && group.length > 0) {
+                        buildsArray.push(group[0]);
+                    }
+                });
+            } else if (Array.isArray(data)) {
+                buildsArray = data;
+            }
+            return buildsArray.map((b: any) => ({
+                ...b,
+                id: b._id || b.id || String(Math.random()),
+                name: b.appName || b.name || 'App'
+            }));
+        },
         enabled: !!user?.id
     })
     const { data: notifications = [] } = useQuery<any[]>({ 
@@ -234,16 +252,16 @@ export default function NotificationsPage() {
 
             {/* Stats */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <StatCard title="Notifications envoy├®es" value={formatNumber(totalSent)} change={0} icon={<Send size={20} />} color="#3461f5" />
-            <StatCard title="Appareils actifs" value={formatNumber(devicesCount)} change={0} icon={<CheckCircle size={20} />} color="#10b981" />
-        </div>
+                <StatCard title="Notifications envoyées" value={formatNumber(totalSent)} change={0} icon={<Send size={20} />} color="#3461f5" />
+                <StatCard title="Appareils actifs" value={formatNumber(devicesCount)} change={0} icon={<CheckCircle size={20} />} color="#10b981" />
+            </div>
 
             {/* Tabs */}
             <div className="flex gap-2 mb-6 border-b overflow-x-auto whitespace-nowrap hide-scroll" style={{ borderColor: 'var(--border)' }}>
                 {[
                     { id: 'compose', label: 'Composer', icon: Plus },
                     { id: 'history', label: 'Historique', icon: Clock },
-                    { id: 'devices', label: 'Appareils (Tokens FCM)', icon: Smartphone },
+                    { id: 'devices', label: 'Appareils', icon: Smartphone },
                 ].map(t => (
                     <button
                         key={t.id}
