@@ -11,7 +11,7 @@ import Input from '../components/ui/Input'
 import { Textarea, Select, Toggle } from '../components/ui/FormControls'
 import { StatusBadge } from '../components/ui/Badge'
 import { StatCard } from '../components/ui/Card'
-import { formatRelativeTime, formatNumber } from '../lib/utils'
+import { formatRelativeTime, formatNumber, formatDate } from '../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -44,10 +44,11 @@ export default function NotificationsPage() {
         enabled: !!user?.id
     })
     const { data: notifications = [] } = useQuery<any[]>({ 
-        queryKey: ['notifications', user?.id], 
+        queryKey: ['notifications', user?.id, selectedApp], 
         queryFn: async () => {
             if (!user?.id) return []
             const results = await getNotifications(selectedApp)
+            if (!Array.isArray(results)) return []
             return results.map((n: any) => ({
                 ...n,
                 stats: n.stats || {
@@ -73,6 +74,7 @@ export default function NotificationsPage() {
         queryKey: ['devices', selectedApp], 
         queryFn: async () => {
             const results = await getDevices(selectedApp === 'all' ? undefined : selectedApp);
+            if (!Array.isArray(results)) return []
             const mapped = results.map((d: any) => ({
                 ...d,
                 id: d._id || d.id,
@@ -498,8 +500,8 @@ export default function NotificationsPage() {
                                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{notif.body}</p>
                                     <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                                         {notif.status === 'scheduled'
-                                            ? `Programmée pour le ${new Date((notif.scheduledAt && notif.scheduledAt._seconds) ? notif.scheduledAt._seconds * 1000 : (notif.scheduledAt || Date.now())).toLocaleDateString('fr-FR')}`
-                                            : `Envoyée ${formatRelativeTime((notif.createdAt && notif.createdAt._seconds) ? notif.createdAt._seconds * 1000 : (notif.createdAt || notif.sentAt || notif['Created Date'] || Date.now()))}`
+                                            ? `Programmée pour le ${new Date(notif.scheduledAt?.seconds ? notif.scheduledAt.seconds * 1000 : (notif.scheduledAt || Date.now())).toLocaleDateString('fr-FR')}`
+                                            : `Envoyée ${formatRelativeTime(notif.createdAt || notif.sentAt || notif['Created Date'] || Date.now())}`
                                         }
                                     </p>
                                 </div>
@@ -525,10 +527,10 @@ export default function NotificationsPage() {
                             {notif.stats && (
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
                                     {[
-                                        { label: 'Envoy├®es', value: formatNumber(notif.stats.sent), color: '#3461f5' },
-                                        { label: 'Livr├®es', value: `${notif.stats.deliveryRate}%`, color: '#10b981' },
+                                        { label: 'Envoyées', value: formatNumber(notif.stats.sent), color: '#3461f5' },
+                                        { label: 'Livrées', value: `${notif.stats.deliveryRate}%`, color: '#10b981' },
                                         { label: 'Ouvertes', value: `${notif.stats.openRate}%`, color: '#f59e0b' },
-                                        { label: 'Cliqu├®es', value: `${notif.stats.clickRate}%`, color: '#7c3aed' },
+                                        { label: 'Cliquées', value: `${notif.stats.clickRate}%`, color: '#7c3aed' },
                                     ].map(s => (
                                         <div key={s.label} className="text-center">
                                             <p className="text-lg font-bold" style={{ color: s.color }}>{s.value}</p>
@@ -552,15 +554,15 @@ export default function NotificationsPage() {
                     {registeredDevices.length === 0 ? (
                         <div className="text-center p-10 mt-4 border border-dashed rounded-xl" style={{ borderColor: 'var(--border)' }}>
                             <Smartphone size={32} className="mx-auto mb-3 opacity-20" />
-                            <p className="text-sm font-semibold">Aucun appareil n'a encore ├®t├® enregistr├®.</p>
-                            <p className="text-xs text-slate-500 mt-2">D├¿s qu'un utilisateur ouvre votre app compil├®e et accepte les notifications Push, son empreinte appara├«tra ici.</p>
+                            <p className="text-sm font-semibold">Aucun appareil n'a encore été enregistré.</p>
+                            <p className="text-xs text-slate-500 mt-2">Dès qu'un utilisateur ouvre votre app compilée et accepte les notifications Push, son empreinte apparaîtra ici.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm whitespace-nowrap">
                                 <thead>
                                     <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
-                                        <th className="py-3 px-4">Syst├¿me</th>
+                                        <th className="py-3 px-4">Système</th>
                                         <th className="py-3 px-4">ID de l'Application</th>
                                         <th className="py-3 px-4">Date d'inscription</th>
                                         <th className="py-3 px-4">Token FCM Unique</th>
@@ -568,7 +570,6 @@ export default function NotificationsPage() {
                                 </thead>
                                 <tbody>
                                     {registeredDevices.map((device: any) => {
-                                        const dateTs = (device.createdAt && device.createdAt._seconds) ? device.createdAt._seconds * 1000 : (device.createdAt || device['Created Date'] || Date.now());
                                         return (
                                         <tr key={device.id} className="border-b last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" style={{ borderColor: 'var(--border)' }}>
                                             <td className="py-3 px-4 font-semibold text-emerald-600 flex items-center gap-2">
@@ -576,7 +577,7 @@ export default function NotificationsPage() {
                                                 {device.os?.toUpperCase() || 'ANDROID'}
                                             </td>
                                             <td className="py-3 px-4 font-mono text-xs">{device.buildId || 'N/A'}</td>
-                                            <td className="py-3 px-4">{new Date(dateTs).toLocaleDateString()} ├á {new Date(dateTs).toLocaleTimeString()}</td>
+                                            <td className="py-3 px-4">{formatDate(device.createdAt || device['Created Date'] || Date.now())}</td>
                                             <td className="py-3 px-4 font-mono text-[10px] text-slate-500 max-w-[200px] overflow-hidden text-ellipsis" title={device.pushToken || device.id}>{device.pushToken || device.id}</td>
                                         </tr>
                                     )})}

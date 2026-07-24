@@ -696,7 +696,15 @@ api.post('/devices/register', async (req, res) => {
 api.get('/devices', authMiddleware, async (req, res) => {
   try {
     const snap = await db.collection('devices').where('userId', '==', req.user.id).get();
-    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    
+    const devices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    devices.sort((a: any, b: any) => {
+        const dateA = a.updatedAt?.toDate?.()?.getTime() || 0;
+        const dateB = b.updatedAt?.toDate?.()?.getTime() || 0;
+        return dateB - dateA;
+    });
+    
+    res.json(devices);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

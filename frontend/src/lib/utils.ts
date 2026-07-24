@@ -5,9 +5,17 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
-export function formatDate(date: string | Date | number, options?: Intl.DateTimeFormatOptions): string {
+export function formatDate(date: any, options?: Intl.DateTimeFormatOptions): string {
     if (!date) return '';
-    const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date
+    let d = date;
+    if (typeof date === 'object' && date !== null && '_seconds' in date) {
+        d = new Date(date._seconds * 1000);
+    } else if (typeof date === 'string' || typeof date === 'number') {
+        d = new Date(date);
+    } else if (!(date instanceof Date)) {
+        return '';
+    }
+    
     return d.toLocaleDateString('fr-FR', {
         day: '2-digit',
         month: 'short',
@@ -16,9 +24,17 @@ export function formatDate(date: string | Date | number, options?: Intl.DateTime
     })
 }
 
-export function formatRelativeTime(date: string | Date | number): string {
+export function formatRelativeTime(date: any): string {
     if (!date) return '';
-    const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date
+    let d = date;
+    if (typeof date === 'object' && date !== null && '_seconds' in date) {
+        d = new Date(date._seconds * 1000);
+    } else if (typeof date === 'string' || typeof date === 'number') {
+        d = new Date(date);
+    } else if (!(date instanceof Date)) {
+        return '';
+    }
+    
     const now = new Date()
     const diff = now.getTime() - d.getTime()
     const seconds = Math.floor(diff / 1000)
