@@ -1741,7 +1741,7 @@ ${this.features.offlineMode ? `
         console.log(`[BUILD ${this.buildId}] ══════════════════════════════════`)
 
         if (!this.javaHome || !this.sdk || !this.bt || !this.androidJar) {
-            throw new Error('Environment manquant: JDK ou Android SDK')
+            throw new Error(`Environment manquant: JDK ou Android SDK. Details: JAVA_HOME=${this.javaHome}, SDK=${this.sdk}, BT=${this.bt}, JAR=${this.androidJar}`)
         }
 
         const isWin = process.platform === 'win32'
