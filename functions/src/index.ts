@@ -361,10 +361,16 @@ api.get('/builds', authMiddleware, async (req, res) => {
   try {
     const snapshot = await db.collection('builds')
       .where('userId', '==', req.user.id)
-      .orderBy('createdAt', 'desc')
       .get();
       
     const builds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Sort builds in memory (descending by createdAt/startedAt)
+    builds.sort((a: any, b: any) => {
+        const dateA = a.createdAt?.toDate?.()?.getTime() || new Date(a.startedAt).getTime() || 0;
+        const dateB = b.createdAt?.toDate?.()?.getTime() || new Date(b.startedAt).getTime() || 0;
+        return dateB - dateA;
+    });
     
     // Group by packageName
     const grouped = builds.reduce((acc: any, current: any) => {
@@ -586,9 +592,16 @@ api.get('/notifications', authMiddleware, async (req, res) => {
   try {
     const snap = await db.collection('notifications')
       .where('userId', '==', req.user.id)
-      .orderBy('createdAt', 'desc')
       .get();
-    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      
+    const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    notifs.sort((a: any, b: any) => {
+        const dateA = a.createdAt?.toDate?.()?.getTime() || 0;
+        const dateB = b.createdAt?.toDate?.()?.getTime() || 0;
+        return dateB - dateA;
+    });
+    
+    res.json(notifs);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
