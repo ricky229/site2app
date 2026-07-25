@@ -155,11 +155,6 @@ async function run() {
             versionCode: versionCode,
             versionName: versionName,
             googleServicesJson: parsedGoogleServices,
-            // Firebase credentials for auto-generating google-services.json
-            firebaseApiKey: process.env.FIREBASE_API_KEY || '',
-            firebaseProjectId: process.env.FIREBASE_PROJECT_ID || '',
-            firebaseProjectNumber: process.env.FIREBASE_MESSAGING_SENDER_ID || '',
-            firebaseAppId: process.env.FIREBASE_APP_ID || '',
         };
 
         const builder = new Builder(appUrl, appName, packageName, builderOptions);

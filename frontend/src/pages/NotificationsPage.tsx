@@ -662,14 +662,14 @@ export default function NotificationsPage() {
                             <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
                                 L'application native Site2App est intelligente. Lorsqu'un visiteur ouvre votre application sur son téléphone, l'application modifie automatiquement l'URL de votre site pour y attacher son identifiant de notification (`s2a_token`).
                                 <br /><br />
-                                <strong>Exemple d'URL générée en arri├¿re-plan :</strong><br />
+                                <strong>Exemple d'URL générée en arrière-plan :</strong><br />
                                 <code className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded text-xs font-mono font-semibold border mt-1 inline-block" style={{ borderColor: 'var(--border)' }}>https://votre-site.com/?s2a_token=APA91bFoijuty...</code>
                             </p>
                             <p className="text-sm font-bold mt-4 mb-2">
                                 👉 Votre mission :
                             </p>
                             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                                Quand l'utilisateur s'inscrit ou se connecte sur votre site web, vérifiez si l'URL contient le param├¿tre <code>s2a_token</code>. Si oui, sauvegardez cette valeur dans votre base de données dans la fiche de votre utilisateur (créez une colonne "push_token").
+                                Quand l'utilisateur s'inscrit ou se connecte sur votre site web, vérifiez si l'URL contient le paramètre <code>s2a_token</code>. Si oui, sauvegardez cette valeur dans votre base de données dans la fiche de votre utilisateur (créez une colonne "push_token").
                                 <br /><br />
                                 <em>Exemple sur Bubble.io : Dans un Workflow "Page is loaded" &rarr; Action: Make changes to User &rarr; push_token = Get data from page URL (parameter: s2a_token).</em>
                             </p>
@@ -684,14 +684,14 @@ export default function NotificationsPage() {
                                 L'envoi direct depuis Bubble vers Firebase nécessite une clé cryptée (un token OAuth2 valide 1 heure). Voici comment configurer ça proprement dans Bubble pour un envoi instantané en 24h/24, sans aucun serveur intermédiaire.
                             </p>
 
-                            <h4 className="font-bold text-sm mb-2">├ëtape A : Générer le Jeton (Token) Google</h4>
+                            <h4 className="font-bold text-sm mb-2">Étape A : Générer le Jeton (Token) Google</h4>
                             <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
                                 <li>Installez le plugin gratuit <strong>Google Service Account</strong> sur Bubble (ou JWT Generator).</li>
-                                <li>Dans un <strong>Backend Workflow</strong> (ou sur une page), utilisez l'action de ce plugin pour générer un Token en utilisant votre fichier JSON Firebase (le m├¬me que celui fourni dans "Configuration Firebase").</li>
+                                <li>Dans un <strong>Backend Workflow</strong> (ou sur une page), utilisez l'action de ce plugin pour générer un Token en utilisant votre fichier JSON Firebase (le même que celui fourni dans "Configuration Firebase").</li>
                                 <li>Scopes à utiliser : <code>https://www.googleapis.com/auth/cloud-platform</code></li>
                             </ul>
 
-                            <h4 className="font-bold text-sm mb-2">├ëtape B : Créer l'Appel API vers Google (FCM)</h4>
+                            <h4 className="font-bold text-sm mb-2">Étape B : Créer l'Appel API vers Google (FCM)</h4>
                             <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
                                 <li>Allez dans <strong>Plugins &gt; API Connector</strong>, et créez un appel API nommé "Firebase FCM API", puis un call (Action / POST) nommé "Send Push".</li>
                             </ul>
@@ -723,7 +723,7 @@ export default function NotificationsPage() {
                             </pre>
                             
                             <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>
-                                <strong>Important</strong> : Décochez "Private" sur tous les param├¿tres dynamiques en bas du call `&lt;param&gt;`. Vous pourrez ainsi appeler cette action dans n'importe quel Workflow Bubble, en passant dynamiquement le Token OAuth2 généré à l'étape A, et le Push partira en 1 seconde à votre utilisateur !
+                                <strong>Important</strong> : Décochez "Private" sur tous les paramètres dynamiques en bas du call `&lt;param&gt;`. Vous pourrez ainsi appeler cette action dans n'importe quel Workflow Bubble, en passant dynamiquement le Token OAuth2 généré à l'étape A, et le Push partira en 1 seconde à votre utilisateur !
                             </p>
                         </div>
                     </div>
