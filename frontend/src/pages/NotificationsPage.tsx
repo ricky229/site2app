@@ -153,7 +153,7 @@ export default function NotificationsPage() {
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
             
-            return await sendNotification(payload.buildId || 'all', payload.title, payload.body, payload.actionUrl, payload.target)
+            return await sendNotification(payload)
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })

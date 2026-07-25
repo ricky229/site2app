@@ -87,8 +87,8 @@ export async function getNotifications(appId: string) {
     return res.data
 }
 
-export async function sendNotification(appId: string, title: string, message: string, url?: string, target?: string | string[]) {
-    const res = await api.post('/notifications/send', { appId, title, message, url, target })
+export async function sendNotification(payload: any) {
+    const res = await api.post('/notifications/send', payload)
     return res.data
 }
 

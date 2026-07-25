@@ -613,7 +613,7 @@ async function sendNotificationCore(user: any, payload: any) {
       
       if (tokens.length > 0) {
         const message = {
-          notification: { title, body, ...(image && { image }) },
+          notification: { title, body, ...(image && { imageUrl: image }) },
           data: { actionUrl: actionUrl || '' },
           tokens
         };
