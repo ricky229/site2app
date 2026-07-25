@@ -1426,16 +1426,16 @@ ${this.features.popupSupport ? `
                 "        var popup = document.createElement('div'); " +
                 "        popup.style.cssText = 'background:#fff;border-radius:24px;padding:32px;width:90%;max-width:400px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.2);transform:scale(0.9);transition:transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);'; " +
                 "        var icon = document.createElement('div'); " +
-                "        icon.innerHTML = '🚀'; " +
+                "        icon.innerHTML = '&#128640;'; " +
                 "        icon.style.cssText = 'font-size:48px;margin-bottom:16px;'; " +
                 "        var title = document.createElement('h2'); " +
-                "        title.innerText = 'Nouvelle mise à jour !'; " +
+                "        title.innerText = 'Nouvelle mise a jour !'; " +
                 "        title.style.cssText = 'margin:0 0 12px;color:#1a1a1a;font-size:22px;font-weight:700;'; " +
                 "        var desc = document.createElement('p'); " +
-                "        desc.innerText = 'Une nouvelle version de votre application est disponible. Mettez à jour maintenant pour profiter des dernières nouveautés et améliorations.'; " +
+                "        desc.innerText = 'Une nouvelle version de votre application est disponible. Mettez a jour maintenant pour profiter des dernieres nouveautes et ameliorations.'; " +
                 "        desc.style.cssText = 'margin:0 0 24px;color:#666;font-size:15px;line-height:1.5;'; " +
                 "        var btn = document.createElement('button'); " +
-                "        btn.innerText = 'Mettre à jour'; " +
+                "        btn.innerText = 'Mettre a jour'; " +
                 "        btn.style.cssText = 'background:#3b82f6;color:#fff;border:none;border-radius:12px;padding:14px 24px;font-size:16px;font-weight:600;cursor:pointer;width:100%;transition:background 0.2s;'; " +
                 "        btn.onclick = function() { window.location.href = data.apkUrl; }; " +
                 "        var closeBtn = document.createElement('button'); " +
