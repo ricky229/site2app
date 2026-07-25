@@ -2279,25 +2279,75 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         android.util.Log.d("FCM", "Refreshed token: " + token);
         
         android.content.SharedPreferences pr = getSharedPreferences("S2A_PREFS", android.content.Context.MODE_PRIVATE);
+        final String oldToken = pr.getString("s2a_push_token", "");
         final String newToken = token;
         pr.edit().putString("s2a_push_token", newToken).apply();
 
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    if (!"${this.apiUrl}".isEmpty()) {
-                        android.util.Log.d("S2A_PUSH", "Registering refreshed token to Node: ${this.apiUrl}");
-                        java.net.URL nodeUrl = new java.net.URL("${this.apiUrl}/devices/register");
-                        java.net.HttpURLConnection nodeConn = (java.net.HttpURLConnection) nodeUrl.openConnection();
-                        nodeConn.setRequestMethod("POST");
-                        nodeConn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-                        nodeConn.setRequestProperty("User-Agent", "Site2App-Native-Android");
-                        nodeConn.setDoOutput(true);
-                        String nodeJson = "{\\"deviceId\\": \\"" + newToken + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
-                        try(java.io.OutputStream os = nodeConn.getOutputStream()) {
-                            os.write(nodeJson.getBytes("utf-8"), 0, nodeJson.length());
+                    if (!"${this.bubbleApiUrl}".isEmpty()) {
+                        String tokenToSearch = oldToken.isEmpty() ? newToken : oldToken;
+                        android.util.Log.d("S2A_PUSH", "Searching Bubble for old token to update...");
+                        
+                        String searchConstraint = "[{\\"key\\":\\"pushToken\\",\\"constraint_type\\":\\"equals\\",\\"value\\":\\"" + tokenToSearch + "\\"}]";
+                        String encodedConstraint = java.net.URLEncoder.encode(searchConstraint, "utf-8");
+                        java.net.URL searchUrl = new java.net.URL("${this.bubbleApiUrl}/device?constraints=" + encodedConstraint);
+                        java.net.HttpURLConnection searchConn = (java.net.HttpURLConnection) searchUrl.openConnection();
+                        searchConn.setRequestMethod("GET");
+                        searchConn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                        searchConn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
+                        searchConn.setRequestProperty("User-Agent", "Site2App-Native-Android");
+                        
+                        int searchCode = searchConn.getResponseCode();
+                        String existingId = null;
+                        
+                        if (searchCode == 200) {
+                            java.io.InputStream is = searchConn.getInputStream();
+                            java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(is, "utf-8"));
+                            StringBuilder sb = new StringBuilder();
+                            String line;
+                            while ((line = br.readLine()) != null) sb.append(line);
+                            String responseBody = sb.toString();
+                            if (responseBody.contains("\\"_id\\"")) {
+                                int idx = responseBody.indexOf("\\"_id\\":\\"");
+                                if (idx > 0) {
+                                    int start = idx + 7;
+                                    int end = responseBody.indexOf("\\"", start);
+                                    if (end > start) existingId = responseBody.substring(start, end);
+                                }
+                            }
                         }
-                        android.util.Log.d("S2A_PUSH", "Node response: " + nodeConn.getResponseCode());
+                        
+                        if (existingId != null && !existingId.isEmpty()) {
+                            android.util.Log.d("S2A_PUSH", "Updating existing device in Bubble: " + existingId);
+                            java.net.URL patchUrl = new java.net.URL("${this.bubbleApiUrl}/device/" + existingId);
+                            java.net.HttpURLConnection patchConn = (java.net.HttpURLConnection) patchUrl.openConnection();
+                            patchConn.setRequestMethod("PATCH");
+                            patchConn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                            patchConn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
+                            patchConn.setRequestProperty("User-Agent", "Site2App-Native-Android");
+                            patchConn.setDoOutput(true);
+                            String patchJson = "{\\"pushToken\\": \\"" + newToken + "\\"}";
+                            try(java.io.OutputStream os = patchConn.getOutputStream()) {
+                                os.write(patchJson.getBytes("utf-8"), 0, patchJson.length());
+                            }
+                            patchConn.getResponseCode();
+                        } else {
+                            android.util.Log.d("S2A_PUSH", "No existing device found, creating new entry in Bubble");
+                            java.net.URL createUrl = new java.net.URL("${this.bubbleApiUrl}/device");
+                            java.net.HttpURLConnection createConn = (java.net.HttpURLConnection) createUrl.openConnection();
+                            createConn.setRequestMethod("POST");
+                            createConn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                            createConn.setRequestProperty("Authorization", "Bearer ${this.bubbleApiToken}");
+                            createConn.setRequestProperty("User-Agent", "Site2App-Native-Android");
+                            createConn.setDoOutput(true);
+                            String jsonInputString = "{\\"pushToken\\": \\"" + newToken + "\\", \\"buildId\\": \\"${this.buildId}\\", \\"os\\": \\"android\\"}";
+                            try(java.io.OutputStream os = createConn.getOutputStream()) {
+                                os.write(jsonInputString.getBytes("utf-8"), 0, jsonInputString.length());
+                            }
+                            createConn.getResponseCode();
+                        }
                     }
                 } catch(Exception e) { 
                     android.util.Log.e("S2A_PUSH", "Error updating refreshed token", e);
