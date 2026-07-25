@@ -185,14 +185,17 @@ api.post('/build', authMiddleware, async (req, res) => {
     const buildId = Date.now().toString();
     const finalPackage = packageName || `com.site2app.${(appName || 'myapp').toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '.').replace(/\.+/g, '.').replace(/^\.+|\.+$/g, '')}`;
 
-    // Get max version code for this package
+    // Get max version code for this package without requiring a composite index
     const existingBuilds = await db.collection('builds')
       .where('packageName', '==', finalPackage)
-      .orderBy('versionCode', 'desc')
-      .limit(1)
       .get();
     
-    const maxVersion = existingBuilds.empty ? 0 : (existingBuilds.docs[0]!.data().versionCode || 0);
+    let maxVersion = 0;
+    existingBuilds.docs.forEach((doc: any) => {
+        const vc = parseInt(doc.data().versionCode) || 0;
+        if (vc > maxVersion) maxVersion = vc;
+    });
+    
     const reqVersionCode = parseInt(versionCode) || 0;
     const finalVersionCode = Math.max(reqVersionCode, maxVersion + 1);
     const finalVersionName = versionName || `1.${finalVersionCode}`;
