@@ -646,9 +646,23 @@ async function sendNotificationCore(user: any, payload: any) {
       }
       
       if (tokens.length > 0) {
-        const message = {
+        const message: any = {
           notification: { title, body, ...(image && { imageUrl: image }) },
           data: { actionUrl: actionUrl || '' },
+          android: {
+            priority: 'high',
+            notification: {
+              sound: 'default'
+            }
+          },
+          apns: {
+            payload: {
+              aps: {
+                contentAvailable: true,
+                sound: 'default'
+              }
+            }
+          },
           tokens
         };
         const response = await admin.messaging().sendEachForMulticast(message);
@@ -826,10 +840,17 @@ api.post('/devices/register', async (req, res) => {
     // Automatically send a welcome push notification to confirm integration
     if (isNewDevice && pushToken) {
         try {
-            const message = {
+            const message: any = {
                 notification: {
                     title: '🚀 Notifications Activées !',
                     body: 'Vous recevrez désormais les notifications importantes de cette application.'
+                },
+                android: {
+                    priority: 'high',
+                    notification: { sound: 'default' }
+                },
+                apns: {
+                    payload: { aps: { contentAvailable: true, sound: 'default' } }
                 },
                 token: pushToken
             };

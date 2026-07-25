@@ -641,6 +641,20 @@ async function sendNotificationCore(user, payload) {
                 const message = {
                     notification: { title, body, ...(image && { imageUrl: image }) },
                     data: { actionUrl: actionUrl || '' },
+                    android: {
+                        priority: 'high',
+                        notification: {
+                            sound: 'default'
+                        }
+                    },
+                    apns: {
+                        payload: {
+                            aps: {
+                                contentAvailable: true,
+                                sound: 'default'
+                            }
+                        }
+                    },
                     tokens
                 };
                 const response = await admin.messaging().sendEachForMulticast(message);
@@ -811,6 +825,13 @@ api.post('/devices/register', async (req, res) => {
                     notification: {
                         title: '🚀 Notifications Activées !',
                         body: 'Vous recevrez désormais les notifications importantes de cette application.'
+                    },
+                    android: {
+                        priority: 'high',
+                        notification: { sound: 'default' }
+                    },
+                    apns: {
+                        payload: { aps: { contentAvailable: true, sound: 'default' } }
                     },
                     token: pushToken
                 };
