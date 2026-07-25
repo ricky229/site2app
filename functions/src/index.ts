@@ -279,10 +279,10 @@ api.post('/build', authMiddleware, async (req, res) => {
         platform: buildData.platform,
         orientation: orientation || 'portrait',
         features: features || {},
-        iconBase64: (icon && !icon.startsWith('http')) ? icon : null,
-        iconUrl: (icon && icon.startsWith('http')) ? icon : null,
-        splashImageBase64: (splashImage && !splashImage.startsWith('http')) ? splashImage : null,
-        splashUrl: (splashImage && splashImage.startsWith('http')) ? splashImage : null,
+        iconBase64: null, // Removed to prevent GitHub Action payload > 64KB limit
+        iconUrl: finalIconUrl,
+        splashImageBase64: null, // Removed to prevent GitHub Action payload > 64KB limit
+        splashUrl: finalSplashUrl,
         versionCode: finalVersionCode,
         versionName: finalVersionName,
         googleServicesJson: masterGoogleServices || req.user?.googleServicesJson || null,
