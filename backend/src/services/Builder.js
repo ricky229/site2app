@@ -1441,11 +1441,11 @@ ${this.features.popupSupport ? `
                 "        var closeBtn = document.createElement('button'); " +
                 "        closeBtn.innerText = 'Plus tard'; " +
                 "        closeBtn.style.cssText = 'background:transparent;color:#94a3b8;border:none;margin-top:16px;font-size:14px;cursor:pointer;'; " +
-                "        closeBtn.onclick = function() { overlay.style.opacity = \"0\"; popup.style.transform = \"scale(0.9)\"; setTimeout(() => overlay.remove(), 400); }; " +
+                "        closeBtn.onclick = function() { overlay.style.opacity = '0'; popup.style.transform = 'scale(0.9)'; setTimeout(() => overlay.remove(), 400); }; " +
                 "        popup.appendChild(icon); popup.appendChild(title); popup.appendChild(desc); popup.appendChild(btn); popup.appendChild(closeBtn); " +
                 "        overlay.appendChild(popup); " +
                 "        document.body.appendChild(overlay); " +
-                "        setTimeout(() => { overlay.style.opacity = \"1\"; popup.style.transform = \"scale(1)\"; }, 500); " +
+                "        setTimeout(() => { overlay.style.opacity = '1'; popup.style.transform = 'scale(1)'; }, 500); " +
                 "      } " +
                 "    }).catch(e => console.log('Update check failed', e)); " +
                 "})();";
