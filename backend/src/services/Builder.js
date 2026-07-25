@@ -1171,14 +1171,7 @@ ${this.features.deepLinking ? `
         }
     };
     
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        try {
-            unregisterReceiver(tokenReceiver);
-            unregisterReceiver(pushReceiver);
-        } catch (Exception e) {}
-    }
+
 
     private void checkForUpdates() {
         new Thread(new Runnable() {
@@ -1750,7 +1743,10 @@ ${this.features.offlineMode ? `
 
     @Override
     protected void onDestroy() {
-        try { unregisterReceiver(tokenReceiver); } catch(Exception e) {}
+        try { 
+            unregisterReceiver(tokenReceiver); 
+            unregisterReceiver(pushReceiver);
+        } catch(Exception e) {}
         if (webView != null) { webView.destroy(); webView = null; }
         super.onDestroy();
     }
