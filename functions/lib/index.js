@@ -212,14 +212,24 @@ api.post('/build', authMiddleware, async (req, res) => {
             packageName: finalPackage,
             status: 'building',
             startedAt: new Date().toISOString(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
             userId: req.user.id,
             versionCode: finalVersionCode,
             versionName: finalVersionName,
-            config: {
-                statusBarColor, themeColor, splashBgColor, enableFullscreen,
-                primaryColor, secondaryColor, orientation, features
-            }
+            config: Object.fromEntries(Object.entries({
+                statusBarColor: statusBarColor || primaryColor || '#3461f5',
+                themeColor: themeColor || primaryColor || '#3461f5',
+                splashBgColor: splashBgColor || primaryColor || '#3461f5',
+                enableFullscreen: !!enableFullscreen,
+                primaryColor: primaryColor || '#3461f5',
+                secondaryColor: secondaryColor || '#3461f5',
+                orientation: orientation || 'portrait',
+                features: features || {}
+            }).filter(([_, v]) => v !== undefined))
         };
+        // Fetch the master google-services.json (from the admin who configured it)
+        const masterUserSnap = await db.collection('users').orderBy('googleServicesJson').startAfter('').limit(1).get();
+        const masterGoogleServices = masterUserSnap.empty ? null : masterUserSnap.docs[0].data().googleServicesJson;
         const builderConfig = {
             buildId,
             appUrl: buildData.url,
@@ -234,11 +244,14 @@ api.post('/build', authMiddleware, async (req, res) => {
                 platform: buildData.platform,
                 orientation: orientation || 'portrait',
                 features: features || {},
-                iconBase64: icon || null,
-                splashImageBase64: splashImage || null,
+                iconBase64: (icon && !icon.startsWith('http')) ? icon : null,
+                iconUrl: (icon && icon.startsWith('http')) ? icon : null,
+                splashImageBase64: (splashImage && !splashImage.startsWith('http')) ? splashImage : null,
+                splashUrl: (splashImage && splashImage.startsWith('http')) ? splashImage : null,
                 versionCode: finalVersionCode,
                 versionName: finalVersionName,
-                googleServicesJson: req.user?.googleServicesJson || null,
+                googleServicesJson: masterGoogleServices || req.user?.googleServicesJson || null,
+                apiUrl: 'https://us-central1-site2app-ba735.cloudfunctions.net/api/api',
             }
         };
         buildData.builderConfig = builderConfig;
@@ -246,32 +259,58 @@ api.post('/build', authMiddleware, async (req, res) => {
         // Trigger GitHub Action
         if (GITHUB_PAT && GITHUB_REPO) {
             console.log(`[API] 🚀 Triggering GitHub Action for build ${buildId}...`);
-            const dispatchRes = await (0, node_fetch_1.default)(`https://api.github.com/repos/${GITHUB_REPO}/dispatches`, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json',
-                    'Authorization': `token ${GITHUB_PAT}`,
-                    'Content-Type': 'application/json',
-                    'User-Agent': 'Site2App-Functions'
-                },
-                body: JSON.stringify({
-                    event_type: 'build_apk',
-                    client_payload: {
-                        buildData: JSON.stringify({
-                            ...builderConfig,
-                            ...builderConfig.options,
-                            url: buildData.url,
-                            appUrl: buildData.url,
-                        })
-                    }
-                })
+            console.log(`[API] GITHUB_REPO=${GITHUB_REPO}, PAT length=${GITHUB_PAT.length}`);
+            try {
+                const dispatchRes = await (0, node_fetch_1.default)(`https://api.github.com/repos/${GITHUB_REPO}/dispatches`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Authorization': `token ${GITHUB_PAT}`,
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'Site2App-Functions'
+                    },
+                    body: JSON.stringify({
+                        event_type: 'build_apk',
+                        client_payload: {
+                            buildData: JSON.stringify({
+                                ...builderConfig,
+                                ...builderConfig.options,
+                                url: buildData.url,
+                                appUrl: buildData.url,
+                            })
+                        }
+                    })
+                });
+                if (!dispatchRes.ok) {
+                    const errText = await dispatchRes.text();
+                    console.error(`[API] ❌ GitHub Action trigger failed: ${dispatchRes.status} - ${errText}`);
+                    // Mark build as failed so frontend stops waiting
+                    await db.collection('builds').doc(buildId).update({
+                        status: 'failed',
+                        error: `GitHub Action trigger failed (${dispatchRes.status}): ${errText}`,
+                    });
+                    return res.json({ buildId, status: 'failed', error: 'GitHub Action trigger failed' });
+                }
+                else {
+                    console.log('[API] ✅ GitHub Action triggered');
+                }
+            }
+            catch (dispatchErr) {
+                console.error('[API] ❌ GitHub dispatch error:', dispatchErr.message);
+                await db.collection('builds').doc(buildId).update({
+                    status: 'failed',
+                    error: `GitHub dispatch error: ${dispatchErr.message}`,
+                });
+                return res.json({ buildId, status: 'failed', error: dispatchErr.message });
+            }
+        }
+        else {
+            console.error(`[API] ❌ GITHUB_PAT or GITHUB_REPO not configured! PAT=${GITHUB_PAT ? 'SET' : 'EMPTY'}, REPO=${GITHUB_REPO || 'EMPTY'}`);
+            await db.collection('builds').doc(buildId).update({
+                status: 'failed',
+                error: 'Configuration serveur manquante: GITHUB_PAT ou GITHUB_REPO non configuré.',
             });
-            if (!dispatchRes.ok) {
-                console.error('[API] ❌ GitHub Action trigger failed:', dispatchRes.status);
-            }
-            else {
-                console.log('[API] ✅ GitHub Action triggered');
-            }
+            return res.json({ buildId, status: 'failed', error: 'Server configuration missing: GITHUB_PAT or GITHUB_REPO not set' });
         }
         res.json({ buildId, status: 'building' });
     }
@@ -323,9 +362,23 @@ api.get('/builds', authMiddleware, async (req, res) => {
     try {
         const snapshot = await db.collection('builds')
             .where('userId', '==', req.user.id)
-            .orderBy('createdAt', 'desc')
             .get();
         const builds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Sort builds in memory (descending by createdAt/startedAt)
+        builds.sort((a, b) => {
+            const getDate = (d, fallback) => {
+                if (d?.toDate)
+                    return d.toDate().getTime();
+                if (typeof d === 'string' || typeof d === 'number')
+                    return new Date(d).getTime() || 0;
+                if (fallback)
+                    return getDate(fallback, null);
+                return 0;
+            };
+            const dateA = getDate(a.createdAt, a.startedAt);
+            const dateB = getDate(b.createdAt, b.startedAt);
+            return dateB - dateA;
+        });
         // Group by packageName
         const grouped = builds.reduce((acc, current) => {
             const pkg = current.packageName || current.id;
@@ -334,6 +387,23 @@ api.get('/builds', authMiddleware, async (req, res) => {
             acc[pkg].push(current);
             return acc;
         }, {});
+        // Add analytics to the latest build of each group
+        const devicesSnap = await db.collection('devices').where('userId', '==', req.user.id).get();
+        const deviceCounts = devicesSnap.docs.reduce((acc, doc) => {
+            const d = doc.data();
+            if (d.buildId) {
+                acc[d.buildId] = (acc[d.buildId] || 0) + 1;
+            }
+            return acc;
+        }, {});
+        Object.keys(grouped).forEach(pkg => {
+            if (grouped[pkg].length > 0) {
+                const latestBuild = grouped[pkg][0];
+                latestBuild.activeUsers = deviceCounts[latestBuild.id] || 0;
+                // Accumulate total devices for the whole package history
+                latestBuild.downloadCount = grouped[pkg].reduce((sum, b) => sum + (deviceCounts[b.id] || 0), 0);
+            }
+        });
         res.json(grouped);
     }
     catch (err) {
@@ -343,18 +413,79 @@ api.get('/builds', authMiddleware, async (req, res) => {
 api.post('/apps/:buildId/publish', authMiddleware, async (req, res) => {
     try {
         const { publishedVersionCode } = req.body;
-        const doc = await db.collection('builds').doc(req.params.buildId).get();
+        const buildId = req.params.buildId;
+        const doc = await db.collection('builds').doc(buildId).get();
         if (!doc.exists)
             return res.status(404).json({ error: 'Build not found' });
-        if (doc.data().userId !== req.user.id)
+        const buildData = doc.data();
+        if (buildData.userId !== req.user.id)
             return res.status(403).json({ error: 'Forbidden' });
-        await db.collection('builds').doc(req.params.buildId).update({
+        // 1. Mark as published
+        await db.collection('builds').doc(buildId).update({
             publishedVersionCode,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
-        res.json({ success: true });
+        // 2. Find all builds for this packageName to get all associated devices
+        const allBuildsSnap = await db.collection('builds')
+            .where('userId', '==', req.user.id)
+            .where('packageName', '==', buildData.packageName)
+            .get();
+        const buildIds = allBuildsSnap.docs.map(d => d.id);
+        // 3. Find all devices associated with any of these buildIds
+        const devicesSnap = await db.collection('devices')
+            .where('userId', '==', req.user.id)
+            .get();
+        const tokens = devicesSnap.docs
+            .filter(d => buildIds.includes(d.data().buildId))
+            .map(d => d.data().pushToken)
+            .filter(Boolean);
+        // 4. Send update push notification
+        if (tokens.length > 0) {
+            await sendNotificationCore(req.user, {
+                title: '🚀 Mise à jour disponible !',
+                body: 'Une nouvelle version de votre application est disponible. Mettez à jour maintenant !',
+                actionUrl: buildData.downloadUrl || '',
+                target: tokens,
+                buildId: buildId
+            });
+        }
+        res.json({ success: true, notifiedCount: tokens.length });
     }
     catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+// Public endpoint for Android app to check for updates
+api.get('/public/app/:packageName/check-update', async (req, res) => {
+    try {
+        const packageName = req.params.packageName;
+        const snap = await db.collection('builds')
+            .where('packageName', '==', packageName)
+            .where('status', '==', 'completed')
+            .get();
+        if (snap.empty) {
+            return res.json({ updateAvailable: false });
+        }
+        const builds = snap.docs.map(d => d.data());
+        builds.sort((a, b) => {
+            const getDate = (d) => {
+                if (d?.toDate)
+                    return d.toDate().getTime();
+                if (typeof d === 'string' || typeof d === 'number')
+                    return new Date(d).getTime() || 0;
+                return 0;
+            };
+            return getDate(b.createdAt) - getDate(a.createdAt);
+        });
+        const build = builds[0];
+        res.json({
+            latestVersionCode: parseInt(build.publishedVersionCode || build.versionCode || '1', 10),
+            apkUrl: build.downloadUrl || null,
+            releaseNotes: 'Nouvelles fonctionnalités et améliorations de performances.'
+        });
+    }
+    catch (err) {
+        console.error('Check update error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -432,41 +563,34 @@ api.post('/internal/build/:buildId/fail', builderAuthMiddleware, async (req, res
 // ----------------------------------------------------------------------
 // NOTIFICATION LOGIC
 // ----------------------------------------------------------------------
-const sendNotificationCore = async (user, payload) => {
+async function sendNotificationCore(user, payload) {
     const { title, body, buildId, target, image, actionUrl, scheduledAt } = payload;
     const notifId = (0, uuid_1.v4)();
     const notificationRecord = {
         id: notifId,
         userId: user.id,
-        title,
-        body,
-        buildId,
-        target,
-        image,
-        actionUrl,
-        scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+        title: payload.title || '',
+        body: payload.body || payload.message || '',
+        buildId: payload.buildId || payload.appId || null,
+        target: payload.target || 'all',
         status: scheduledAt ? 'scheduled' : 'sent',
         createdAt: admin.firestore.FieldValue.serverTimestamp()
     };
-    if (!scheduledAt && user.firebaseKey) {
+    if (payload.image)
+        notificationRecord.image = payload.image;
+    if (payload.actionUrl || payload.url)
+        notificationRecord.actionUrl = payload.actionUrl || payload.url;
+    if (scheduledAt)
+        notificationRecord.scheduledAt = new Date(scheduledAt);
+    if (!scheduledAt) {
         try {
-            const serviceAccount = typeof user.firebaseKey === 'string' ? JSON.parse(user.firebaseKey) : user.firebaseKey;
-            const safeUserId = user.id.replace(/[^a-zA-Z0-9]/g, '');
-            const appName = `fcm_${safeUserId}_${serviceAccount.project_id}`;
-            let fcmAdmin;
-            try {
-                fcmAdmin = admin.app(appName);
-            }
-            catch (e) {
-                fcmAdmin = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) }, appName);
-            }
             let tokens = [];
             if (Array.isArray(target) && target.length > 0) {
                 tokens = target;
             }
             else {
                 let devicesQuery = db.collection('devices').where('userId', '==', user.id);
-                if (buildId) {
+                if (buildId && buildId !== 'all') {
                     devicesQuery = devicesQuery.where('buildId', '==', buildId);
                 }
                 const devicesSnap = await devicesQuery.get();
@@ -478,7 +602,7 @@ const sendNotificationCore = async (user, payload) => {
                     data: { actionUrl: actionUrl || '' },
                     tokens
                 };
-                const response = await fcmAdmin.messaging().sendEachForMulticast(message);
+                const response = await admin.messaging().sendEachForMulticast(message);
                 notificationRecord['stats'] = {
                     successCount: response.successCount,
                     failureCount: response.failureCount
@@ -512,7 +636,8 @@ const sendNotificationCore = async (user, payload) => {
     }
     await db.collection('notifications').doc(notifId).set(notificationRecord);
     return notificationRecord;
-};
+}
+;
 api.post('/notifications/send', authMiddleware, async (req, res) => {
     try {
         const result = await sendNotificationCore(req.user, req.body);
@@ -526,9 +651,14 @@ api.get('/notifications', authMiddleware, async (req, res) => {
     try {
         const snap = await db.collection('notifications')
             .where('userId', '==', req.user.id)
-            .orderBy('createdAt', 'desc')
             .get();
-        res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        notifs.sort((a, b) => {
+            const dateA = a.createdAt?.toDate?.()?.getTime() || 0;
+            const dateB = b.createdAt?.toDate?.()?.getTime() || 0;
+            return dateB - dateA;
+        });
+        res.json(notifs);
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -601,18 +731,55 @@ api.get('/notifications/poll', (req, res) => res.json({ success: true, message: 
 // ----------------------------------------------------------------------
 api.post('/devices/register', async (req, res) => {
     try {
-        const { pushToken, buildId, userId, platform } = req.body;
-        if (!pushToken || !userId)
-            return res.status(400).json({ error: 'pushToken and userId required' });
+        // Android Builder app sends deviceId and buildId
+        // New versions could send pushToken and userId
+        const pushToken = req.body.pushToken || req.body.deviceId;
+        const buildId = req.body.buildId;
+        const platform = req.body.platform || req.body.os || 'android';
+        if (!pushToken || !buildId) {
+            return res.status(400).json({ error: 'pushToken and buildId required' });
+        }
+        // Auto-discover userId from the build to ensure backward compatibility
+        let userId = req.body.userId;
+        if (!userId) {
+            const buildDoc = await db.collection('builds').doc(buildId).get();
+            if (buildDoc.exists) {
+                userId = buildDoc.data()?.userId;
+            }
+        }
+        // If we STILL don't have a userId, we can't tie it to a dashboard
+        if (!userId) {
+            return res.status(400).json({ error: 'Could not determine userId for this device' });
+        }
         const id = crypto.createHash('md5').update(`${userId}_${pushToken}`).digest('hex');
-        await db.collection('devices').doc(id).set({
+        const deviceRef = db.collection('devices').doc(id);
+        const existingDevice = await deviceRef.get();
+        const isNewDevice = !existingDevice.exists;
+        await deviceRef.set({
             pushToken,
             buildId,
             userId,
             platform,
+            createdAt: isNewDevice ? admin.firestore.FieldValue.serverTimestamp() : existingDevice.data()?.createdAt,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
-        res.json({ success: true });
+        // Automatically send a welcome push notification to confirm integration
+        if (isNewDevice && pushToken) {
+            try {
+                const message = {
+                    notification: {
+                        title: '🚀 Notifications Activées !',
+                        body: 'Vous recevrez désormais les notifications importantes de cette application.'
+                    },
+                    token: pushToken
+                };
+                await admin.messaging().send(message);
+            }
+            catch (e) {
+                console.error('Failed to send welcome push notification:', e);
+            }
+        }
+        res.json({ success: true, isNew: isNewDevice });
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -621,7 +788,13 @@ api.post('/devices/register', async (req, res) => {
 api.get('/devices', authMiddleware, async (req, res) => {
     try {
         const snap = await db.collection('devices').where('userId', '==', req.user.id).get();
-        res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const devices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        devices.sort((a, b) => {
+            const dateA = a.updatedAt?.toDate?.()?.getTime() || 0;
+            const dateB = b.updatedAt?.toDate?.()?.getTime() || 0;
+            return dateB - dateA;
+        });
+        res.json(devices);
     }
     catch (err) {
         res.status(500).json({ error: err.message });
@@ -752,22 +925,30 @@ api.get('/analyze', async (req, res) => {
             favicon = new URL(favicon, urlObj.origin).toString();
         }
         // Extract colors
-        const colors = new Set();
-        // Theme color
+        const colorsCount = new Map();
+        const addColor = (c, weight = 1) => {
+            const color = c.toLowerCase();
+            // Expanded filter for generic grays and whites
+            const genericColors = ['#ffffff', '#000000', '#fff', '#000', '#f4f5f6', '#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da', '#adb5bd', '#6c757d', '#495057', '#343a40', '#212529', '#111111', '#222222', '#333333', '#f0f0f0', '#fafafa'];
+            if (genericColors.includes(color))
+                return;
+            colorsCount.set(color, (colorsCount.get(color) || 0) + weight);
+        };
+        // Theme color gets a big weight
         const themeColorMatch = html.match(/<meta[^>]*name=["']theme-color["'][^>]*content=["']([^"']+)["'][^>]*>/i);
         if (themeColorMatch)
-            colors.add(themeColorMatch[1].toLowerCase());
+            addColor(themeColorMatch[1], 20);
         // Regex for colors
         const hexRegex = /#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})\b/g;
         const rgbRegex = /rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+(?:\s*,\s*[\d.]+)?\s*\)/gi;
         const cssVarRegex = /--[\w-]+:\s*(#[A-Fa-f0-9]{3,8}|rgba?\([^)]+\))/gi;
         let match;
         while ((match = hexRegex.exec(html)) !== null)
-            colors.add(match[0].toLowerCase());
+            addColor(match[0]);
         while ((match = rgbRegex.exec(html)) !== null)
-            colors.add(match[0].toLowerCase());
+            addColor(match[0]);
         while ((match = cssVarRegex.exec(html)) !== null)
-            colors.add(match[1].toLowerCase());
+            addColor(match[1]);
         // Fetch external CSS up to 5
         const cssMatches = [...html.matchAll(/<link[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi)].slice(0, 5);
         for (const cssMatch of cssMatches) {
@@ -779,26 +960,24 @@ api.get('/analyze', async (req, res) => {
                 if (cssRes.ok) {
                     const cssText = await cssRes.text();
                     while ((match = hexRegex.exec(cssText)) !== null)
-                        colors.add(match[0].toLowerCase());
+                        addColor(match[0]);
                     while ((match = rgbRegex.exec(cssText)) !== null)
-                        colors.add(match[0].toLowerCase());
+                        addColor(match[0]);
                 }
             }
             catch (e) {
                 // ignore css fetch errors
             }
         }
-        // Filter generic colors
-        const filteredColors = Array.from(colors).filter(c => {
-            if (c === '#ffffff' || c === '#000000' || c === '#fff' || c === '#000')
-                return false;
-            return true;
-        });
+        // Sort by frequency
+        const sortedColors = Array.from(colorsCount.entries())
+            .sort((a, b) => b[1] - a[1])
+            .map(entry => entry[0]);
         res.json({
             title,
             description,
             favicon,
-            colors: filteredColors.slice(0, 10), // Limit to top 10 unique colors
+            colors: sortedColors.slice(0, 10), // Limit to top 10 unique colors
             ssl: targetUrl.startsWith('https://')
         });
     }

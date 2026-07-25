@@ -368,8 +368,14 @@ api.get('/builds', authMiddleware, async (req, res) => {
     
     // Sort builds in memory (descending by createdAt/startedAt)
     builds.sort((a: any, b: any) => {
-        const dateA = a.createdAt?.toDate?.()?.getTime() || new Date(a.startedAt).getTime() || 0;
-        const dateB = b.createdAt?.toDate?.()?.getTime() || new Date(b.startedAt).getTime() || 0;
+        const getDate = (d: any, fallback: any) => {
+            if (d?.toDate) return d.toDate().getTime();
+            if (typeof d === 'string' || typeof d === 'number') return new Date(d).getTime() || 0;
+            if (fallback) return getDate(fallback, null);
+            return 0;
+        };
+        const dateA = getDate(a.createdAt, a.startedAt);
+        const dateB = getDate(b.createdAt, b.startedAt);
         return dateB - dateA;
     });
     
@@ -409,19 +415,85 @@ api.get('/builds', authMiddleware, async (req, res) => {
 api.post('/apps/:buildId/publish', authMiddleware, async (req, res) => {
   try {
     const { publishedVersionCode } = req.body;
-    const doc = await db.collection('builds').doc(req.params.buildId).get();
+    const buildId = req.params.buildId;
+    const doc = await db.collection('builds').doc(buildId).get();
     if (!doc.exists) return res.status(404).json({ error: 'Build not found' });
-    if (doc.data().userId !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    const buildData = doc.data()!;
+    if (buildData.userId !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
     
-    await db.collection('builds').doc(req.params.buildId).update({
+    // 1. Mark as published
+    await db.collection('builds').doc(buildId).update({
       publishedVersionCode,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
     
-    res.json({ success: true });
+    // 2. Find all builds for this packageName to get all associated devices
+    const allBuildsSnap = await db.collection('builds')
+        .where('userId', '==', req.user.id)
+        .where('packageName', '==', buildData.packageName)
+        .get();
+    const buildIds = allBuildsSnap.docs.map(d => d.id);
+    
+    // 3. Find all devices associated with any of these buildIds
+    const devicesSnap = await db.collection('devices')
+        .where('userId', '==', req.user.id)
+        .get();
+        
+    const tokens = devicesSnap.docs
+        .filter(d => buildIds.includes(d.data().buildId))
+        .map(d => d.data().pushToken)
+        .filter(Boolean);
+
+    // 4. Send update push notification
+    if (tokens.length > 0) {
+        await sendNotificationCore(req.user, {
+            title: '🚀 Mise à jour disponible !',
+            body: 'Une nouvelle version de votre application est disponible. Mettez à jour maintenant !',
+            actionUrl: buildData.downloadUrl || '',
+            target: tokens,
+            buildId: buildId
+        });
+    }
+    
+    res.json({ success: true, notifiedCount: tokens.length });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Public endpoint for Android app to check for updates
+api.get('/public/app/:packageName/check-update', async (req, res) => {
+    try {
+        const packageName = req.params.packageName;
+        const snap = await db.collection('builds')
+            .where('packageName', '==', packageName)
+            .where('status', '==', 'completed')
+            .get();
+            
+        if (snap.empty) {
+            return res.json({ updateAvailable: false });
+        }
+        
+        const builds = snap.docs.map(d => d.data());
+        builds.sort((a: any, b: any) => {
+            const getDate = (d: any) => {
+                if (d?.toDate) return d.toDate().getTime();
+                if (typeof d === 'string' || typeof d === 'number') return new Date(d).getTime() || 0;
+                return 0;
+            };
+            return getDate(b.createdAt) - getDate(a.createdAt);
+        });
+
+        const build = builds[0];
+        res.json({
+            latestVersionCode: parseInt(build.publishedVersionCode || build.versionCode || '1', 10),
+            apkUrl: build.downloadUrl || null,
+            releaseNotes: 'Nouvelles fonctionnalités et améliorations de performances.'
+        });
+    } catch (err) {
+        console.error('Check update error:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // ----------------------------------------------------------------------
@@ -503,7 +575,7 @@ api.post('/internal/build/:buildId/fail', builderAuthMiddleware, async (req, res
 // ----------------------------------------------------------------------
 // NOTIFICATION LOGIC
 // ----------------------------------------------------------------------
-const sendNotificationCore = async (user, payload) => {
+async function sendNotificationCore(user: any, payload: any) {
   const { title, body, buildId, target, image, actionUrl, scheduledAt } = payload;
   
   const notifId = uuidv4();

@@ -43,16 +43,7 @@ export default function NotificationsPage() {
         queryFn: async () => {
             if (!user?.id) return [];
             const data = await getBuilds(user.id);
-            let buildsArray: any[] = [];
-            if (data && typeof data === 'object' && !Array.isArray(data)) {
-                Object.values(data).forEach((group: any) => {
-                    if (Array.isArray(group) && group.length > 0) {
-                        buildsArray.push(group[0]);
-                    }
-                });
-            } else if (Array.isArray(data)) {
-                buildsArray = data;
-            }
+            let buildsArray: any[] = data || [];
             return buildsArray.map((b: any) => ({
                 ...b,
                 id: b._id || b.id || String(Math.random()),
@@ -162,10 +153,7 @@ export default function NotificationsPage() {
         mutationFn: async (payload: any) => {
             if (!user?.id) throw new Error("Non authentifié")
             
-            const isSpecific = Array.isArray(payload.target);
-            const targetStr = isSpecific ? payload.target.join(',') : String(payload.target || 'all');
-            
-            return await sendNotification(payload.buildId || 'all', payload.title, payload.body, payload.actionUrl, targetStr)
+            return await sendNotification(payload.buildId || 'all', payload.title, payload.body, payload.actionUrl, payload.target)
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['notifications'] })
@@ -220,7 +208,7 @@ export default function NotificationsPage() {
 
     const activeApp = apps.find(a => a.id === selectedApp)
     const activeAppLabel = selectedApp === 'all' ? 'Mon App' : String(activeApp?.name || 'Mon App')
-    const activeAppIcon = selectedApp === 'all' ? '­ƒô▒' : String(activeApp?.name || 'Ap').slice(0, 2).toUpperCase()
+    const activeAppIcon = selectedApp === 'all' ? '📱' : String(activeApp?.name || 'Ap').slice(0, 2).toUpperCase()
 
     const totalSent = notifications.reduce((sum, n) => sum + (n.stats?.sent || 0), 0)
     const totalDelivered = notifications.reduce((sum, n) => sum + (n.stats?.delivered || 0), 0)
@@ -322,71 +310,71 @@ export default function NotificationsPage() {
                         <div className="card p-4 sm:p-6">
                             <h3 className="font-bold mb-4 sm:mb-5 text-sm sm:text-base">Ciblage (Appareils Android)</h3>
                             <div className="space-y-4">
-                                <Select
-                                    label="Mode d'envoi"
-                                    options={[
-                                        { value: 'all', label: "📢 Diffuser à tous les appareils de l'application" },
-                                        { value: 'specific', label: '🎯 Cibler des appareils spécifiques' }
-                                    ]}
-                                    value={targetMode}
-                                    onChange={e => setTargetMode(e.target.value as any)}
-                                />
+                                    <Select
+                                        label="Mode d'envoi"
+                                        options={[
+                                            { value: 'all', label: "📢 Diffuser à tous les appareils de l'application" },
+                                            { value: 'specific', label: '🎯 Cibler des appareils spécifiques' }
+                                        ]}
+                                        value={targetMode}
+                                        onChange={e => setTargetMode(e.target.value as any)}
+                                    />
 
-                                {targetMode === 'specific' && (() => {
-                                    const filteredDevices = registeredDevices.filter(d => selectedApp === 'all' || d.buildId === selectedApp);
-                                    const allSelected = filteredDevices.length > 0 && filteredDevices.every(d => selectedDevices.includes(d.id));
-                                    return (
-                                        <div className="space-y-2 mt-4">
-                                            <div className="flex items-center justify-between">
-                                                <p className="text-sm font-semibold">Sélectionnez les appareils ({filteredDevices.length} disponibles)</p>
-                                                {filteredDevices.length > 0 && (
-                                                    <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--brand-500)' }}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={allSelected}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) setSelectedDevices(filteredDevices.map(d => d.pushToken))
-                                                                else setSelectedDevices([])
-                                                            }}
-                                                        />
-                                                        Tout sélectionner
-                                                    </label>
-                                                )}
-                                            </div>
-                                            <div className="max-h-[200px] overflow-y-auto space-y-2 border rounded-xl p-3" style={{ borderColor: 'var(--border)' }}>
-                                                {filteredDevices.map((device: any) => (
-                                                    <label key={device.id} className="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedDevices.includes(device.pushToken)}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) setSelectedDevices(prev => [...prev, device.pushToken])
-                                                                else setSelectedDevices(prev => prev.filter(t => t !== device.pushToken))
-                                                            }}
-                                                            className="mt-1 accent-brand-500"
-                                                        />
-                                                        <div className="overflow-hidden">
-                                                            <div className="flex items-center gap-2">
-                                                                <p className="text-sm font-bold truncate">­ƒô▒ Appareil {device.os?.toUpperCase() || 'Android'}</p>
-                                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
-                                                                    {device.buildId?.substring(0,6) || 'Global'}
-                                                                </span>
+                                    {targetMode === 'specific' && (() => {
+                                        const filteredDevices = registeredDevices.filter(d => selectedApp === 'all' || d.buildId === selectedApp);
+                                        const allSelected = filteredDevices.length > 0 && filteredDevices.every(d => selectedDevices.includes(d.pushToken));
+                                        return (
+                                            <div className="space-y-2 mt-4">
+                                                <div className="flex items-center justify-between">
+                                                    <p className="text-sm font-semibold">Sélectionnez les appareils ({filteredDevices.length} disponibles)</p>
+                                                    {filteredDevices.length > 0 && (
+                                                        <label className="flex items-center gap-2 cursor-pointer text-sm" style={{ color: 'var(--brand-500)' }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={allSelected}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) setSelectedDevices(filteredDevices.map(d => d.pushToken))
+                                                                    else setSelectedDevices([])
+                                                                }}
+                                                            />
+                                                            Tout sélectionner
+                                                        </label>
+                                                    )}
+                                                </div>
+                                                <div className="max-h-[200px] overflow-y-auto space-y-2 border rounded-xl p-3" style={{ borderColor: 'var(--border)' }}>
+                                                    {filteredDevices.map((device: any) => (
+                                                        <label key={device.id} className="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedDevices.includes(device.pushToken)}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) setSelectedDevices(prev => [...prev, device.pushToken])
+                                                                    else setSelectedDevices(prev => prev.filter(t => t !== device.pushToken))
+                                                                }}
+                                                                className="mt-1 accent-brand-500"
+                                                            />
+                                                            <div className="overflow-hidden">
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-sm font-bold truncate">📱 Appareil {device.os?.toUpperCase() || 'Android'}</p>
+                                                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
+                                                                        {device.buildId?.substring(0,6) || 'Global'}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[10px] text-gray-500 truncate font-mono mt-0.5" title={device.pushToken}>{device.pushToken}</p>
                                                             </div>
-                                                            <p className="text-[10px] text-gray-500 truncate font-mono mt-0.5" title={device.pushToken}>{device.pushToken}</p>
-                                                        </div>
-                                                    </label>
-                                                ))}
-                                                {filteredDevices.length === 0 && (
-                                                    <p className="text-sm text-gray-400 p-2">Aucun appareil trouvé pour cette application.</p>
-                                                )}
+                                                        </label>
+                                                    ))}
+                                                    {filteredDevices.length === 0 && (
+                                                        <p className="text-sm text-gray-400 p-2">Aucun appareil trouvé pour cette application.</p>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })()}
+                                        );
+                                    })()}
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="card p-4 sm:p-6">
+                            <div className="card p-4 sm:p-6">
                             <h3 className="font-bold mb-4 sm:mb-5 text-sm sm:text-base">Envoi</h3>
                             <div className="space-y-4">
                                 <Toggle
@@ -508,11 +496,11 @@ export default function NotificationsPage() {
                                         <StatusBadge status={notif.status} />
                                         <span className="badge badge-muted text-xs">
                                             {Array.isArray(notif.targetOs)
-                                                ? '­ƒñû Android'
-                                                : notif.targetOs === 'all' ? '­ƒîì Tous'
-                                                    : notif.targetOs === 'android' ? '­ƒñû Android'
-                                                        : notif.targetOs === 'ios' ? '­ƒìÄ iOS'
-                                                            : '­ƒñû Android'}
+                                                ? '🤖 Android'
+                                                : notif.targetOs === 'all' ? '🌍 Tous'
+                                                    : notif.targetOs === 'android' ? '🤖 Android'
+                                                        : notif.targetOs === 'ios' ? '🍏 iOS'
+                                                            : '🤖 Android'}
                                         </span>
                                     </div>
                                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{notif.body}</p>

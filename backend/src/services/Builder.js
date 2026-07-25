@@ -1410,6 +1410,47 @@ ${this.features.popupSupport ? `
                 "})();";
                 view.evaluateJavascript(tokenSyncScript, null);
                 ` : ""}
+
+                // --- In-App Update Checker ---
+                String updateScript = "(function() { " +
+                "  if (window.__s2a_update_checked) return; " +
+                "  window.__s2a_update_checked = true; " +
+                "  var pkg = '${this.packageName}'; " +
+                "  var currentVer = ${this.versionCode || 1}; " +
+                "  fetch('${this.apiUrl}/public/app/' + pkg + '/check-update')" +
+                "    .then(r => r.json())" +
+                "    .then(data => { " +
+                "      if (data.latestVersionCode > currentVer && data.apkUrl) { " +
+                "        var overlay = document.createElement('div'); " +
+                "        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:999999;display:flex;align-items:center;justify-content:center;font-family:sans-serif;opacity:0;transition:opacity 0.4s ease;'; " +
+                "        var popup = document.createElement('div'); " +
+                "        popup.style.cssText = 'background:#fff;border-radius:24px;padding:32px;width:90%;max-width:400px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.2);transform:scale(0.9);transition:transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);'; " +
+                "        var icon = document.createElement('div'); " +
+                "        icon.innerHTML = '🚀'; " +
+                "        icon.style.cssText = 'font-size:48px;margin-bottom:16px;'; " +
+                "        var title = document.createElement('h2'); " +
+                "        title.innerText = 'Nouvelle mise à jour !'; " +
+                "        title.style.cssText = 'margin:0 0 12px;color:#1a1a1a;font-size:22px;font-weight:700;'; " +
+                "        var desc = document.createElement('p'); " +
+                "        desc.innerText = 'Une nouvelle version de votre application est disponible. Mettez à jour maintenant pour profiter des dernières nouveautés et améliorations.'; " +
+                "        desc.style.cssText = 'margin:0 0 24px;color:#666;font-size:15px;line-height:1.5;'; " +
+                "        var btn = document.createElement('button'); " +
+                "        btn.innerText = 'Mettre à jour'; " +
+                "        btn.style.cssText = 'background:#3b82f6;color:#fff;border:none;border-radius:12px;padding:14px 24px;font-size:16px;font-weight:600;cursor:pointer;width:100%;transition:background 0.2s;'; " +
+                "        btn.onclick = function() { window.location.href = data.apkUrl; }; " +
+                "        var closeBtn = document.createElement('button'); " +
+                "        closeBtn.innerText = 'Plus tard'; " +
+                "        closeBtn.style.cssText = 'background:transparent;color:#94a3b8;border:none;margin-top:16px;font-size:14px;cursor:pointer;'; " +
+                "        closeBtn.onclick = function() { overlay.style.opacity = \"0\"; popup.style.transform = \"scale(0.9)\"; setTimeout(() => overlay.remove(), 400); }; " +
+                "        popup.appendChild(icon); popup.appendChild(title); popup.appendChild(desc); popup.appendChild(btn); popup.appendChild(closeBtn); " +
+                "        overlay.appendChild(popup); " +
+                "        document.body.appendChild(overlay); " +
+                "        setTimeout(() => { overlay.style.opacity = \"1\"; popup.style.transform = \"scale(1)\"; }, 500); " +
+                "      } " +
+                "    }).catch(e => console.log('Update check failed', e)); " +
+                "})();";
+                view.evaluateJavascript(updateScript, null);
+
             }
 ${this.features.offlineMode ? `
             @Override

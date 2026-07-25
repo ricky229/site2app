@@ -42,9 +42,22 @@ export async function deleteAccount() {
 }
 
 // Builds
-export async function getBuilds(userId?: string) {
+export async function getBuilds(userId?: string, grouped = false) {
     const res = await api.get('/builds')
-    return res.data
+    const data = res.data;
+    if (grouped) return data;
+    
+    let buildsArray: any[] = [];
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+        Object.values(data).forEach((group: any) => {
+            if (Array.isArray(group) && group.length > 0) {
+                buildsArray.push(group[0]); 
+            }
+        });
+    } else if (Array.isArray(data)) {
+        buildsArray = data;
+    }
+    return buildsArray;
 }
 
 export async function getBuildStatus(appId: string) {
@@ -52,15 +65,16 @@ export async function getBuildStatus(appId: string) {
     return res.data
 }
 
+export async function publishApp(buildId: string, publishedVersionCode: number) {
+    const res = await api.post(`/apps/${buildId}/publish`, { publishedVersionCode });
+    return res.data;
+}
+
 export async function deleteBuild(appId: string) {
     const res = await api.delete(`/build/${appId}`)
     return res.data
 }
 
-export async function publishApp(appId: string, payload?: any) {
-    const res = await api.post(`/apps/${appId}/publish`, payload)
-    return res.data
-}
 
 export async function startBuild(appData: any) {
     const res = await api.post('/build', appData)
@@ -73,7 +87,7 @@ export async function getNotifications(appId: string) {
     return res.data
 }
 
-export async function sendNotification(appId: string, title: string, message: string, url?: string, target?: string) {
+export async function sendNotification(appId: string, title: string, message: string, url?: string, target?: string | string[]) {
     const res = await api.post('/notifications/send', { appId, title, message, url, target })
     return res.data
 }

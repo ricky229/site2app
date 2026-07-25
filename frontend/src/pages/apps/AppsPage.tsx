@@ -10,44 +10,29 @@ import { formatRelativeTime, formatNumber, platformLabel } from '../../lib/utils
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
 import type { App } from '../../types'
-import { getBuilds as getAppsByUser, deleteBuild as deleteApp } from '../../lib/api'
+import { getBuilds as getAppsByUser, deleteBuild as deleteApp, publishApp } from '../../lib/api'
 
 async function fetchBuilds(userId: string): Promise<App[]> {
     if (!userId) return [];
-    try {
-        const data = await getAppsByUser(userId);
-        
-        // Backend returns an object grouped by packageName
-        let buildsArray: any[] = [];
-        if (typeof data === 'object' && !Array.isArray(data)) {
-            // Flatten the object, taking the most recent build for each package
-            Object.values(data).forEach((group: any) => {
-                if (Array.isArray(group) && group.length > 0) {
-                    buildsArray.push(group[0]); // The backend already sorts by createdAt desc
-                }
-            });
-        } else if (Array.isArray(data)) {
-            buildsArray = data;
-        }
+    const data = await getAppsByUser(userId);
+    let buildsArray: any[] = data || [];
 
-        return buildsArray.map((b: any) => {
-            return {
-                ...b,
-                id: b._id || b.id || String(Math.random()),
-                name: b.appName || b.name || 'App',
-                url: b.url || '',
-                status: b.status || 'pending',
-                platform: b.platform || 'android',
-                version: b.version || '1.0',
-                downloadCount: b.downloadCount || 0,
-                activeUsers: b.activeUsers || 0,
-                lastBuiltAt: b.createdAt || b['Created Date'] || b.startedAt || b.lastBuiltAt,
-                apkUrl: b.apkFile || b.downloadUrl || (b.status === 'completed' ? `/node/download/${b._id}` : undefined)
-            }
-        })
-    } catch {
-        return []
-    }
+    return buildsArray.map((b: any) => {
+        return {
+            ...b,
+            id: b._id || b.id || String(Math.random()),
+            name: b.appName || b.name || 'App',
+            url: b.url || '',
+            status: b.status || 'pending',
+            platform: b.platform || 'android',
+            version: b.version || '1.0',
+            versionCode: b.versionCode || 1,
+            downloadCount: b.downloadCount || 0,
+            activeUsers: b.activeUsers || 0,
+            lastBuiltAt: b.createdAt || b['Created Date'] || b.startedAt || b.lastBuiltAt,
+            apkUrl: b.apkFile || b.downloadUrl || (b.status === 'completed' ? `/node/download/${b._id}` : undefined)
+        }
+    })
 }
 
 const PremiumAppCard = ({ app, delay }: any) => {
@@ -70,13 +55,16 @@ const PremiumAppCard = ({ app, delay }: any) => {
         }
     }
 
-    const handlePublish = async (e: React.MouseEvent, id: string) => {
+    const handlePublish = async (e: React.MouseEvent, app: any) => {
         e.stopPropagation()
-        if (window.confirm('Voulez-vous forcer la publication de cette mise  jour vers tous vos utilisateurs ?')) {
+        if (window.confirm('Voulez-vous forcer la publication de cette mise à jour vers tous vos utilisateurs ?')) {
             try {
-                alert('Ordre de publication envoy aux appareils !')
-            } catch (err) {
-                console.error(err)
+                const result = await publishApp(app.id, parseInt(app.versionCode || '1', 10));
+                alert(`Publication réussie ! ${result.notifiedCount || 0} appareils ont été notifiés.`);
+                queryClient.invalidateQueries({ queryKey: ['builds'] });
+            } catch (err: any) {
+                console.error(err);
+                alert(`Erreur: ${err.message}`);
             }
         }
     }
@@ -152,7 +140,7 @@ const PremiumAppCard = ({ app, delay }: any) => {
                 {app.status === 'completed' && (
                     <button
                         className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white transition-colors"
-                        onClick={(e) => handlePublish(e, app.id)}
+                        onClick={(e) => handlePublish(e, app)}
                     >
                         <Play size={14} /> Publier
                     </button>
