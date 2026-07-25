@@ -194,16 +194,56 @@ api.post('/build', authMiddleware, async (req, res) => {
         const { appName, url, platform, packageName, statusBarColor, themeColor, splashBgColor, enableFullscreen, primaryColor, secondaryColor, orientation, features, icon, splashImage, versionCode, versionName } = req.body;
         const buildId = Date.now().toString();
         const finalPackage = packageName || `com.site2app.${(appName || 'myapp').toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '.').replace(/\.+/g, '.').replace(/^\.+|\.+$/g, '')}`;
-        // Get max version code for this package
+        // Get max version code for this package without requiring a composite index
         const existingBuilds = await db.collection('builds')
             .where('packageName', '==', finalPackage)
-            .orderBy('versionCode', 'desc')
-            .limit(1)
             .get();
-        const maxVersion = existingBuilds.empty ? 0 : (existingBuilds.docs[0].data().versionCode || 0);
+        let maxVersion = 0;
+        existingBuilds.docs.forEach((doc) => {
+            const vc = parseInt(doc.data().versionCode) || 0;
+            if (vc > maxVersion)
+                maxVersion = vc;
+        });
         const reqVersionCode = parseInt(versionCode) || 0;
         const finalVersionCode = Math.max(reqVersionCode, maxVersion + 1);
         const finalVersionName = versionName || `1.${finalVersionCode}`;
+        let finalIconUrl = null;
+        let finalSplashUrl = null;
+        const bucket = admin.storage().bucket();
+        if (icon && !icon.startsWith('http')) {
+            try {
+                const buffer = icon.startsWith('data:') ? Buffer.from(icon.split(',')[1], 'base64') : Buffer.from(icon, 'base64');
+                const ext = icon.startsWith('data:image/jpeg') ? 'jpg' : 'png';
+                const mimeType = ext === 'jpg' ? 'image/jpeg' : 'image/png';
+                const file = bucket.file(`builds/${buildId}/icon.${ext}`);
+                await file.save(buffer, { metadata: { contentType: mimeType } });
+                await file.makePublic().catch(() => { });
+                finalIconUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+            }
+            catch (e) {
+                console.error('Icon upload failed', e);
+            }
+        }
+        else if (icon && icon.startsWith('http')) {
+            finalIconUrl = icon;
+        }
+        if (splashImage && !splashImage.startsWith('http')) {
+            try {
+                const buffer = splashImage.startsWith('data:') ? Buffer.from(splashImage.split(',')[1], 'base64') : Buffer.from(splashImage, 'base64');
+                const ext = splashImage.startsWith('data:image/png') ? 'png' : 'jpg';
+                const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+                const file = bucket.file(`builds/${buildId}/splash.${ext}`);
+                await file.save(buffer, { metadata: { contentType: mimeType } });
+                await file.makePublic().catch(() => { });
+                finalSplashUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+            }
+            catch (e) {
+                console.error('Splash upload failed', e);
+            }
+        }
+        else if (splashImage && splashImage.startsWith('http')) {
+            finalSplashUrl = splashImage;
+        }
         const buildData = {
             id: buildId,
             appName: appName || 'My App',
@@ -224,8 +264,10 @@ api.post('/build', authMiddleware, async (req, res) => {
                 primaryColor: primaryColor || '#3461f5',
                 secondaryColor: secondaryColor || '#3461f5',
                 orientation: orientation || 'portrait',
-                features: features || {}
-            }).filter(([_, v]) => v !== undefined))
+                features: features || {},
+                icon: finalIconUrl,
+                splashImage: finalSplashUrl
+            }).filter(([_, v]) => v !== undefined && v !== null))
         };
         // Fetch the master google-services.json (from the admin who configured it)
         const masterUserSnap = await db.collection('users').orderBy('googleServicesJson').startAfter('').limit(1).get();
@@ -244,10 +286,10 @@ api.post('/build', authMiddleware, async (req, res) => {
                 platform: buildData.platform,
                 orientation: orientation || 'portrait',
                 features: features || {},
-                iconBase64: (icon && !icon.startsWith('http')) ? icon : null,
-                iconUrl: (icon && icon.startsWith('http')) ? icon : null,
-                splashImageBase64: (splashImage && !splashImage.startsWith('http')) ? splashImage : null,
-                splashUrl: (splashImage && splashImage.startsWith('http')) ? splashImage : null,
+                iconBase64: null, // Removed to prevent GitHub Action payload > 64KB limit
+                iconUrl: finalIconUrl,
+                splashImageBase64: null, // Removed to prevent GitHub Action payload > 64KB limit
+                splashUrl: finalSplashUrl,
                 versionCode: finalVersionCode,
                 versionName: finalVersionName,
                 googleServicesJson: masterGoogleServices || req.user?.googleServicesJson || null,
@@ -598,7 +640,7 @@ async function sendNotificationCore(user, payload) {
             }
             if (tokens.length > 0) {
                 const message = {
-                    notification: { title, body, ...(image && { image }) },
+                    notification: { title, body, ...(image && { imageUrl: image }) },
                     data: { actionUrl: actionUrl || '' },
                     tokens
                 };
