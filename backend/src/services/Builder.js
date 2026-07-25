@@ -623,8 +623,8 @@ ${this.features.deepLinking ? `            <intent-filter android:autoVerify="tr
             ? `
         // User-provided splash image — display it properly centered (FIT_CENTER)
         ImageView splashImg = new ImageView(this);
-        // Utilisation de CENTER_CROP pour forcer l'image à remplir tout l'écran
-        splashImg.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        // Utilisation de FIT_CENTER pour que l'image garde ses proportions sans déborder
+        splashImg.setScaleType(ImageView.ScaleType.FIT_CENTER);
         root.addView(splashImg, new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT));
             

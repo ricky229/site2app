@@ -57,12 +57,14 @@ export default function CreateAppPage() {
                         name: data.appName || data.name || '',
                         url: data.url || '',
                         packageName: data.packageName || '',
-                        primaryColor: data.themeColor || '#3461f5',
-                        secondaryColor: data.splashBgColor || '#7c3aed',
-                        orientation: data.orientation || 'portrait',
+                        primaryColor: data.themeColor || data.config?.primaryColor || '#3461f5',
+                        secondaryColor: data.splashBgColor || data.config?.secondaryColor || '#7c3aed',
+                        orientation: data.orientation || data.config?.orientation || 'portrait',
                         features: safeFeatures,
+                        icon: data.config?.icon || '',
+                        splashImage: data.config?.splashImage || '',
                         statusBar: {
-                            color: data.themeColor || '#ffffff',
+                            color: data.themeColor || data.config?.statusBarColor || '#ffffff',
                             style: 'dark' as const,
                         },
                     }

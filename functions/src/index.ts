@@ -200,6 +200,39 @@ api.post('/build', authMiddleware, async (req, res) => {
     const finalVersionCode = Math.max(reqVersionCode, maxVersion + 1);
     const finalVersionName = versionName || `1.${finalVersionCode}`;
 
+    let finalIconUrl = null;
+    let finalSplashUrl = null;
+    
+    const bucket = admin.storage().bucket();
+    
+    if (icon && !icon.startsWith('http')) {
+        try {
+            const buffer = icon.startsWith('data:') ? Buffer.from(icon.split(',')[1], 'base64') : Buffer.from(icon, 'base64');
+            const ext = icon.startsWith('data:image/jpeg') ? 'jpg' : 'png';
+            const mimeType = ext === 'jpg' ? 'image/jpeg' : 'image/png';
+            const file = bucket.file(`builds/${buildId}/icon.${ext}`);
+            await file.save(buffer, { metadata: { contentType: mimeType } });
+            await file.makePublic().catch(() => {});
+            finalIconUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+        } catch(e) { console.error('Icon upload failed', e); }
+    } else if (icon && icon.startsWith('http')) {
+        finalIconUrl = icon;
+    }
+
+    if (splashImage && !splashImage.startsWith('http')) {
+        try {
+            const buffer = splashImage.startsWith('data:') ? Buffer.from(splashImage.split(',')[1], 'base64') : Buffer.from(splashImage, 'base64');
+            const ext = splashImage.startsWith('data:image/png') ? 'png' : 'jpg';
+            const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+            const file = bucket.file(`builds/${buildId}/splash.${ext}`);
+            await file.save(buffer, { metadata: { contentType: mimeType } });
+            await file.makePublic().catch(() => {});
+            finalSplashUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+        } catch(e) { console.error('Splash upload failed', e); }
+    } else if (splashImage && splashImage.startsWith('http')) {
+        finalSplashUrl = splashImage;
+    }
+
     const buildData: any = {
       id: buildId,
       appName: appName || 'My App',
@@ -221,8 +254,10 @@ api.post('/build', authMiddleware, async (req, res) => {
           primaryColor: primaryColor || '#3461f5',
           secondaryColor: secondaryColor || '#3461f5',
           orientation: orientation || 'portrait',
-          features: features || {}
-        }).filter(([_, v]) => v !== undefined)
+          features: features || {},
+          icon: finalIconUrl,
+          splashImage: finalSplashUrl
+        }).filter(([_, v]) => v !== undefined && v !== null)
       )
     };
 
