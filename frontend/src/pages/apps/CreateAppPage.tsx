@@ -62,7 +62,7 @@ export default function CreateAppPage() {
                         orientation: data.orientation || data.config?.orientation || 'portrait',
                         features: safeFeatures,
                         icon: data.config?.icon || '',
-                        splashImage: data.config?.splashImage || '',
+                        splashScreen: data.config?.splashImage || '',
                         statusBar: {
                             color: data.themeColor || data.config?.statusBarColor || '#ffffff',
                             style: 'dark' as const,
