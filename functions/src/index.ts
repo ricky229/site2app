@@ -182,7 +182,8 @@ api.post('/build', authMiddleware, async (req, res) => {
       icon, splashImage, versionCode, versionName
     } = req.body;
 
-    const buildId = Date.now().toString();
+    const buildId = req.body.buildId || Date.now().toString();
+    const isNewBuild = !req.body.buildId;
     const finalPackage = packageName || `com.site2app.${(appName || 'myapp').toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '.').replace(/\.+/g, '.').replace(/^\.+|\.+$/g, '')}`;
 
     // Get max version code for this package without requiring a composite index
@@ -196,6 +197,7 @@ api.post('/build', authMiddleware, async (req, res) => {
         if (vc > maxVersion) maxVersion = vc;
     });
     
+    // If it's an update, increment the highest version found. If new, default to 1.
     const reqVersionCode = parseInt(versionCode) || 0;
     const finalVersionCode = Math.max(reqVersionCode, maxVersion + 1);
     const finalVersionName = versionName || `1.${finalVersionCode}`;
@@ -241,7 +243,6 @@ api.post('/build', authMiddleware, async (req, res) => {
       packageName: finalPackage,
       status: 'building',
       startedAt: new Date().toISOString(),
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
       userId: req.user.id,
       versionCode: finalVersionCode,
       versionName: finalVersionName,
@@ -291,7 +292,14 @@ api.post('/build', authMiddleware, async (req, res) => {
     };
 
     buildData.builderConfig = builderConfig;
-    await db.collection('builds').doc(buildId).set(buildData);
+    
+    if (isNewBuild) {
+      buildData.createdAt = admin.firestore.FieldValue.serverTimestamp();
+    } else {
+      buildData.updatedAt = admin.firestore.FieldValue.serverTimestamp();
+    }
+    
+    await db.collection('builds').doc(buildId).set(buildData, { merge: true });
 
     // Trigger GitHub Action
     if (GITHUB_PAT && GITHUB_REPO) {
@@ -378,17 +386,8 @@ api.delete('/build/:buildId', authMiddleware, async (req, res) => {
     
     const packageName = build.packageName;
     
-    // Delete all builds with the same package name for this user
-    const buildsSnapshot = await db.collection('builds')
-      .where('userId', '==', req.user.id)
-      .where('packageName', '==', packageName)
-      .get();
-      
-    const batch = db.batch();
-    buildsSnapshot.forEach(doc => {
-      batch.delete(doc.ref);
-    });
-    await batch.commit();
+    // Delete only this specific build
+    await db.collection('builds').doc(buildId).delete();
     
     res.json({ success: true });
   } catch (err) {

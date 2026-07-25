@@ -25,7 +25,7 @@ async function fetchBuilds(userId: string): Promise<App[]> {
             url: b.url || '',
             status: b.status || 'pending',
             platform: b.platform || 'android',
-            version: b.version || '1.0',
+            version: b.versionName || b.version || '1.0',
             versionCode: b.versionCode || 1,
             downloadCount: b.downloadCount || 0,
             activeUsers: b.activeUsers || 0,
