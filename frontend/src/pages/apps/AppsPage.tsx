@@ -30,7 +30,8 @@ async function fetchBuilds(userId: string): Promise<App[]> {
             downloadCount: b.downloadCount || 0,
             activeUsers: b.activeUsers || 0,
             lastBuiltAt: b.createdAt || b['Created Date'] || b.startedAt || b.lastBuiltAt,
-            apkUrl: b.apkFile || b.downloadUrl || (b.status === 'completed' ? `/node/download/${b._id}` : undefined)
+            apkUrl: b.apkFile || b.downloadUrl || (b.status === 'completed' ? `/node/download/${b._id}` : undefined),
+            icon: b.icon || b.config?.icon || b.logo || null
         }
     })
 }

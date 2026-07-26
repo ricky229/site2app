@@ -64,7 +64,7 @@ async function fetchBuilds(userId: string): Promise<any[]> {
             activeUsers: b.activeUsers || 0,
             lastBuiltAt: b['Created Date'] || b.startedAt || b.lastBuiltAt,
             apkUrl: b.apkFile || (b.status === 'completed' ? `/node/download/${b._id}` : undefined),
-            icon: b.icon || null,
+            icon: b.icon || b.config?.icon || b.logo || null,
         }))
     } catch {
         return []
