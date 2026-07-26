@@ -15,7 +15,6 @@ import api, { deleteAccount } from '../lib/api'
 
 const tabs = [
     { id: 'profile', label: 'Profil', icon: User, color: 'blue' },
-    { id: 'integrations', label: 'Intégrations', icon: Globe, color: 'purple' },
     { id: 'notifications', label: 'Alertes', icon: Bell, color: 'emerald' },
     { id: 'security', label: 'Sécurité', icon: Shield, color: 'red' },
 ]
@@ -167,54 +166,6 @@ export default function SettingsPage() {
                             </motion.div>
                         )}
 
-                        {/* INTEGRATIONS */}
-                        {activeTab === 'integrations' && (
-                            <motion.div
-                                key="integrations"
-                                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <div className="bg-[var(--surface-1)] border border-[var(--border)] rounded-[2rem] p-6 md:p-8 shadow-sm">
-                                    <div className="flex items-center gap-4 mb-6">
-                                        <div className="w-12 h-12 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
-                                            <Smartphone size={24} />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-2xl font-black text-[var(--text-primary)]">Firebase Cloud Messaging</h2>
-                                            <p className="text-[var(--text-secondary)] font-medium">Connectez FCM pour envoyer des Push en marque blanche.</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        <Input
-                                            label="Service Account JSON"
-                                            placeholder='{"type": "service_account", "project_id": "..."}'
-                                            value={firebaseKey}
-                                            onChange={e => setFirebaseKey(e.target.value)}
-                                            type="password"
-                                        />
-                                        <button
-                                            onClick={async () => {
-                                                if (!firebaseKey) return toast.error('Veuillez entrer une clé valide');
-                                                setSaving(true)
-                                                try {
-                                                    await api.post('/user/firebase', { key: firebaseKey })
-                                                    toast.success('Clé Firebase sauvegardée !')
-                                                } catch (e: any) {
-                                                    toast.error(e.error || 'Erreur')
-                                                } finally {
-                                                    setSaving(false)
-                                                }
-                                            }}
-                                            disabled={saving}
-                                            className="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold transition-colors"
-                                        >
-                                            Connecter Firebase
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
 
                         {/* NOTIFICATIONS */}
                         {activeTab === 'notifications' && (
