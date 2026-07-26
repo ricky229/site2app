@@ -7,6 +7,7 @@ import {
     Star, Menu, X, Moon, Sun, Play, Code, Palette, Settings,
     TrendingUp, Clock, ChevronRight
 } from 'lucide-react'
+import { useAuthStore } from '../store/authStore'
 
 const fadeUp = {
     hidden: { opacity: 0, y: 40 },
@@ -26,6 +27,7 @@ const features = [
 
 export default function LandingPage() {
     const navigate = useNavigate()
+    const { user } = useAuthStore()
     const [menuOpen, setMenuOpen] = useState(false)
     const [darkMode, setDarkMode] = useState(() => {
         return document.documentElement.classList.contains('dark') || 
@@ -84,10 +86,18 @@ export default function LandingPage() {
                         <button onClick={() => setDarkMode(!darkMode)} className="p-2.5 rounded-full bg-[var(--surface-1)] hover:bg-[var(--surface-2)] transition-colors border border-[var(--border)]">
                             {darkMode ? <Sun size={18} /> : <Moon size={18} />}
                         </button>
-                        <Link to="/auth/login" className="text-sm font-bold px-4 hover:text-blue-500 transition-colors">Connexion</Link>
-                        <Link to="/auth/register" className="bg-[var(--text-primary)] text-[var(--surface-0)] px-6 py-2.5 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-all">
-                            Démarrer
-                        </Link>
+                        {user ? (
+                            <Link to="/dashboard" className="bg-[var(--text-primary)] text-[var(--surface-0)] px-6 py-2.5 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-all">
+                                Tableau de bord
+                            </Link>
+                        ) : (
+                            <>
+                                <Link to="/auth/login" className="text-sm font-bold px-4 hover:text-blue-500 transition-colors">Connexion</Link>
+                                <Link to="/auth/register" className="bg-[var(--text-primary)] text-[var(--surface-0)] px-6 py-2.5 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-all">
+                                    Démarrer
+                                </Link>
+                            </>
+                        )}
                     </div>
 
                     <button className="lg:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
@@ -108,8 +118,14 @@ export default function LandingPage() {
                                 <a key={href} href={href} onClick={() => setMenuOpen(false)} className="text-lg font-bold p-2">{label}</a>
                             ))}
                             <div className="h-px bg-[var(--border)] my-2" />
-                            <Link to="/auth/login" className="btn btn-secondary w-full">Connexion</Link>
-                            <Link to="/auth/register" className="btn btn-primary w-full">Démarrer gratuitement</Link>
+                            {user ? (
+                                <Link to="/dashboard" className="btn btn-primary w-full text-center">Tableau de bord</Link>
+                            ) : (
+                                <>
+                                    <Link to="/auth/login" className="btn btn-secondary w-full">Connexion</Link>
+                                    <Link to="/auth/register" className="btn btn-primary w-full">Démarrer gratuitement</Link>
+                                </>
+                            )}
                         </div>
                     </motion.div>
                 )}
@@ -150,8 +166,8 @@ export default function LandingPage() {
                                     className="w-full pl-12 pr-40 py-4 bg-[var(--surface-1)] border-2 border-[var(--border)] rounded-full text-[var(--text-primary)] font-medium focus:outline-none focus:border-blue-500 transition-colors shadow-sm"
                                 />
                                 <button 
-                                    onClick={() => navigate('/auth/register')}
-                                    className="absolute inset-y-1.5 right-1.5 bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-full font-bold shadow-md transition-all flex items-center gap-2"
+                                    onClick={() => navigate(user ? '/dashboard' : '/auth/register')}
+                                    className="absolute inset-y-1.5 right-1.5 bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-full font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer"
                                 >
                                     Créer <ArrowRight size={16} />
                                 </button>
@@ -241,8 +257,8 @@ export default function LandingPage() {
                         <div className="relative z-10">
                             <h2 className="text-3xl md:text-4xl font-black mb-6 tracking-tight">Prêt à lancer <br/>votre app ?</h2>
                             <p className="text-xl text-blue-100 font-medium max-w-2xl mx-auto mb-10">Rejoignez des milliers de créateurs. Créez votre compte gratuitement et générez votre première application en 3 minutes.</p>
-                            <Link to="/auth/register" className="inline-block bg-white text-blue-900 px-10 py-5 rounded-full font-black text-lg shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform">
-                                Démarrer gratuitement
+                            <Link to={user ? '/dashboard' : '/auth/register'} className="inline-block bg-white text-blue-900 px-10 py-5 rounded-full font-black text-lg shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform cursor-pointer">
+                                {user ? 'Aller au Tableau de bord' : 'Démarrer gratuitement'}
                             </Link>
                         </div>
                     </div>
