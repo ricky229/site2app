@@ -92,10 +92,7 @@ export default function RegisterPage() {
                     <Chrome size={18} />
                     S'inscrire avec Google
                 </button>
-                <button type="button" onClick={() => toast.error("La connexion OAuth n'est pas encore activée en production.")} className="btn btn-secondary w-full justify-start gap-3">
-                    <Github size={18} />
-                    S'inscrire avec GitHub
-                </button>
+
             </div>
 
             <div className="flex items-center gap-3 mb-6">

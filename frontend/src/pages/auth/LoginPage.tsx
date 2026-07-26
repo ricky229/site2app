@@ -82,13 +82,7 @@ export default function LoginPage() {
                     <Chrome size={18} />
                     Continuer avec Google
                 </button>
-                <button
-                    onClick={() => handleOAuth('github')}
-                    className="btn btn-secondary w-full justify-start gap-3"
-                >
-                    <Github size={18} />
-                    Continuer avec GitHub
-                </button>
+
             </div>
 
             {/* Divider */}
