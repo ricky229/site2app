@@ -87,8 +87,8 @@ export default function AnalyticsPage() {
              const periodNotifs = notifs.filter((n: any) => new Date(n['Created Date'] || n.createdAt) >= periodStart)
              const periodDevices = devices.filter((d: any) => new Date(d['Created Date'] || d.createdAt) >= periodStart)
 
-             const totalSent = periodNotifs.reduce((sum: number, n: any) => sum + (n.sentCount || n.sent || 0), 0)
-             const totalDelivered = periodNotifs.reduce((sum: number, n: any) => sum + (n.deliveredCount || n.delivered || 0), 0)
+             const totalSent = periodNotifs.reduce((sum: number, n: any) => sum + (n.stats?.successCount || 0) + (n.stats?.failureCount || 0) + (n.sentCount || n.sent || 0), 0)
+             const totalDelivered = periodNotifs.reduce((sum: number, n: any) => sum + (n.stats?.successCount || n.deliveredCount || n.delivered || 0), 0)
              const avgDeliveryRate = totalSent > 0 ? Math.round((totalDelivered / totalSent) * 100) : 0
              
              const summary = {
@@ -111,8 +111,8 @@ export default function AnalyticsPage() {
                  if (isNaN(d1.getTime())) return;
                  const key = d1.toISOString().split('T')[0]
                  if (dailyData[key]) {
-                     dailyData[key].sent += (n.sentCount || n.sent || 0)
-                     dailyData[key].delivered += (n.deliveredCount || n.delivered || 0)
+                     dailyData[key].sent += (n.stats?.successCount || 0) + (n.stats?.failureCount || 0) + (n.sentCount || n.sent || 0)
+                     dailyData[key].delivered += (n.stats?.successCount || n.deliveredCount || n.delivered || 0)
                  }
              })
              
@@ -146,27 +146,28 @@ export default function AnalyticsPage() {
              ]
              
              const appStats = apps.map((a: any) => {
-                 const appNotifs = notifs.filter((n: any) => n.appId === a._id)
-                 const aSent = appNotifs.reduce((sum: number, n: any) => sum + (n.sentCount || n.sent || 0), 0)
-                 const aDeliv = appNotifs.reduce((sum: number, n: any) => sum + (n.deliveredCount || n.delivered || 0), 0)
+                 const appNotifs = notifs.filter((n: any) => n.buildId === a.id || n.appId === a._id)
+                 const aSent = appNotifs.reduce((sum: number, n: any) => sum + (n.stats?.successCount || 0) + (n.stats?.failureCount || 0) + (n.sentCount || n.sent || 0), 0)
+                 const aDelivered = appNotifs.reduce((sum: number, n: any) => sum + (n.stats?.successCount || n.deliveredCount || n.delivered || 0), 0)
                  return {
                      id: a._id,
                      name: a.appName || a.name || 'App',
                      devices: devices.filter((d: any) => d.appId === a._id).length || a.activeUsers || 0,
                      notificationsSent: aSent,
-                     deliveryRate: aSent > 0 ? Math.round((aDeliv / aSent) * 100) : 0
+                     deliveryRate: aSent > 0 ? Math.round((aDelivered / aSent) * 100) : 0
                  }
              })
              
              const topNotifications = periodNotifs.sort((a: any, b: any) => new Date(b['Created Date'] || b.createdAt).getTime() - new Date(a['Created Date'] || a.createdAt).getTime()).slice(0, 5).map((n: any) => {
-                 const nSent = n.sentCount || n.sent || 0;
-                 const nDeliv = n.deliveredCount || n.delivered || 0;
+                 const nSent = (n.stats?.successCount || 0) + (n.stats?.failureCount || 0) + (n.sentCount || n.sent || 0);
+                 const nDeliv = (n.stats?.successCount || n.deliveredCount || n.delivered || 0);
                  return {
-                     id: n._id,
+                     id: n._id || n.id,
                      title: n.title,
                      sent: nSent,
                      delivered: nDeliv,
                      deliveryRate: nSent > 0 ? Math.round((nDeliv / nSent) * 100) : 0,
+                     openRate: n.stats?.openRate || 0,
                      sentAt: n['Created Date'] || n.createdAt
                  }
              })

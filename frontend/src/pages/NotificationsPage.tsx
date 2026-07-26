@@ -58,16 +58,22 @@ export default function NotificationsPage() {
             if (!user?.id) return []
             const results = await getNotifications(selectedApp)
             if (!Array.isArray(results)) return []
-            return results.map((n: any) => ({
-                ...n,
-                stats: n.stats || {
-                    sent: n.sentCount || 0,
-                    delivered: n.deliveredCount || 0,
-                    deliveryRate: n.sentCount > 0 ? Math.round((n.deliveredCount || 0) / n.sentCount * 100) : 0,
-                    openRate: 0,
-                    clickRate: 0
-                }
-            }))
+            return results.map((n: any) => {
+                const sCount = n.stats?.successCount || n.sentCount || 0;
+                const fCount = n.stats?.failureCount || 0;
+                const total = sCount + fCount;
+                return {
+                    ...n,
+                    id: n._id || n.id,
+                    stats: {
+                        sent: total > 0 ? total : (n.stats?.sent || 0),
+                        delivered: sCount > 0 ? sCount : (n.stats?.delivered || 0),
+                        deliveryRate: total > 0 ? Math.round((sCount / total) * 100) : (n.stats?.deliveryRate || 0),
+                        openRate: n.stats?.openRate || 0,
+                        clickRate: n.stats?.clickRate || 0
+                    }
+                };
+            });
         },
         enabled: !!user?.id
     })
@@ -484,18 +490,19 @@ export default function NotificationsPage() {
                         </div>
                     ) : notifications.map(notif => (
                         <motion.div
-                            key={notif._id}
+                            key={notif.id}
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="card p-3 sm:p-5"
+                            className="p-4 sm:p-5 rounded-2xl border"
+                            style={{ backgroundColor: 'var(--surface-1)', borderColor: 'var(--border)' }}
                         >
-                            <div className="flex items-start justify-between gap-4 mb-4">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-3 mb-1">
-                                        <h3 className="font-bold">{notif.title}</h3>
+                            <div className="flex flex-col sm:flex-row justify-between gap-4 mb-4">
+                                <div className="flex-1">
+                                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <h3 className="font-bold text-lg break-words">{notif.title}</h3>
                                         <StatusBadge status={notif.status} />
-                                        <span className="badge badge-muted text-xs">
-                                            {Array.isArray(notif.targetOs)
+                                        <span className="px-2 py-0.5 text-xs rounded-full bg-[var(--surface-2)] text-[var(--text-secondary)] flex items-center gap-1 font-medium">
+                                            <Smartphone size={12} /> {Array.isArray(notif.targetOs)
                                                 ? '🤖 Android'
                                                 : notif.targetOs === 'all' ? '🌍 Tous'
                                                     : notif.targetOs === 'android' ? '🤖 Android'
@@ -503,27 +510,34 @@ export default function NotificationsPage() {
                                                             : '🤖 Android'}
                                         </span>
                                     </div>
-                                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{notif.body}</p>
-                                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                                    <p style={{ color: 'var(--text-secondary)' }} className="text-sm mb-2 break-words line-clamp-2">{notif.body}</p>
+                                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                                         {notif.status === 'scheduled'
                                             ? `Programmée pour le ${new Date(notif.scheduledAt?.seconds ? notif.scheduledAt.seconds * 1000 : (notif.scheduledAt || Date.now())).toLocaleDateString('fr-FR')}`
                                             : `Envoyée ${formatRelativeTime(notif.createdAt || notif.sentAt || notif['Created Date'] || Date.now())}`
                                         }
                                     </p>
                                 </div>
-                                <div className="flex gap-2 flex-shrink-0">
-                                    <Button variant="ghost" size="sm" icon={<Copy size={14} />} onClick={() => {
-                                        setForm(f => ({ ...f, title: notif.title, body: notif.body, image: notif.image || '', actionUrl: notif.targetUrl || '' }))
-                                        setTab('compose')
-                                    }}>Dupliquer</Button>
+                                <div className="flex items-start gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        icon={<Copy size={14} />}
+                                        onClick={() => {
+                                            setForm(f => ({ ...f, title: notif.title, body: notif.body, image: notif.image || '', actionUrl: notif.targetUrl || '' }))
+                                            setTab('compose')
+                                        }}
+                                    >
+                                        Dupliquer
+                                    </Button>
                                     <Button
                                         variant="danger"
                                         size="sm"
                                         icon={<Trash2 size={14} />}
                                         onClick={() => {
-                                            if (confirm('Supprimer cette notification ?')) deleteMutation.mutate(notif._id)
+                                            if (confirm('Supprimer cette notification ?')) deleteMutation.mutate(notif.id)
                                         }}
-                                        loading={deleteMutation.isPending && deleteMutation.variables === notif._id}
+                                        loading={deleteMutation.isPending && deleteMutation.variables === notif.id}
                                     >
                                         Effacer
                                     </Button>
