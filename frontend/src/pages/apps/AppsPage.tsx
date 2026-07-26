@@ -133,30 +133,22 @@ const PremiumAppCard = ({ app, delay }: any) => {
             {/* Actions overlay / bottom strip */}
             <div className="flex gap-2 relative z-10" onClick={e => e.stopPropagation()}>
                 <button
-                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--surface-3)] hover:text-blue-500 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--surface-3)] hover:text-blue-500 transition-colors cursor-pointer"
                     onClick={() => navigate(`/apps/${app.id}`)}
                 >
                     <Eye size={14} /> Modifier
                 </button>
-                {app.status === 'completed' && (
-                    <button
-                        className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white transition-colors"
-                        onClick={(e) => handlePublish(e, app)}
-                    >
-                        <Play size={14} /> Publier
-                    </button>
-                )}
                 {app.apkUrl && (
                     <a
                         href={app.apkUrl}
-                        className="flex items-center justify-center p-2 rounded-xl text-green-600 bg-green-500/10 hover:bg-green-500 hover:text-white transition-colors"
+                        className="flex items-center justify-center p-2 rounded-xl text-green-600 bg-green-500/10 hover:bg-green-500 hover:text-white transition-colors cursor-pointer"
                         title="Tlcharger APK"
                     >
                         <Download size={16} />
                     </a>
                 )}
                 <button
-                    className="flex items-center justify-center p-2 rounded-xl text-red-500 bg-red-500/10 hover:bg-red-500 hover:text-white transition-colors"
+                    className="flex items-center justify-center p-2 rounded-xl text-red-500 bg-red-500/10 hover:bg-red-500 hover:text-white transition-colors cursor-pointer"
                     onClick={(e) => handleDelete(e, app.id)}
                     title="Supprimer"
                 >
