@@ -948,8 +948,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-${this.features.pullToRefresh ? `import android.widget.ScrollView;
-import android.view.ViewGroup;` : ''}
+${this.features.pullToRefresh ? `import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;` : ''}
 ${this.features.popupSupport ? `import android.webkit.WebView.WebViewTransport;
 import android.os.Message;` : ''}
 ${this.features.deepLinking ? '' : ''}
@@ -1055,7 +1054,7 @@ public class MainActivity extends Activity {
     private long updateDownloadId = -1;
     private static final int FILE_CHOOSER_REQUEST = 1001;
     private static final int PERMISSION_REQUEST = 1002;
-${this.features.pullToRefresh ? `    private android.widget.FrameLayout swipeContainer;` : ''}
+${this.features.pullToRefresh ? `    private SwipeRefreshLayout swipeContainer;` : ''}
 ${this.features.popupSupport ? `    private WebView popupWebView;` : ''}
 
     private BroadcastReceiver tokenReceiver = new BroadcastReceiver() {
@@ -1118,13 +1117,16 @@ ${this.features.popupSupport ? `    private WebView popupWebView;` : ''}
 
 ${this.features.pullToRefresh ? `
         // ── Pull-to-refresh ──
-        webView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+        swipeContainer = new SwipeRefreshLayout(this);
+        layout.removeView(webView);
+        swipeContainer.addView(webView);
+        layout.addView(swipeContainer, 0, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        swipeContainer.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
-            public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-                // Variable used for pull-to-refresh state tracking
+            public void onRefresh() {
+                webView.reload();
             }
         });
-        webView.setOverScrollMode(View.OVER_SCROLL_ALWAYS);
 ` : ''}
         setupWebView();
         requestPermissions();
@@ -1377,6 +1379,7 @@ ${this.features.popupSupport ? `
             public void onPageFinished(WebView view, String url) {
                 progressBar.setVisibility(View.GONE);
                 CookieManager.getInstance().flush();
+                ${this.features.pullToRefresh ? `if (swipeContainer != null) { swipeContainer.setRefreshing(false); }` : ''}
                 
                 // Expose a requestPushNotifications so existing user scripts don't break
                 ${this.features.pushNotifications ? `
@@ -2429,6 +2432,7 @@ dependencies {
     // Force unified Kotlin stdlib to prevent duplicate class conflicts
     implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.22"))
 ${this.features.admob ? `    implementation 'com.google.android.gms:play-services-ads:22.6.0'` : ''}
+${this.features.pullToRefresh ? `    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'` : ''}
 }
 
 configurations.all {
