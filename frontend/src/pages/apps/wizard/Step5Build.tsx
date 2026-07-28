@@ -343,30 +343,36 @@ export default function Step5Build() {
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 {[
                                     { id: 'android' as const, icon: Smartphone, label: 'Android', sublabel: 'APK/AAB', color: '#3ddc84', desc: 'Compatible tous Android 5.0+' },
-                                    { id: 'ios' as const, icon: Apple, label: 'iOS', sublabel: 'IPA', color: '#555', desc: 'iPhone et iPad' },
-                                    { id: 'both' as const, icon: null, label: 'Les deux', sublabel: 'APK + IPA', color: '#3461f5', desc: 'Meilleure couverture' },
+                                    { id: 'ios' as const, icon: Apple, label: 'iOS', sublabel: 'IPA', color: '#555', desc: 'iPhone et iPad', disabled: true },
+                                    { id: 'both' as const, icon: null, label: 'Les deux', sublabel: 'APK + IPA', color: '#3461f5', desc: 'Meilleure couverture', disabled: true },
                                 ].map(option => (
                                     <button
                                         key={option.id}
-                                        onClick={() => setPlatform(option.id)}
-                                        className="p-5 rounded-2xl border-2 text-center transition-all"
+                                        onClick={() => !option.disabled && setPlatform(option.id)}
+                                        disabled={option.disabled}
+                                        className={`relative p-5 rounded-2xl border-2 text-center transition-all ${option.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-blue-300'}`}
                                         style={{
                                             borderColor: platform === option.id ? option.color : 'var(--border)',
                                             background: platform === option.id ? `${option.color}10` : 'var(--surface-1)',
                                         }}
                                     >
+                                        {option.disabled && (
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200 whitespace-nowrap">
+                                                Bientôt disponible
+                                            </div>
+                                        )}
                                         {option.id === 'both' ? (
                                             <div className="flex justify-center gap-1 mb-2">
-                                                <Smartphone size={22} style={{ color: '#3ddc84' }} />
-                                                <Apple size={22} style={{ color: '#555' }} />
+                                                <Smartphone size={22} style={{ color: option.disabled ? '#999' : '#3ddc84' }} />
+                                                <Apple size={22} style={{ color: option.disabled ? '#999' : '#555' }} />
                                             </div>
                                         ) : option.icon ? (
-                                            <option.icon size={28} className="mx-auto mb-2" style={{ color: option.color }} />
+                                            <option.icon size={28} className="mx-auto mb-2" style={{ color: option.disabled ? '#999' : option.color }} />
                                         ) : null}
                                         <p className="font-bold">{option.label}</p>
                                         <p className="text-xs mt-0.5 font-mono" style={{ color: 'var(--text-muted)' }}>{option.sublabel}</p>
                                         <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>{option.desc}</p>
-                                        {platform === option.id && (
+                                        {platform === option.id && !option.disabled && (
                                             <div className="mt-2 text-brand-500">
                                                 <CheckCircle size={16} className="mx-auto" />
                                             </div>
