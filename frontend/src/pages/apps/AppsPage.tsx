@@ -20,7 +20,7 @@ async function fetchBuilds(userId: string): Promise<App[]> {
     return buildsArray.map((b: any) => {
         return {
             ...b,
-            id: b._id || b.id || String(Math.random()),
+            id: b.id || b._id || String(Math.random()),
             name: b.appName || b.name || 'App',
             url: b.url || '',
             status: b.status || 'pending',
@@ -30,7 +30,7 @@ async function fetchBuilds(userId: string): Promise<App[]> {
             downloadCount: b.downloadCount || 0,
             activeUsers: b.activeUsers || 0,
             lastBuiltAt: b.createdAt || b['Created Date'] || b.startedAt || b.lastBuiltAt,
-            apkUrl: b.apkFile || b.downloadUrl || (b.status === 'completed' ? `/node/download/${b._id}` : undefined),
+            apkUrl: b.apkFile || b.downloadUrl || (b.status === 'completed' ? `/node/download/${b.id || b._id}` : undefined),
             icon: b.icon || b.config?.icon || b.logo || null
         }
     })
@@ -50,8 +50,10 @@ const PremiumAppCard = ({ app, delay }: any) => {
             try {
                 await deleteApp(id)
                 queryClient.invalidateQueries({ queryKey: ['builds'] })
-            } catch (err) {
+                alert('Application supprimée avec succès.')
+            } catch (err: any) {
                 console.error(err)
+                alert('Erreur lors de la suppression : ' + (err.response?.data?.error || err.message))
             }
         }
     }

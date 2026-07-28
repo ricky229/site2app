@@ -54,7 +54,7 @@ async function fetchBuilds(userId: string): Promise<any[]> {
     try {
         const data = await getAppsByUser(userId);
         return (Array.isArray(data) ? data : []).map((b: any) => ({
-            id: b._id || b.id || '0',
+            id: b.id || b._id || '0',
             name: b.appName || b.name || 'Sans nom',
             url: b.url || '',
             status: b.status || 'pending',
@@ -63,7 +63,7 @@ async function fetchBuilds(userId: string): Promise<any[]> {
             downloadCount: b.downloadCount || 0,
             activeUsers: b.activeUsers || 0,
             lastBuiltAt: b['Created Date'] || b.startedAt || b.lastBuiltAt,
-            apkUrl: b.apkFile || (b.status === 'completed' ? `/node/download/${b._id}` : undefined),
+            apkUrl: b.apkFile || (b.status === 'completed' ? `/node/download/${b.id || b._id}` : undefined),
             icon: b.icon || b.config?.icon || b.logo || null,
         }))
     } catch {
