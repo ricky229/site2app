@@ -39,6 +39,7 @@ async function fetchBuilds(userId: string): Promise<App[]> {
 const PremiumAppCard = ({ app, delay }: any) => {
     const navigate = useNavigate()
     const queryClient = useQueryClient()
+    const { user } = useAuthStore()
     const colors: Record<string, string> = {
         '1': '#3b82f6', '2': '#8b5cf6', '3': '#10b981',
     }
@@ -47,12 +48,19 @@ const PremiumAppCard = ({ app, delay }: any) => {
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation()
         if (window.confirm('Voulez-vous vraiment supprimer cette application ?')) {
+            // Optimistic update
+            const queryKey = ['builds', user?.id];
+            const previousApps = queryClient.getQueryData(queryKey);
+            queryClient.setQueryData(queryKey, (old: any) => (old ? old.filter((a: any) => a.id !== id) : []));
+
             try {
                 await deleteApp(id)
                 queryClient.invalidateQueries({ queryKey: ['builds'] })
                 alert('Application supprimée avec succès.')
             } catch (err: any) {
                 console.error(err)
+                // Revert optimistic update on error
+                if (previousApps) queryClient.setQueryData(queryKey, previousApps);
                 alert('Erreur lors de la suppression : ' + (err.response?.data?.error || err.message))
             }
         }
