@@ -1127,6 +1127,16 @@ ${this.features.pullToRefresh ? `
                 webView.reload();
             }
         });
+        
+        webView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+            @Override
+            public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+                if (swipeContainer != null) {
+                    swipeContainer.setEnabled(scrollY == 0);
+                }
+            }
+        });
+        webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 ` : ''}
         setupWebView();
         requestPermissions();
