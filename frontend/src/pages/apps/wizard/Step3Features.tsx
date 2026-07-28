@@ -159,7 +159,7 @@ export default function Step3Features() {
             </div>
 
             {/* AdMob Configuration Panel */}
-            {config.features.admob && (
+            {state.config.features?.admob && (
                 <motion.div 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -175,7 +175,7 @@ export default function Step3Features() {
                                 type="text"
                                 className="w-full bg-[var(--surface-1)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                                 placeholder="ca-app-pub-xxxxxxxxxxxxxxxx~xxxxxxxxxx"
-                                value={config.admobAppId || ''}
+                                value={state.config.admobAppId || ''}
                                 onChange={e => updateConfig({ admobAppId: e.target.value })}
                             />
                             <p className="text-[10px] text-[var(--text-muted)] mt-1">Nécessaire pour le fonctionnement de l'application Android.</p>
@@ -187,7 +187,7 @@ export default function Step3Features() {
                                     type="text"
                                     className="w-full bg-[var(--surface-1)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                                     placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
-                                    value={config.admobBannerId || ''}
+                                    value={state.config.admobBannerId || ''}
                                     onChange={e => updateConfig({ admobBannerId: e.target.value })}
                                 />
                             </div>
@@ -197,7 +197,7 @@ export default function Step3Features() {
                                     type="text"
                                     className="w-full bg-[var(--surface-1)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                                     placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
-                                    value={config.admobInterstitialId || ''}
+                                    value={state.config.admobInterstitialId || ''}
                                     onChange={e => updateConfig({ admobInterstitialId: e.target.value })}
                                 />
                             </div>
