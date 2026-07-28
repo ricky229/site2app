@@ -76,6 +76,7 @@ export interface AppConfig {
     features: AppFeatures;
     customCss?: string;
     customJs?: string;
+    admobAppId?: string;
     admobBannerId?: string;
     admobInterstitialId?: string;
     firebaseConfig?: FirebaseConfig;

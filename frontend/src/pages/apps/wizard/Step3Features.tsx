@@ -158,6 +158,54 @@ export default function Step3Features() {
                 ))}
             </div>
 
+            {/* AdMob Configuration Panel */}
+            {config.features.admob && (
+                <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-6 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]"
+                >
+                    <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                        <DollarSign size={16} className="text-amber-500" /> Configuration AdMob (Monétisation)
+                    </h3>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">App ID AdMob (Obligatoire)</label>
+                            <input
+                                type="text"
+                                className="w-full bg-[var(--surface-1)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                                placeholder="ca-app-pub-xxxxxxxxxxxxxxxx~xxxxxxxxxx"
+                                value={config.admobAppId || ''}
+                                onChange={e => updateConfig({ admobAppId: e.target.value })}
+                            />
+                            <p className="text-[10px] text-[var(--text-muted)] mt-1">Nécessaire pour le fonctionnement de l'application Android.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">ID Annonce Bannière</label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-[var(--surface-1)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                                    placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                                    value={config.admobBannerId || ''}
+                                    onChange={e => updateConfig({ admobBannerId: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">ID Annonce Interstitiel</label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-[var(--surface-1)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                                    placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                                    value={config.admobInterstitialId || ''}
+                                    onChange={e => updateConfig({ admobInterstitialId: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
             {/* Info banner */}
             <div className="mt-6 p-4 rounded-xl flex items-start gap-3"
                 style={{ background: 'rgba(52,97,245,0.08)', border: '1px solid rgba(52,97,245,0.2)' }}>

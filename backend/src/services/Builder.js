@@ -481,7 +481,7 @@ ${this.features.deepLinking ? `            <intent-filter android:autoVerify="tr
         </activity>${this.features.admob ? `
 
         <!-- AdMob -->
-        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy" />` : ''}
+        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="${this.config.admobAppId || 'ca-app-pub-3940256099942544~3347511713'}" />` : ''}
 
         <!-- File Provider for camera/downloads -->
         <provider
@@ -948,6 +948,16 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+${this.features.admob ? `import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.initialization.InitializationStatus;
+import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.AdError;` : ''}
 ${this.features.pullToRefresh ? `import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;` : ''}
 ${this.features.popupSupport ? `import android.webkit.WebView.WebViewTransport;
 import android.os.Message;` : ''}
@@ -1056,6 +1066,9 @@ public class MainActivity extends Activity {
     private static final int PERMISSION_REQUEST = 1002;
 ${this.features.pullToRefresh ? `    private SwipeRefreshLayout swipeContainer;` : ''}
 ${this.features.popupSupport ? `    private WebView popupWebView;` : ''}
+${this.features.admob ? `    private AdView mAdView;
+    private InterstitialAd mInterstitialAd;
+    private int adPageLoadCount = 0;` : ''}
 
     private BroadcastReceiver tokenReceiver = new BroadcastReceiver() {
         @Override
@@ -1113,8 +1126,39 @@ ${this.features.popupSupport ? `    private WebView popupWebView;` : ''}
             FrameLayout.LayoutParams.MATCH_PARENT, 6);
         layout.addView(progressBar, pbParams);
 
-        setContentView(layout);
+${this.features.admob ? `
+        MobileAds.initialize(this, new OnInitializationCompleteListener() {
+            @Override
+            public void onInitializationComplete(InitializationStatus initializationStatus) {}
+        });
+` : ''}
+        View contentView = layout;
+${(this.features.admob && this.config.admobBannerId) ? `
+        LinearLayout mainLayout = new LinearLayout(this);
+        mainLayout.setOrientation(LinearLayout.VERTICAL);
+        mainLayout.setBackgroundColor(Color.WHITE);
 
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f);
+        mainLayout.addView(layout, layoutParams);
+
+        mAdView = new AdView(this);
+        mAdView.setAdSize(com.google.android.gms.ads.AdSize.BANNER);
+        mAdView.setAdUnitId("${this.config.admobBannerId}");
+        AdRequest bannerAdRequest = new AdRequest.Builder().build();
+        mAdView.loadAd(bannerAdRequest);
+
+        LinearLayout.LayoutParams adParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        mainLayout.addView(mAdView, adParams);
+        
+        contentView = mainLayout;
+` : ''}
+        setContentView(contentView);
+
+${(this.features.admob && this.config.admobInterstitialId) ? `
+        loadInterstitialAd();
+` : ''}
 ${this.features.pullToRefresh ? `
         // ── Pull-to-refresh ──
         swipeContainer = new SwipeRefreshLayout(this);
@@ -1753,6 +1797,36 @@ ${this.features.offlineMode ? `
 
     @Override
     protected void onPause() { super.onPause(); if (webView != null) webView.onPause(); }
+
+${(this.features.admob && this.config.admobInterstitialId) ? `
+    private void loadInterstitialAd() {
+        AdRequest interstitialRequest = new AdRequest.Builder().build();
+        InterstitialAd.load(this, "${this.config.admobInterstitialId}", interstitialRequest,
+            new InterstitialAdLoadCallback() {
+                @Override
+                public void onAdLoaded(@androidx.annotation.NonNull InterstitialAd interstitialAd) {
+                    mInterstitialAd = interstitialAd;
+                    mInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                        @Override
+                        public void onAdDismissedFullScreenContent() {
+                            mInterstitialAd = null;
+                            // Optionally preload next ad: loadInterstitialAd();
+                        }
+                        @Override
+                        public void onAdFailedToShowFullScreenContent(AdError adError) {
+                            mInterstitialAd = null;
+                        }
+                    });
+                    // Show interstitial ad immediately when loaded (e.g. on app launch)
+                    mInterstitialAd.show(MainActivity.this);
+                }
+                @Override
+                public void onAdFailedToLoad(@androidx.annotation.NonNull LoadAdError loadAdError) {
+                    mInterstitialAd = null;
+                }
+            });
+    }
+` : ''}
 
     @Override
     protected void onDestroy() {
