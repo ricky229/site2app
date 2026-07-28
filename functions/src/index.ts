@@ -868,7 +868,12 @@ api.post('/devices/register', async (req, res) => {
 
 api.get('/devices', authMiddleware, async (req, res) => {
   try {
-    const snap = await db.collection('devices').where('userId', '==', req.user.id).get();
+    const appId = req.query.appId as string;
+    let query: any = db.collection('devices').where('userId', '==', req.user.id);
+    if (appId) {
+        query = query.where('buildId', '==', appId);
+    }
+    const snap = await query.get();
     
     const devices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     devices.sort((a: any, b: any) => {
