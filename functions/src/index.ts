@@ -198,7 +198,9 @@ api.post('/payment/create-invoice', authMiddleware, async (req: any, res) => {
       return res.status(500).json({ error: 'Configuration serveur manquante. Veuillez vérifier que les secrets GitHub (PAYDUNYA_MASTER_KEY, PAYDUNYA_PRIVATE_KEY, PAYDUNYA_TOKEN) sont bien configurés et non vides.', details: { master: !!PAYDUNYA_MASTER_KEY, private: !!PAYDUNYA_PRIVATE_KEY, token: !!PAYDUNYA_TOKEN } });
     }
 
-    const amount = plan === 'yearly' ? 25000 : 75000;
+    const settingsDoc = await db.collection('settings').doc('platform').get();
+    const settings = settingsDoc.exists ? settingsDoc.data()! : { yearlyPrice: 25000, lifetimePrice: 75000 };
+    const amount = plan === 'yearly' ? (settings.yearlyPrice || 25000) : (settings.lifetimePrice || 75000);
     const description = plan === 'yearly' ? 'Abonnement Annuel Site2App' : 'Accès À Vie Site2App';
 
     const payload = {
@@ -279,7 +281,9 @@ api.post('/payment/softpay', authMiddleware, async (req: any, res) => {
       return res.status(500).json({ error: 'Configuration serveur manquante.' });
     }
 
-    const amount = plan === 'yearly' ? 25000 : 75000;
+    const settingsDoc = await db.collection('settings').doc('platform').get();
+    const settings = settingsDoc.exists ? settingsDoc.data()! : { yearlyPrice: 25000, lifetimePrice: 75000 };
+    const amount = plan === 'yearly' ? (settings.yearlyPrice || 25000) : (settings.lifetimePrice || 75000);
     const description = plan === 'yearly' ? 'Abonnement Annuel Site2App' : 'Accès À Vie Site2App';
 
     const payload = {
