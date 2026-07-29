@@ -359,13 +359,27 @@ api.post('/payment/softpay', authMiddleware, async (req: any, res) => {
       djamo_fullName: fullName || req.user.id,
       djamo_email: email || 'test@site2app.online',
       djamo_phone: phoneNumber,
-      djamo_payment_token: invoiceToken
+      djamo_payment_token: invoiceToken,
+      
+      // MTN Benin parameters
+      mtn_benin_customer_fullname: fullName || req.user.id,
+      mtn_benin_email: email || 'test@site2app.online',
+      mtn_benin_phone_number: phoneNumber,
+      mtn_benin_wallet_provider: "MTNBENIN",
+
+      // Moov Benin parameters
+      moov_benin_customer_fullname: fullName || req.user.id,
+      moov_benin_email: email || 'test@site2app.online',
+      moov_benin_phone_number: phoneNumber,
+      moov_benin_wallet_provider: "MOOVBENIN"
     };
 
     const softRes = await fetch(softpayUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         'PAYDUNYA-MASTER-KEY': PAYDUNYA_MASTER_KEY,
         'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_PRIVATE_KEY,
         'PAYDUNYA-TOKEN': PAYDUNYA_TOKEN,
@@ -373,7 +387,15 @@ api.post('/payment/softpay', authMiddleware, async (req: any, res) => {
       body: JSON.stringify(softpayPayload)
     });
 
-    const softData = await softRes.json();
+    const softText = await softRes.text();
+    let softData;
+    try {
+      softData = JSON.parse(softText);
+    } catch (e) {
+      console.error('[PayDunya SoftPay] Réponse invalide (non-JSON):', softText.substring(0, 200));
+      return res.status(502).json({ error: 'Exception interne SoftPay (Réponse non-JSON du serveur bancaire)', details: softText.substring(0, 100) });
+    }
+
     return res.json(softData);
 
   } catch (err: any) {
