@@ -6,6 +6,8 @@ import { api } from '../lib/api'
 import confetti from 'canvas-confetti'
 import { motion, AnimatePresence } from 'framer-motion'
 
+import { formatNumber } from '../lib/utils'
+
 const COUNTRIES = [
     { id: 'senegal', flag: 'sn', name: 'Sénégal', methods: [ 
         { id: 'wave_senegal', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Wave_Mobile_Money_logo.png/600px-Wave_Mobile_Money_logo.png', logoText: 'W', logoBg: '#1c3faa' }, 
@@ -41,7 +43,7 @@ const COUNTRIES = [
 ]
 
 export default function PricingPage() {
-    const { user } = useAuthStore()
+    const { user, updateUser } = useAuthStore()
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const [isLoading, setIsLoading] = useState<string | null>(null)
