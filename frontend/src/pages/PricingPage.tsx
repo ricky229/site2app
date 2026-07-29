@@ -8,36 +8,36 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const COUNTRIES = [
     { id: 'senegal', flag: 'sn', name: 'Sénégal', methods: [ 
-        { id: 'wave_senegal', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoText: 'W', logoBg: '#1c3faa' }, 
-        { id: 'new_orange_money_senegal', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
-        { id: 'free_money_senegal', name: 'Free Money', color: 'bg-red-50 text-red-700 border-red-200', logoText: 'F', logoBg: '#da291c' }, 
-        { id: 'expresso_senegal', name: 'Expresso', color: 'bg-gray-100 text-gray-700 border-gray-300', logoText: 'EX', logoBg: '#595959' } 
+        { id: 'wave_senegal', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoImg: 'https://logo.clearbit.com/wave.com', logoText: 'W', logoBg: '#1c3faa' }, 
+        { id: 'new_orange_money_senegal', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'free_money_senegal', name: 'Free Money', color: 'bg-red-50 text-red-700 border-red-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Free_logo_2019.svg', logoText: 'F', logoBg: '#da291c' }, 
+        { id: 'expresso_senegal', name: 'Expresso', color: 'bg-gray-100 text-gray-700 border-gray-300', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Expresso_Telecom_Logo.png', logoText: 'EX', logoBg: '#595959' } 
     ] },
     { id: 'ci', flag: 'ci', name: 'Côte d\'Ivoire', methods: [ 
-        { id: 'wave_ci', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoText: 'W', logoBg: '#1c3faa' }, 
-        { id: 'orange_money_ci', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
-        { id: 'mtn_ci', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
-        { id: 'moov_ci', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
+        { id: 'wave_ci', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoImg: 'https://logo.clearbit.com/wave.com', logoText: 'W', logoBg: '#1c3faa' }, 
+        { id: 'orange_money_ci', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'mtn_ci', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/MTN_Logo.svg', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
+        { id: 'moov_ci', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: 'https://upload.wikimedia.org/wikipedia/fr/a/a3/Moov_Africa_logo.png', logoText: 'M', logoBg: '#0054a6' } 
     ] },
     { id: 'burkina', flag: 'bf', name: 'Burkina Faso', methods: [ 
-        { id: 'orange_money_burkina', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
-        { id: 'moov_burkina', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
+        { id: 'orange_money_burkina', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'moov_burkina', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: 'https://upload.wikimedia.org/wikipedia/fr/a/a3/Moov_Africa_logo.png', logoText: 'M', logoBg: '#0054a6' } 
     ] },
     { id: 'benin', flag: 'bj', name: 'Bénin', methods: [ 
-        { id: 'mtn_benin', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
-        { id: 'moov_benin', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' }, 
-        { id: 'celtiis_cash', name: 'Celtiis', color: 'bg-green-50 text-green-700 border-green-200', logoText: 'C', logoBg: '#008b45' } 
+        { id: 'mtn_benin', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/MTN_Logo.svg', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
+        { id: 'moov_benin', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: 'https://upload.wikimedia.org/wikipedia/fr/a/a3/Moov_Africa_logo.png', logoText: 'M', logoBg: '#0054a6' }, 
+        { id: 'celtiis_cash', name: 'Celtiis', color: 'bg-green-50 text-green-700 border-green-200', logoImg: 'https://logo.clearbit.com/celtiis.bj', logoText: 'C', logoBg: '#008b45' } 
     ] },
     { id: 'togo', flag: 'tg', name: 'Togo', methods: [ 
-        { id: 't_money_togo', name: 'T-Money', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'TM', logoBg: '#ffcc00', logoColor: '#000' }, 
-        { id: 'moov_togo', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
+        { id: 't_money_togo', name: 'T-Money', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoImg: 'https://logo.clearbit.com/togocom.tg', logoText: 'TM', logoBg: '#ffcc00', logoColor: '#000' }, 
+        { id: 'moov_togo', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: 'https://upload.wikimedia.org/wikipedia/fr/a/a3/Moov_Africa_logo.png', logoText: 'M', logoBg: '#0054a6' } 
     ] },
     { id: 'mali', flag: 'ml', name: 'Mali', methods: [ 
-        { id: 'orange_money_mali', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
-        { id: 'moov_mali', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
+        { id: 'orange_money_mali', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'moov_mali', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: 'https://upload.wikimedia.org/wikipedia/fr/a/a3/Moov_Africa_logo.png', logoText: 'M', logoBg: '#0054a6' } 
     ] },
     { id: 'cameroun', flag: 'cm', name: 'Cameroun', methods: [ 
-        { id: 'mtn_cameroun', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' } 
+        { id: 'mtn_cameroun', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/MTN_Logo.svg', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' } 
     ] }
 ]
 
@@ -57,11 +57,27 @@ export default function PricingPage() {
     const [softpayMessage, setSoftpayMessage] = useState<string | null>(null)
     const [softpayUrl, setSoftpayUrl] = useState<string | null>(null)
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false)
+    const [validationCountdown, setValidationCountdown] = useState<number | null>(null)
+
+    useEffect(() => {
+        let interval: any;
+        if (validationCountdown !== null && validationCountdown > 0) {
+            interval = setInterval(() => {
+                setValidationCountdown(prev => prev! - 1)
+            }, 1000)
+        } else if (validationCountdown === 0) {
+            setValidationCountdown(null)
+            setPaymentStatus('cancelled')
+            setSoftpayMessage("Le délai de paiement est expiré. Veuillez réessayer.")
+        }
+        return () => clearInterval(interval)
+    }, [validationCountdown])
 
     useEffect(() => {
         const status = searchParams.get('payment')
         if (status === 'success') {
             setPaymentStatus('success')
+            setValidationCountdown(null)
             confetti({
                 particleCount: 150,
                 spread: 70,
@@ -72,6 +88,21 @@ export default function PricingPage() {
             setPaymentStatus('cancelled')
         }
     }, [searchParams])
+
+    useEffect(() => {
+        if (user && user.plan && user.plan !== 'free') {
+            if (isPaymentModalOpen || validationCountdown !== null) {
+                setPaymentStatus('success')
+                setValidationCountdown(null)
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#3b82f6', '#10b981', '#fbbf24']
+                })
+            }
+        }
+    }, [user?.plan])
 
     const handleSubscribe = async (plan: string) => {
         if (!user) {
@@ -99,6 +130,9 @@ export default function PricingPage() {
 
             const data = res.data
             
+            // Regardless of URL or message, we start the validation countdown
+            setValidationCountdown(180)
+            
             if (data.url) {
                 setSoftpayUrl(data.url)
                 setIsLoading(null)
@@ -106,7 +140,7 @@ export default function PricingPage() {
                 setSoftpayMessage(data.message)
                 setIsLoading(null)
             } else {
-                alert('Paiement initié, veuillez vérifier votre téléphone.')
+                setSoftpayMessage('Paiement initié, veuillez vérifier votre téléphone.')
                 setIsLoading(null)
             }
         } catch (e: any) {
@@ -325,31 +359,39 @@ export default function PricingPage() {
                             </div>
 
                             <div className="p-6 space-y-6">
-                                {softpayUrl ? (
-                                    <div className="text-center py-8 space-y-4">
-                                        <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mb-4">
-                                            <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                            </svg>
+                                {validationCountdown !== null ? (
+                                    <div className="text-center py-8 space-y-6">
+                                        <div className="relative mx-auto w-32 h-32 flex items-center justify-center">
+                                            <div className="absolute inset-0 border-4 border-blue-500 rounded-full animate-ping opacity-20"></div>
+                                            <div className="absolute inset-0 border-4 border-blue-100 dark:border-blue-900 rounded-full animate-pulse"></div>
+                                            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                                                {Math.floor(validationCountdown / 60)}:{(validationCountdown % 60).toString().padStart(2, '0')}
+                                            </div>
                                         </div>
-                                        <h4 className="text-lg font-medium text-gray-900 dark:text-white">Presque terminé !</h4>
-                                        <p className="text-gray-600 dark:text-gray-300">
-                                            Veuillez cliquer sur le bouton ci-dessous pour valider le paiement dans votre application sans quitter le site.
-                                        </p>
-                                        <a 
-                                            href={softpayUrl} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            className="inline-flex items-center justify-center w-full px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg transition-colors"
-                                        >
-                                            Ouvrir l'application de paiement
-                                            <svg className="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                            </svg>
-                                        </a>
-                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
-                                            Une fois validé, vous pouvez fermer cette fenêtre. La page se mettra à jour toute seule.
-                                        </p>
+                                        <div className="space-y-2">
+                                            <h4 className="text-xl font-bold text-gray-900 dark:text-white">Validation en cours</h4>
+                                            <p className="text-gray-600 dark:text-gray-300 px-4">
+                                                Consultez votre téléphone et entrez votre code secret pour valider le paiement.
+                                            </p>
+                                        </div>
+                                        {softpayUrl && (
+                                            <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+                                                <a 
+                                                    href={softpayUrl} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer" 
+                                                    className="inline-flex items-center justify-center w-full px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg transition-colors"
+                                                >
+                                                    Ouvrir l'application de paiement
+                                                    <svg className="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                    </svg>
+                                                </a>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                                                    Si vous n'avez pas reçu de notification, cliquez sur ce bouton (ex: Wave).
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : softpayMessage ? (
                                     <div className="text-center py-8 space-y-4">
@@ -445,12 +487,34 @@ export default function PricingPage() {
                                                         className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${paymentMethod === method.id ? method.color + ' ring-2 ring-offset-2 ring-current' : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:text-gray-300'}`}
                                                     >
                                                         <div className="flex items-center space-x-3">
-                                                            <div 
-                                                                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm"
-                                                                style={{ backgroundColor: (method as any).logoBg, color: (method as any).logoColor || '#fff' }}
-                                                            >
-                                                                {(method as any).logoText}
-                                                            </div>
+                                                            {(method as any).logoImg ? (
+                                                                <div className="w-8 h-8 rounded-full bg-white shadow-sm overflow-hidden flex items-center justify-center p-0.5 relative">
+                                                                    <img 
+                                                                        src={(method as any).logoImg} 
+                                                                        alt="" 
+                                                                        className="w-full h-full object-contain"
+                                                                        onError={(e) => {
+                                                                            (e.target as any).style.display = 'none';
+                                                                            if ((e.target as any).nextElementSibling) {
+                                                                                (e.target as any).nextElementSibling.style.display = 'flex';
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    <div 
+                                                                        className="absolute inset-0 items-center justify-center text-xs font-bold hidden"
+                                                                        style={{ backgroundColor: (method as any).logoBg, color: (method as any).logoColor || '#fff' }}
+                                                                    >
+                                                                        {(method as any).logoText}
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div 
+                                                                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm"
+                                                                    style={{ backgroundColor: (method as any).logoBg, color: (method as any).logoColor || '#fff' }}
+                                                                >
+                                                                    {(method as any).logoText}
+                                                                </div>
+                                                            )}
                                                             <span className="font-semibold text-sm">{method.name}</span>
                                                         </div>
                                                         {paymentMethod === method.id && (
