@@ -17,6 +17,9 @@ export const api = axios.create({
 api.interceptors.request.use(config => {
     const token = localStorage.getItem('site2app_token')
     if (token) config.headers.Authorization = `Bearer ${token}`
+    return config
+})
+
 // Auth Functions
 export async function apiRegister(name: string, email: string, password: string) {
     const res = await api.post('/auth/register', { name, email, password })
