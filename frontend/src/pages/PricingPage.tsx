@@ -25,7 +25,9 @@ export default function PricingPage() {
                 alert('Erreur lors de la création de la facture.')
             }
         } catch (e: any) {
-            alert('Erreur: ' + e.message)
+            const serverMsg = e.response?.data?.error || e.message;
+            const details = e.response?.data?.details ? JSON.stringify(e.response.data.details) : '';
+            alert('Erreur: ' + serverMsg + (details ? '\nDétails: ' + details : ''));
         } finally {
             setIsLoading(null)
         }

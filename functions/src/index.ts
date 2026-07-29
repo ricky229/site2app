@@ -187,7 +187,7 @@ api.post('/payment/create-invoice', authMiddleware, async (req: any, res) => {
 
     if (!PAYDUNYA_MASTER_KEY || !PAYDUNYA_PRIVATE_KEY || !PAYDUNYA_TOKEN) {
       console.error('[PayDunya] Clés API manquantes.');
-      return res.status(500).json({ error: 'Configuration de paiement serveur manquante.' });
+      return res.status(500).json({ error: 'Configuration de paiement serveur manquante.', details: { master: !!PAYDUNYA_MASTER_KEY, private: !!PAYDUNYA_PRIVATE_KEY, token: !!PAYDUNYA_TOKEN } });
     }
 
     const amount = plan === 'yearly' ? 25000 : 75000;
@@ -212,27 +212,41 @@ api.post('/payment/create-invoice', authMiddleware, async (req: any, res) => {
       }
     };
 
-    const response = await fetch('https://app.paydunya.com/api/v1/checkout-invoice/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'PAYDUNYA-MASTER-KEY': PAYDUNYA_MASTER_KEY,
-        'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_PRIVATE_KEY,
-        'PAYDUNYA-TOKEN': PAYDUNYA_TOKEN,
-      },
-      body: JSON.stringify(payload),
-    });
+    let response;
+    try {
+      response = await fetch('https://app.paydunya.com/api/v1/checkout-invoice/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'PAYDUNYA-MASTER-KEY': PAYDUNYA_MASTER_KEY,
+          'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_PRIVATE_KEY,
+          'PAYDUNYA-TOKEN': PAYDUNYA_TOKEN,
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (fetchErr: any) {
+      console.error('[PayDunya] Fetch Failed:', fetchErr);
+      return res.status(500).json({ error: 'Erreur réseau vers PayDunya', details: fetchErr.message });
+    }
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseErr: any) {
+      console.error('[PayDunya] JSON Parse Failed:', parseErr);
+      const text = await response.text().catch(() => 'no text');
+      return res.status(500).json({ error: 'Erreur de parsing de la réponse PayDunya', status: response.status, bodyText: text });
+    }
+
     if (data.response_code === '00') {
       return res.json({ invoiceUrl: data.response_text });
     } else {
       console.error('[PayDunya] Erreur:', data);
-      return res.status(500).json({ error: 'Erreur lors de la création de la facture' });
+      return res.status(500).json({ error: 'Erreur lors de la création de la facture', details: data });
     }
   } catch (err: any) {
     console.error('[PayDunya] Exception:', err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Exception interne', details: err.message });
   }
 });
 
