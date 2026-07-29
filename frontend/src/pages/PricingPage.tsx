@@ -57,20 +57,58 @@ export default function PricingPage() {
     const [softpayUrl, setSoftpayUrl] = useState<string | null>(null)
     const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false)
     const [validationCountdown, setValidationCountdown] = useState<number | null>(null)
+    const [prices, setPrices] = useState({ starter: 25000, pro: 75000, enterprise: 150000 })
+
+    useEffect(() => {
+        api.get('/settings')
+            .then(res => {
+                if (res.data?.pricing) {
+                    setPrices(res.data.pricing)
+                }
+            })
+            .catch(err => console.error("Could not load pricing settings", err));
+    }, [])
 
     useEffect(() => {
         let interval: any;
+        let pollingInterval: any;
+
         if (validationCountdown !== null && validationCountdown > 0) {
             interval = setInterval(() => {
-                setValidationCountdown(prev => prev! - 1)
-            }, 1000)
+                setValidationCountdown(prev => prev !== null ? prev - 1 : null)
+            }, 1000);
+
+            pollingInterval = setInterval(async () => {
+                try {
+                    const res = await api.get('/auth/me');
+                    const freshUser = res.data;
+                    updateUser(freshUser);
+                    
+                    if (freshUser.lastPaymentStatus === 'failed') {
+                        setValidationCountdown(null);
+                        setPaymentStatus('cancelled');
+                        setSoftpayMessage("Paiement échoué (solde insuffisant ou refus). Veuillez réessayer.");
+                    } else if (freshUser.lastPaymentStatus === 'cancelled') {
+                        setValidationCountdown(null);
+                        setPaymentStatus('cancelled');
+                        setSoftpayMessage("Le paiement a été annulé.");
+                    }
+                } catch (e) {
+                    console.error('Erreur lors de la vérification du statut', e);
+                }
+            }, 5000);
+
         } else if (validationCountdown === 0) {
             setValidationCountdown(null)
             setPaymentStatus('cancelled')
             setSoftpayMessage("Le délai de paiement est expiré. Veuillez réessayer.")
         }
-        return () => clearInterval(interval)
-    }, [validationCountdown])
+        
+        return () => {
+            clearInterval(interval);
+            clearInterval(pollingInterval);
+        };
+    }, [validationCountdown, updateUser])
 
     useEffect(() => {
         const status = searchParams.get('payment')
@@ -101,7 +139,7 @@ export default function PricingPage() {
                 })
             }
         }
-    }, [user?.plan])
+    }, [user?.plan, isPaymentModalOpen, validationCountdown])
 
     const handleSubscribe = async (plan: string) => {
         if (!user) {
@@ -130,7 +168,7 @@ export default function PricingPage() {
             const data = res.data
             
             // Regardless of URL or message, we start the validation countdown
-            setValidationCountdown(180)
+            setValidationCountdown(120)
             
             if (data.url) {
                 setSoftpayUrl(data.url)
@@ -272,7 +310,7 @@ export default function PricingPage() {
                         </div>
                         <div className="mb-8">
                             <h3 className="text-2xl font-bold mb-2 text-blue-400">Annuel</h3>
-                            <div className="text-4xl font-extrabold mb-2">25 000 FCFA <span className="text-lg text-zinc-400 font-normal">/an</span></div>
+                            <div className="text-4xl font-extrabold mb-2">{formatNumber(prices.starter)} FCFA <span className="text-lg text-zinc-400 font-normal">/an</span></div>
                             <p className="text-zinc-400 text-sm">Pour les professionnels.</p>
                         </div>
                         
@@ -298,7 +336,7 @@ export default function PricingPage() {
                     <div className="bg-zinc-900 border border-white/10 rounded-2xl p-8 flex flex-col relative">
                         <div className="mb-8">
                             <h3 className="text-2xl font-bold mb-2">À Vie</h3>
-                            <div className="text-4xl font-extrabold mb-2">75 000 FCFA</div>
+                            <div className="text-4xl font-extrabold mb-2">{formatNumber(prices.pro)} FCFA</div>
                             <p className="text-zinc-400 text-sm">Paiement unique. Accès à vie.</p>
                         </div>
                         
@@ -348,7 +386,7 @@ export default function PricingPage() {
                                     <span>Paiement sécurisé</span>
                                 </h3>
                                 <button
-                                    onClick={() => { setIsPaymentModalOpen(false); setSoftpayMessage(null); setPaymentStatus('cancelled'); setSoftpayUrl(null); }}
+                                    onClick={() => { setIsPaymentModalOpen(false); setSoftpayMessage(null); setPaymentStatus('cancelled'); setSoftpayUrl(null); setValidationCountdown(null); }}
                                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                                 >
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

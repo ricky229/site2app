@@ -61,6 +61,14 @@ const authMiddleware = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
+const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+  if (req.user && req.user.role === 'admin') {
+    next();
+  } else {
+    return res.status(403).json({ error: 'Accès refusé. Privilèges administrateur requis.' });
+  }
+};
+
 const builderAuthMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || authHeader !== `Bearer ${BUILDER_SECRET}`) {
@@ -417,10 +425,15 @@ api.post('/payment/webhook', express.json(), async (req: any, res) => {
     if (status === 'completed') {
       await db.collection('users').doc(userId).update({
         plan: plan,
+        lastPaymentStatus: status,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
       console.log(`[PayDunya] Succès: Plan ${plan} activé pour l'utilisateur ${userId}`);
     } else {
+      await db.collection('users').doc(userId).update({
+        lastPaymentStatus: status,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
       console.log(`[PayDunya] Statut de paiement ${status} pour l'utilisateur ${userId}`);
     }
 
@@ -1355,6 +1368,115 @@ api.get('/analyze', async (req, res) => {
       ssl: targetUrl.startsWith('https://')
     });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ----------------------------------------------------------------------
+// ADMIN ROUTES
+// ----------------------------------------------------------------------
+api.get('/admin/stats', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const usersSnapshot = await db.collection('users').get();
+    const buildsSnapshot = await db.collection('builds').get();
+    
+    // Very basic MRR estimation (just summing up prices of paid plans)
+    // In reality, this requires subscription management logic.
+    let mrr = 0;
+    usersSnapshot.forEach(doc => {
+      const plan = doc.data().plan;
+      if (plan === 'starter') mrr += 25000;
+      else if (plan === 'pro') mrr += 75000;
+      else if (plan === 'enterprise') mrr += 150000; // approximation
+    });
+
+    res.json({
+      totalUsers: usersSnapshot.size,
+      totalBuilds: buildsSnapshot.size,
+      mrr: mrr
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.get('/admin/users', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const snapshot = await db.collection('users').orderBy('createdAt', 'desc').limit(100).get();
+    const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json(users);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.put('/admin/users/:id', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    // Prevent updating protected fields carelessly
+    const safeUpdates = {
+      role: updates.role,
+      plan: updates.plan,
+      status: updates.status,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+    // Clean up undefined values
+    Object.keys(safeUpdates).forEach(key => safeUpdates[key as keyof typeof safeUpdates] === undefined && delete safeUpdates[key as keyof typeof safeUpdates]);
+
+    await db.collection('users').doc(id).update(safeUpdates);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.delete('/admin/users/:id', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.collection('users').doc(id).delete();
+    // In a real scenario, you might also want to delete their builds, apps, etc.
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.get('/admin/builds', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const snapshot = await db.collection('builds').orderBy('createdAt', 'desc').limit(100).get();
+    const builds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json(builds);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.get('/settings', async (req, res) => {
+  try {
+    const doc = await db.collection('settings').doc('global').get();
+    if (!doc.exists) {
+      // Return default settings
+      return res.json({
+        pricing: {
+          starter: 25000,
+          pro: 75000,
+          enterprise: 150000
+        }
+      });
+    }
+    res.json(doc.data());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.put('/admin/settings', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const updates = req.body;
+    await db.collection('settings').doc('global').set(updates, { merge: true });
+    res.json({ success: true });
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
