@@ -214,13 +214,15 @@ api.post('/payment/create-invoice', authMiddleware, async (req: any, res) => {
 
     let response;
     try {
-      response = await fetch('https://app.paydunya.com/api/v1/checkout-invoice/create', {
+      const baseUrl = PAYDUNYA_MODE === 'test' ? 'https://app.paydunya.com/sandbox-api/v1' : 'https://app.paydunya.com/api/v1';
+      response = await fetch(`${baseUrl}/checkout-invoice/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'PAYDUNYA-MASTER-KEY': PAYDUNYA_MASTER_KEY,
           'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_PRIVATE_KEY,
           'PAYDUNYA-TOKEN': PAYDUNYA_TOKEN,
+          'PAYDUNYA-MODE': PAYDUNYA_MODE
         },
         body: JSON.stringify(payload),
       });
