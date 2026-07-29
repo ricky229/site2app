@@ -94,7 +94,7 @@ export default function PricingPage() {
                         setValidationCountdown(null);
                         setPaymentStatus('cancelled');
                         setSoftpayMessage("Le paiement a été annulé.");
-                    } else if (freshUser.lastPaymentStatus === 'completed') {
+                    } else if (freshUser.lastPaymentStatus === 'completed' || freshUser.lastPaymentStatus === 'successful') {
                         setValidationCountdown(null);
                         setPaymentStatus('success');
                         setIsPaymentModalOpen(false); // CLOSE THE MODAL!

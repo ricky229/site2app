@@ -420,15 +420,15 @@ api.post('/payment/softpay', authMiddleware, async (req: any, res) => {
 
 api.post('/payment/webhook', express.json(), async (req: any, res) => {
   try {
-    const { data } = req.body;
+    const data = req.body;
     if (!data || !data.custom_data) {
       return res.status(400).send('Invalid payload');
     }
 
     const { userId, plan } = data.custom_data;
-    const status = data.status; // e.g. "completed"
+    const status = data.status; // e.g. "completed" ou "successful"
 
-    if (status === 'completed') {
+    if (status === 'completed' || status === 'successful') {
       await db.collection('users').doc(userId).update({
         plan: plan,
         lastPaymentStatus: status,
