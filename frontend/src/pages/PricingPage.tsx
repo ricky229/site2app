@@ -87,11 +87,22 @@ export default function PricingPage() {
         return () => clearInterval(interval);
     }, [validationCountdown])
 
+    // Use a ref to access the latest countdown value inside the interval without triggering effect re-runs
+    const validationCountdownRef = useRef(validationCountdown);
+    useEffect(() => {
+        validationCountdownRef.current = validationCountdown;
+    }, [validationCountdown]);
+
     // Handle the payment status polling
     useEffect(() => {
         let pollingInterval: any;
         if (isPaymentModalOpen) {
             pollingInterval = setInterval(async () => {
+                // Only check the status if a payment has actually been initiated (countdown is running)
+                if (validationCountdownRef.current === null || validationCountdownRef.current <= 0) {
+                    return;
+                }
+                
                 try {
                     const res = await api.get(`/auth/me?t=${new Date().getTime()}`);
                     const freshUser = res.data;
