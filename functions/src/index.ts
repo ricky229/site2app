@@ -151,6 +151,7 @@ api.post('/auth/login', async (req, res) => {
 });
 
 api.get('/auth/me', authMiddleware, (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   const { password, ...userProfile } = req.user;
   res.json(userProfile);
 });

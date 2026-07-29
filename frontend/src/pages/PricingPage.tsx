@@ -82,7 +82,7 @@ export default function PricingPage() {
 
             pollingInterval = setInterval(async () => {
                 try {
-                    const res = await api.get('/auth/me');
+                    const res = await api.get(`/auth/me?t=${new Date().getTime()}`);
                     const freshUser = res.data;
                     updateUser(freshUser);
                     
