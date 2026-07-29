@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
-    <rect width="500" height="500" rx="50" fill="#000"/>
-    <rect x="50" y="50" width="400" height="400" rx="30" fill="#ff7900"/>
-    <text x="250" y="280" font-family="Arial" font-size="100" font-weight="bold" fill="#fff" text-anchor="middle">Orange</text>
-</svg>
