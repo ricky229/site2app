@@ -71,15 +71,26 @@ export default function PricingPage() {
             .catch(err => console.error("Could not load pricing settings", err));
     }, [])
 
+    // Handle the countdown timer
     useEffect(() => {
         let interval: any;
-        let pollingInterval: any;
-
         if (validationCountdown !== null && validationCountdown > 0) {
             interval = setInterval(() => {
                 setValidationCountdown(prev => prev !== null ? prev - 1 : null)
             }, 1000);
+        } else if (validationCountdown === 0) {
+            setValidationCountdown(null)
+            setPaymentStatus('cancelled')
+            setIsPaymentModalOpen(false)
+            setSoftpayMessage("Le délai de paiement est expiré. Veuillez réessayer.")
+        }
+        return () => clearInterval(interval);
+    }, [validationCountdown])
 
+    // Handle the payment status polling
+    useEffect(() => {
+        let pollingInterval: any;
+        if (isPaymentModalOpen && validationCountdown !== null && validationCountdown > 0) {
             pollingInterval = setInterval(async () => {
                 try {
                     const res = await api.get(`/auth/me?t=${new Date().getTime()}`);
@@ -99,7 +110,7 @@ export default function PricingPage() {
                     } else if (freshUser.lastPaymentStatus === 'completed' || freshUser.lastPaymentStatus === 'successful') {
                         setValidationCountdown(null);
                         setPaymentStatus('success');
-                        setIsPaymentModalOpen(false); // CLOSE THE MODAL!
+                        setIsPaymentModalOpen(false);
                         setSoftpayMessage(null);
                         confetti({
                             particleCount: 150,
@@ -112,19 +123,9 @@ export default function PricingPage() {
                     console.error('Erreur lors de la vérification du statut', e);
                 }
             }, 5000);
-
-        } else if (validationCountdown === 0) {
-            setValidationCountdown(null)
-            setPaymentStatus('cancelled')
-            setIsPaymentModalOpen(false)
-            setSoftpayMessage("Le délai de paiement est expiré. Veuillez réessayer.")
         }
-        
-        return () => {
-            clearInterval(interval);
-            clearInterval(pollingInterval);
-        };
-    }, [validationCountdown, updateUser])
+        return () => clearInterval(pollingInterval);
+    }, [isPaymentModalOpen, updateUser])
 
     useEffect(() => {
         const status = searchParams.get('payment')
