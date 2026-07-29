@@ -322,6 +322,11 @@ api.post('/payment/softpay', authMiddleware, async (req: any, res) => {
 
     const invoiceToken = invoiceData.token;
 
+    // Reset payment status to pending for the new transaction
+    await db.collection('users').doc(req.user.id).update({
+      lastPaymentStatus: 'pending'
+    });
+
     // 2. Call SoftPay
     if (PAYDUNYA_MODE === 'test') {
       // Mock responses in test mode because Sandbox Softpay endpoints don't exist
@@ -411,7 +416,6 @@ api.post('/payment/softpay', authMiddleware, async (req: any, res) => {
       console.error('[PayDunya SoftPay] Réponse invalide (non-JSON):', softText.substring(0, 200));
       return res.status(502).json({ error: 'Exception interne SoftPay (Réponse non-JSON du serveur bancaire)', details: softText.substring(0, 100) });
     }
-
     return res.json(softData);
 
   } catch (err: any) {

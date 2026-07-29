@@ -300,10 +300,10 @@ export default function PricingPage() {
                         </div>
 
                         <button 
-                            disabled
-                            className="w-full py-3 rounded-xl bg-zinc-800 text-zinc-400 font-bold cursor-not-allowed"
+                            disabled={user?.plan === 'free' || !user?.plan}
+                            className={`w-full py-3 rounded-xl font-bold transition-colors ${(user?.plan === 'free' || !user?.plan) ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed' : 'bg-zinc-800 text-white hover:bg-zinc-700'}`}
                         >
-                            Forfait actuel
+                            {user?.plan === 'free' || !user?.plan ? 'Forfait actuel' : 'Choisir ce forfait'}
                         </button>
                     </div>
 
@@ -329,10 +329,10 @@ export default function PricingPage() {
 
                         <button 
                             onClick={() => handleSubscribe('yearly')}
-                            disabled={isLoading === 'yearly'}
-                            className="w-full py-3 rounded-xl bg-blue-500 text-white font-bold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+                            disabled={isLoading === 'yearly' || user?.plan === 'yearly'}
+                            className={`w-full py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 ${user?.plan === 'yearly' ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                         >
-                            {isLoading === 'yearly' ? 'Redirection...' : 'Choisir ce forfait'}
+                            {user?.plan === 'yearly' ? 'Forfait actuel' : isLoading === 'yearly' ? 'Redirection...' : 'Choisir ce forfait'}
                         </button>
                     </div>
 
@@ -354,10 +354,10 @@ export default function PricingPage() {
 
                         <button 
                             onClick={() => handleSubscribe('lifetime')}
-                            disabled={isLoading === 'lifetime'}
-                            className="w-full py-3 rounded-xl bg-white text-black font-bold hover:bg-zinc-200 transition-colors flex items-center justify-center gap-2"
+                            disabled={isLoading === 'lifetime' || user?.plan === 'lifetime'}
+                            className={`w-full py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 ${user?.plan === 'lifetime' ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed' : 'bg-white text-black hover:bg-zinc-200'}`}
                         >
-                            {isLoading === 'lifetime' ? 'Redirection...' : 'Payer une seule fois'}
+                            {user?.plan === 'lifetime' ? 'Forfait actuel' : isLoading === 'lifetime' ? 'Redirection...' : 'Payer une seule fois'}
                         </button>
                     </div>
                 </div>
@@ -390,7 +390,15 @@ export default function PricingPage() {
                                     <span>Paiement sécurisé</span>
                                 </h3>
                                 <button
-                                    onClick={() => { setIsPaymentModalOpen(false); setSoftpayMessage(null); setPaymentStatus('cancelled'); setSoftpayUrl(null); setValidationCountdown(null); }}
+                                    onClick={() => {
+                                        setIsPaymentModalOpen(false);
+                                        if (validationCountdown !== null || softpayMessage !== null) {
+                                            setPaymentStatus('cancelled');
+                                        }
+                                        setSoftpayMessage(null);
+                                        setSoftpayUrl(null);
+                                        setValidationCountdown(null);
+                                    }}
                                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                                 >
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
