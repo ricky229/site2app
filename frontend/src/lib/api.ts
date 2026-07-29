@@ -20,6 +20,24 @@ api.interceptors.request.use(config => {
     return config
 })
 
+const getNodeBaseUrl = () => {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://127.0.0.1:4000/node'
+    }
+    return 'https://site2app.online/node'
+}
+
+export const nodeApi = axios.create({
+    baseURL: getNodeBaseUrl(),
+    headers: { 'Content-Type': 'application/json' },
+})
+
+nodeApi.interceptors.request.use(config => {
+    const token = localStorage.getItem('site2app_token')
+    if (token) config.headers.Authorization = `Bearer ${token}`
+    return config
+})
+
 // Auth Functions
 export async function apiRegister(name: string, email: string, password: string) {
     const res = await api.post('/auth/register', { name, email, password })
