@@ -463,6 +463,16 @@ api.post('/payment/webhook', express.json(), async (req: any, res) => {
   }
 });
 
+api.get('/admin/webhook-logs', async (req, res) => {
+  try {
+    const snap = await db.collection('webhook_logs').orderBy('receivedAt', 'desc').limit(5).get();
+    const logs = snap.docs.map(doc => doc.data());
+    res.json(logs);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ----------------------------------------------------------------------
 // BUILD ROUTES
 // ----------------------------------------------------------------------
