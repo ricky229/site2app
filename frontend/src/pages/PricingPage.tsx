@@ -90,7 +90,7 @@ export default function PricingPage() {
     // Handle the payment status polling
     useEffect(() => {
         let pollingInterval: any;
-        if (isPaymentModalOpen && validationCountdown !== null && validationCountdown > 0) {
+        if (isPaymentModalOpen) {
             pollingInterval = setInterval(async () => {
                 try {
                     const res = await api.get(`/auth/me?t=${new Date().getTime()}`);
