@@ -487,11 +487,11 @@ export default function PricingPage() {
                                                     >
                                                         <div className="flex items-center space-x-3">
                                                             {(method as any).logoImg ? (
-                                                                <div className="w-8 h-8 rounded-full bg-white shadow-sm overflow-hidden flex items-center justify-center p-0.5 relative">
+                                                                <div className="w-12 h-10 rounded-md bg-white shadow-sm flex items-center justify-center p-1 relative overflow-hidden border border-gray-100">
                                                                     <img 
                                                                         src={(method as any).logoImg} 
-                                                                        alt="" 
-                                                                        className="w-full h-full object-contain"
+                                                                        alt={method.name} 
+                                                                        className="w-full h-full object-contain scale-110"
                                                                         onError={(e) => {
                                                                             (e.target as any).style.display = 'none';
                                                                             if ((e.target as any).nextElementSibling) {
@@ -500,7 +500,7 @@ export default function PricingPage() {
                                                                         }}
                                                                     />
                                                                     <div 
-                                                                        className="absolute inset-0 items-center justify-center text-xs font-bold hidden"
+                                                                        className="absolute inset-0 items-center justify-center text-sm font-bold hidden"
                                                                         style={{ backgroundColor: (method as any).logoBg, color: (method as any).logoColor || '#fff' }}
                                                                     >
                                                                         {(method as any).logoText}
