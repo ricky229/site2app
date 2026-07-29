@@ -89,10 +89,12 @@ export default function PricingPage() {
                     if (freshUser.lastPaymentStatus === 'failed') {
                         setValidationCountdown(null);
                         setPaymentStatus('cancelled');
+                        setIsPaymentModalOpen(false);
                         setSoftpayMessage("Paiement échoué (solde insuffisant ou refus). Veuillez réessayer.");
                     } else if (freshUser.lastPaymentStatus === 'cancelled') {
                         setValidationCountdown(null);
                         setPaymentStatus('cancelled');
+                        setIsPaymentModalOpen(false);
                         setSoftpayMessage("Le paiement a été annulé.");
                     } else if (freshUser.lastPaymentStatus === 'completed' || freshUser.lastPaymentStatus === 'successful') {
                         setValidationCountdown(null);
@@ -114,6 +116,7 @@ export default function PricingPage() {
         } else if (validationCountdown === 0) {
             setValidationCountdown(null)
             setPaymentStatus('cancelled')
+            setIsPaymentModalOpen(false)
             setSoftpayMessage("Le délai de paiement est expiré. Veuillez réessayer.")
         }
         
