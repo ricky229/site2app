@@ -13,6 +13,7 @@ import NotificationsPage from './pages/NotificationsPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
+import PricingPage from './pages/PricingPage'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,6 +31,7 @@ export default function App() {
         <Routes>
           {/* Public */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
 
           {/* Auth */}
           <Route element={<AuthLayout />}>
@@ -40,6 +42,7 @@ export default function App() {
           {/* Protected Dashboard */}
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/dashboard/pricing" element={<PricingPage />} />
             <Route path="/apps" element={<AppsPage />} />
             <Route path="/apps/create" element={<CreateAppPage />} />
             <Route path="/apps/:id" element={<CreateAppPage />} />

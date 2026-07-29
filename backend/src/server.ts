@@ -530,6 +530,16 @@ const authMiddleware = async (req: any, res: any, next: any) => {
 
 // ─── Build Request ─────────────────────────────────
 app.post('/node/build', authMiddleware, (req: any, res) => {
+    // Check user plan limits
+    const userBuildsCount = Array.from(builds.values()).filter(b => b.userId === req.user.id).length;
+    const plan = req.user.plan || 'free';
+    
+    if (plan === 'free' && userBuildsCount >= 1) {
+        return res.status(403).json({ error: 'Limite atteinte. Passez à un forfait Premium pour créer plus d\'applications.' });
+    }
+    if (plan === 'yearly' && userBuildsCount >= 10) {
+        return res.status(403).json({ error: 'Limite de 10 applications atteinte pour le forfait Annuel. Passez au forfait À vie.' });
+    }
     const {
         appName,
         url,
@@ -564,6 +574,20 @@ app.post('/node/build', authMiddleware, (req: any, res) => {
             statusBarColor, themeColor, splashBgColor, enableFullscreen, primaryColor, secondaryColor,
             orientation, features
         }
+    }
+
+    // Force restrictions for free users on the backend
+    if (!req.user.plan || req.user.plan === 'free') {
+        if (buildData.config.features) {
+            buildData.config.features.pushNotifications = false;
+            buildData.config.features.biometrics = false;
+            buildData.config.features.admob = false;
+            buildData.config.features.analytics = false;
+            buildData.config.features.otaUpdates = false;
+            buildData.config.features.offlineMode = false;
+            buildData.config.features.customCssJs = false;
+        }
+        features = buildData.config.features;
     }
 
     // TRUST THE FRONTEND but verify against local history for safety
@@ -605,6 +629,7 @@ app.post('/node/build', authMiddleware, (req: any, res) => {
 
     const builderOptions = {
         buildId: buildId,
+        userPlan: req.user.plan || 'free',
         apiUrl: req.protocol + '://' + rawHost,
         statusBarColor: statusBarColor || primaryColor || '#3461f5',
         themeColor: themeColor || primaryColor || '#3461f5',
@@ -1861,7 +1886,98 @@ async function pollExternalNotifications() {
 // Start polling daemon in background
 setInterval(() => pollExternalNotifications().catch(console.error), POLLING_INTERVAL_MS);
 
-// ─── Start Server ────────────────────────────────────
+// ─── PayDunya Integration ────────────────────────────
+const PAYDUNYA_MASTER_KEY = process.env.PAYDUNYA_MASTER_KEY || 'test_master_key';
+const PAYDUNYA_PRIVATE_KEY = process.env.PAYDUNYA_PRIVATE_KEY || 'test_private_key';
+const PAYDUNYA_TOKEN = process.env.PAYDUNYA_TOKEN || 'test_token';
+const PAYDUNYA_MODE = process.env.PAYDUNYA_MODE || 'test';
+
+app.post('/node/payment/create-invoice', authMiddleware, async (req: any, res) => {
+    const { plan } = req.body;
+    let amount = 0;
+    let description = '';
+
+    if (plan === 'yearly') {
+        amount = 25000;
+        description = 'Forfait Annuel Site2App';
+    } else if (plan === 'lifetime') {
+        amount = 75000;
+        description = 'Forfait À Vie Site2App';
+    } else {
+        return res.status(400).json({ error: 'Forfait invalide' });
+    }
+
+    try {
+        const payload = {
+            invoice: {
+                total_amount: amount,
+                description: description,
+                store: {
+                    name: "Site2App"
+                },
+                custom_data: {
+                    userId: req.user.id,
+                    plan: plan
+                }
+            },
+            store: {
+                name: "Site2App"
+            },
+            actions: {
+                cancel_url: req.headers.origin + '/dashboard/pricing?status=cancelled',
+                return_url: req.headers.origin + '/dashboard/pricing?status=success',
+                callback_url: req.protocol + '://' + req.get('host') + '/node/payment/webhook'
+            }
+        };
+
+        const response = await fetch('https://app.paydunya.com/api/v1/checkout-invoice/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'PAYDUNYA-MASTER-KEY': PAYDUNYA_MASTER_KEY,
+                'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_PRIVATE_KEY,
+                'PAYDUNYA-TOKEN': PAYDUNYA_TOKEN
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json() as any;
+        if (data.response_code === '00') {
+            res.json({ invoiceUrl: data.response_text, token: data.token });
+        } else {
+            res.status(500).json({ error: 'Erreur PayDunya', details: data });
+        }
+    } catch (e: any) {
+        console.error('[PayDunya] Error:', e.message);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.post('/node/payment/webhook', async (req: any, res) => {
+    try {
+        const { data, hash } = req.body;
+        // Verify hash if necessary in production
+        if (data && data.status === 'completed') {
+            const userId = data.custom_data.userId;
+            const plan = data.custom_data.plan;
+            
+            const user = users.get(userId);
+            if (user) {
+                user.plan = plan;
+                users.set(userId, user);
+                saveUsers();
+                console.log(`[PayDunya] ✅ User ${userId} upgraded to ${plan}`);
+                
+                // If using Bubble as truth, notify bubble...
+            }
+        }
+        res.send('OK');
+    } catch (e) {
+        res.status(500).send('Error');
+    }
+});
+
+// ─── Start Server ────────────────────────────────────────────────────────────────────────
 const PORT = parseInt(process.env.PORT as string) || 4000
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Site2App Backend running on port ${PORT} (0.0.0.0)`)

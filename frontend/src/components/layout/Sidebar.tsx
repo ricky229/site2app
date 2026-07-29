@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
     LayoutDashboard, Smartphone, Bell, BarChart2, Settings,
-    Shield, Plus, Zap
+    Shield, Plus, Zap, CreditCard
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 
@@ -12,6 +12,7 @@ const navItems = [
     { path: '/apps', icon: Smartphone, label: 'Apps' },
     { path: '/notifications', icon: Bell, label: 'Push' },
     { path: '/analytics', icon: BarChart2, label: 'Stats' },
+    { path: '/dashboard/pricing', icon: CreditCard, label: 'Tarifs' },
     { path: '/settings', icon: Settings, label: 'Profil' },
 ]
 

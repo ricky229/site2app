@@ -4,7 +4,7 @@ export interface User {
     email: string;
     name: string;
     avatar?: string;
-    plan: 'free' | 'starter' | 'pro' | 'enterprise';
+    plan: 'free' | 'yearly' | 'lifetime';
     role: 'user' | 'admin';
     emailVerified: boolean;
     createdAt: string;

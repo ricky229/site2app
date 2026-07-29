@@ -87,6 +87,7 @@ class Builder {
         this.appName = appName || 'MonApp'
         this.packageName = packageName || 'com.site2app.' + this.appName.toLowerCase().replace(/[^a-z0-9]/g, '')
         this.buildId = options.buildId || Date.now().toString()
+        this.userPlan = options.userPlan || 'free'
         this.buildDir = path.join(__dirname, '../../storage/builds', this.buildId)
         this.javaHome = findJavaHome()
         this.sdk = findAndroidSdk()
@@ -1154,6 +1155,37 @@ ${(this.features.admob && this.config.admobBannerId) ? `
         
         contentView = mainLayout;
 ` : ''}
+
+${this.userPlan === 'free' ? `
+        // ── WATERMARK POUR COMPTES GRATUITS ──
+        LinearLayout rootLayout = new LinearLayout(this);
+        rootLayout.setOrientation(LinearLayout.VERTICAL);
+        
+        LinearLayout.LayoutParams contentParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f);
+        rootLayout.addView(contentView, contentParams);
+
+        TextView watermark = new TextView(this);
+        watermark.setText("⚡ Créé avec Site2App");
+        watermark.setTextSize(12);
+        watermark.setTextColor(Color.parseColor("#888888"));
+        watermark.setGravity(Gravity.CENTER);
+        watermark.setPadding(0, 15, 0, 15);
+        watermark.setBackgroundColor(Color.parseColor("#F5F5F5"));
+        watermark.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://site2app.online"));
+                startActivity(browserIntent);
+            }
+        });
+        
+        rootLayout.addView(watermark, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        
+        contentView = rootLayout;
+` : ''}
+
         setContentView(contentView);
 
 ${(this.features.admob && this.config.admobInterstitialId) ? `

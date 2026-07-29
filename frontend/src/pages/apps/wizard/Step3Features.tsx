@@ -6,6 +6,7 @@ import {
     DollarSign, BarChart, Zap, Info
 } from 'lucide-react'
 import { useWizardStore } from '../../../store/wizardStore'
+import { useAuthStore } from '../../../store/authStore'
 import { Toggle } from '../../../components/ui/FormControls'
 import type { AppFeatures } from '../../../types'
 
@@ -15,7 +16,7 @@ interface FeatureItem {
     label: string
     description: string
     color: string
-    plan?: 'free' | 'starter' | 'pro'
+    plan?: 'premium'
     badge?: string
 }
 
@@ -23,8 +24,8 @@ const featureGroups: { title: string; features: FeatureItem[] }[] = [
     {
         title: 'Fonctionnalités essentielles',
         features: [
-            { key: 'pushNotifications', icon: Bell, label: 'Notifications Push', description: 'Envoyez des notifications ciblées via Firebase FCM — 100% gratuit.', color: '#f59e0b', badge: 'GRATUIT' },
-            { key: 'offlineMode', icon: Wifi, label: 'Mode hors-ligne', description: 'L\'app fonctionne sans connexion grâce au cache intelligent.', color: '#10b981' },
+            { key: 'pushNotifications', icon: Bell, label: 'Notifications Push', description: 'Envoyez des notifications ciblées via Firebase FCM.', color: '#f59e0b', plan: 'premium' },
+            { key: 'offlineMode', icon: Wifi, label: 'Mode hors-ligne', description: 'L\'app fonctionne sans connexion grâce au cache intelligent.', color: '#10b981', plan: 'premium' },
             { key: 'pullToRefresh', icon: RefreshCw, label: 'Pull-to-refresh', description: 'L\'utilisateur tire vers le bas pour actualiser le contenu.', color: '#3b82f6' },
             { key: 'progressBar', icon: BarChart, label: 'Barre de progression', description: 'Barre de chargement visible lors de la navigation.', color: '#6366f1' },
         ]
@@ -35,13 +36,13 @@ const featureGroups: { title: string; features: FeatureItem[] }[] = [
             { key: 'geolocation', icon: MapPin, label: 'Géolocalisation', description: 'Accès au GPS de l\'appareil pour services basés sur la position.', color: '#3461f5' },
             { key: 'camera', icon: Camera, label: 'Caméra & Galerie', description: 'Accès à l\'appareil photo et à la bibliothèque de photos.', color: '#7c3aed' },
             { key: 'nativeShare', icon: Share2, label: 'Partage natif', description: 'Share sheet natif Android/iOS pour partager du contenu.', color: '#06b6d4' },
-            { key: 'biometrics', icon: Fingerprint, label: 'Biométrie', description: 'Verrouillage de l\'app avec Face ID ou empreinte digitale.', color: '#ef4444' },
+            { key: 'biometrics', icon: Fingerprint, label: 'Biométrie', description: 'Verrouillage de l\'app avec Face ID ou empreinte digitale.', color: '#ef4444', plan: 'premium' },
         ]
     },
     {
         title: 'Expérience utilisateur',
         features: [
-            { key: 'fullscreen', icon: Maximize2, label: 'Mode plein écran', description: 'Mode immersif — cachezles barres systèmes pour plus d\'espace.', color: '#f97316' },
+            { key: 'fullscreen', icon: Maximize2, label: 'Mode plein écran', description: 'Mode immersif — cachez les barres systèmes pour plus d\'espace.', color: '#f97316' },
             { key: 'fileDownload', icon: Download, label: 'Téléchargements', description: 'Gestion native des téléchargements de fichiers depuis votre site.', color: '#84cc16' },
             { key: 'popupSupport', icon: MessageSquare, label: 'Support des popups', description: 'Gestion des popups et fenêtres secondaires de votre site.', color: '#a855f7' },
             { key: 'deepLinking', icon: Zap, label: 'Deep Linking', description: 'Ouvrez des pages spécifiques depuis des liens externes.', color: '#14b8a6' },
@@ -50,16 +51,17 @@ const featureGroups: { title: string; features: FeatureItem[] }[] = [
     {
         title: 'Avancé',
         features: [
-            { key: 'customCssJs', icon: Code2, label: 'CSS/JS personnalisé', description: 'Injectez du code CSS/JS pour personnaliser l\'apparence.', color: '#6366f1', plan: 'starter' },
-            { key: 'analytics', icon: BarChart2, label: 'Analytics intégré', description: 'Tableau de bord avec pages vues, sessions, rétention.', color: '#3461f5', plan: 'starter' },
-            { key: 'otaUpdates', icon: RefreshCw, label: 'OTA Updates', description: 'Mettez à jour votre app sans passer par le store.', color: '#10b981', plan: 'starter' },
-            { key: 'admob', icon: DollarSign, label: 'AdMob (monétisation)', description: 'Intégrez des bannières et interstitiels Google AdMob.', color: '#f59e0b', plan: 'pro' },
+            { key: 'customCssJs', icon: Code2, label: 'CSS/JS personnalisé', description: 'Injectez du code CSS/JS pour personnaliser l\'apparence.', color: '#6366f1', plan: 'premium' },
+            { key: 'analytics', icon: BarChart2, label: 'Analytics intégré', description: 'Tableau de bord avec pages vues, sessions, rétention.', color: '#3461f5', plan: 'premium' },
+            { key: 'otaUpdates', icon: RefreshCw, label: 'OTA Updates', description: 'Mettez à jour votre app sans passer par le store.', color: '#10b981', plan: 'premium' },
+            { key: 'admob', icon: DollarSign, label: 'AdMob (monétisation)', description: 'Intégrez des bannières et interstitiels Google AdMob.', color: '#f59e0b', plan: 'premium' },
         ]
     },
 ]
 
 export default function Step3Features() {
     const { state, updateConfig } = useWizardStore()
+    const { user } = useAuthStore()
     const features = state.config.features || {} as AppFeatures
     const [hoveredFeature, setHoveredFeature] = useState<string | null>(null)
 
@@ -96,63 +98,76 @@ export default function Step3Features() {
                             {group.title}
                         </h3>
                         <div className="grid sm:grid-cols-2 gap-3">
-                            {group.features.map(feature => (
-                                <motion.div
-                                    key={feature.key}
-                                    whileHover={{ scale: 1.01 }}
-                                    onMouseEnter={() => setHoveredFeature(feature.key)}
-                                    onMouseLeave={() => setHoveredFeature(null)}
-                                    className="flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all"
-                                    style={{
-                                        borderColor: features[feature.key] ? feature.color + '40' : 'var(--border)',
-                                        background: features[feature.key] ? `${feature.color}08` : 'var(--surface-1)',
-                                    }}
-                                    onClick={() => toggleFeature(feature.key, !features[feature.key])}
-                                >
-                                    <div
-                                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
+                            {group.features.map(feature => {
+                                const isPremium = feature.plan === 'premium'
+                                const isLocked = isPremium && (!user || user.plan === 'free')
+                                const isChecked = !!features[feature.key] && !isLocked
+
+                                return (
+                                    <motion.div
+                                        key={feature.key}
+                                        whileHover={isLocked ? {} : { scale: 1.01 }}
+                                        onMouseEnter={() => setHoveredFeature(feature.key)}
+                                        onMouseLeave={() => setHoveredFeature(null)}
+                                        className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${isLocked ? 'opacity-60 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
                                         style={{
-                                            background: features[feature.key] ? `${feature.color}20` : 'var(--surface-2)',
-                                            color: features[feature.key] ? feature.color : 'var(--text-muted)',
+                                            borderColor: isChecked ? feature.color + '40' : 'var(--border)',
+                                            background: isChecked ? `${feature.color}08` : 'var(--surface-1)',
+                                        }}
+                                        onClick={() => {
+                                            if (isLocked) {
+                                                alert("Cette fonctionnalité requiert un forfait Premium (Annuel ou À vie).")
+                                                return
+                                            }
+                                            toggleFeature(feature.key, !features[feature.key])
                                         }}
                                     >
-                                        <feature.icon size={19} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-sm">{feature.label}</span>
-                                            {feature.badge && (
-                                                <span className="badge badge-success text-xs" style={{ fontSize: '0.65rem' }}>
-                                                    {feature.badge}
-                                                </span>
-                                            )}
-                                            {feature.plan === 'pro' && (
-                                                <span className="badge badge-warning text-xs" style={{ fontSize: '0.65rem' }}>PRO</span>
-                                            )}
-                                            {feature.plan === 'starter' && (
-                                                <span className="badge badge-brand text-xs" style={{ fontSize: '0.65rem' }}>STARTER+</span>
+                                        <div
+                                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
+                                            style={{
+                                                background: isChecked ? `${feature.color}20` : 'var(--surface-2)',
+                                                color: isChecked ? feature.color : 'var(--text-muted)',
+                                            }}
+                                        >
+                                            <feature.icon size={19} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-semibold text-sm">{feature.label}</span>
+                                                {feature.badge && (
+                                                    <span className="badge badge-success text-xs" style={{ fontSize: '0.65rem' }}>
+                                                        {feature.badge}
+                                                    </span>
+                                                )}
+                                                {isPremium && (
+                                                    <span className="badge text-xs bg-amber-500/10 text-amber-600" style={{ fontSize: '0.65rem' }}>PREMIUM</span>
+                                                )}
+                                            </div>
+                                            {hoveredFeature === feature.key && (
+                                                <motion.p
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto' }}
+                                                    className="text-xs mt-1"
+                                                    style={{ color: 'var(--text-secondary)' }}
+                                                >
+                                                    {feature.description}
+                                                    {isLocked && <span className="block mt-1 font-bold text-amber-500">Forfait Premium requis.</span>}
+                                                </motion.p>
                                             )}
                                         </div>
-                                        {hoveredFeature === feature.key && (
-                                            <motion.p
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                className="text-xs mt-1"
-                                                style={{ color: 'var(--text-secondary)' }}
-                                            >
-                                                {feature.description}
-                                            </motion.p>
-                                        )}
-                                    </div>
-                                    <div onClick={e => e.stopPropagation()}>
-                                        <Toggle
-                                            checked={!!features[feature.key]}
-                                            onChange={v => toggleFeature(feature.key, v)}
-                                            size="sm"
-                                        />
-                                    </div>
-                                </motion.div>
-                            ))}
+                                        <div onClick={e => e.stopPropagation()}>
+                                            <Toggle
+                                                checked={isChecked}
+                                                onChange={v => {
+                                                    if (!isLocked) toggleFeature(feature.key, v)
+                                                }}
+                                                size="sm"
+                                                disabled={isLocked}
+                                            />
+                                        </div>
+                                    </motion.div>
+                                )
+                            })}
                         </div>
                     </div>
                 ))}
