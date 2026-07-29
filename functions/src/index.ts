@@ -19,6 +19,7 @@ app.use(cors({ origin: true }));
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'site2app_super_secret';
 const BUILDER_SECRET = process.env.BUILDER_SECRET || 'dev_secret_123';
@@ -421,12 +422,22 @@ api.post('/payment/softpay', authMiddleware, async (req: any, res) => {
 api.post('/payment/webhook', express.json(), async (req: any, res) => {
   try {
     const data = req.body;
-    if (!data || !data.custom_data) {
+    
+    // DEBUG: Save the exact payload to Firestore so we can inspect it!
+    await db.collection('webhook_logs').add({
+      payload: data,
+      receivedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Try to find custom_data whether it's at root or inside invoice
+    const customData = data.custom_data || (data.invoice && data.invoice.custom_data);
+
+    if (!data || !customData) {
       return res.status(400).send('Invalid payload');
     }
 
-    const { userId, plan } = data.custom_data;
-    const status = data.status; // e.g. "completed" ou "successful"
+    const { userId, plan } = customData;
+    const status = data.status || (data.invoice && data.invoice.status); // e.g. "completed" ou "successful"
 
     if (status === 'completed' || status === 'successful') {
       await db.collection('users').doc(userId).update({
