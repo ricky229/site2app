@@ -6,6 +6,16 @@ import { api } from '../lib/api'
 import confetti from 'canvas-confetti'
 import { motion, AnimatePresence } from 'framer-motion'
 
+const COUNTRIES = [
+    { id: 'senegal', name: 'Sénégal', methods: [ { id: 'wave_senegal', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200' }, { id: 'new_orange_money_senegal', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200' }, { id: 'free_money_senegal', name: 'Free Money', color: 'bg-red-50 text-red-700 border-red-200' }, { id: 'expresso_senegal', name: 'Expresso', color: 'bg-gray-100 text-gray-700 border-gray-300' } ] },
+    { id: 'ci', name: 'Côte d\'Ivoire', methods: [ { id: 'wave_ci', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200' }, { id: 'orange_money_ci', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200' }, { id: 'mtn_ci', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' }, { id: 'moov_ci', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300' } ] },
+    { id: 'burkina', name: 'Burkina Faso', methods: [ { id: 'orange_money_burkina', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200' }, { id: 'moov_burkina', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300' } ] },
+    { id: 'benin', name: 'Bénin', methods: [ { id: 'mtn_benin', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' }, { id: 'moov_benin', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300' }, { id: 'celtiis_cash', name: 'Celtiis', color: 'bg-green-50 text-green-700 border-green-200' } ] },
+    { id: 'togo', name: 'Togo', methods: [ { id: 't_money_togo', name: 'T-Money', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' }, { id: 'moov_togo', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300' } ] },
+    { id: 'mali', name: 'Mali', methods: [ { id: 'orange_money_mali', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200' }, { id: 'moov_mali', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300' } ] },
+    { id: 'cameroun', name: 'Cameroun', methods: [ { id: 'mtn_cameroun', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' } ] }
+]
+
 export default function PricingPage() {
     const { user } = useAuthStore()
     const navigate = useNavigate()
@@ -14,8 +24,11 @@ export default function PricingPage() {
     const [paymentStatus, setPaymentStatus] = useState<'success' | 'cancelled' | null>(null)
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
     const [selectedPlanForModal, setSelectedPlanForModal] = useState<string | null>(null)
-    const [paymentMethod, setPaymentMethod] = useState<'wave_senegal' | 'orange_money_senegal' | 'free_money_senegal'>('wave_senegal')
+    const [selectedCountry, setSelectedCountry] = useState('senegal')
+    const [paymentMethod, setPaymentMethod] = useState('wave_senegal')
     const [phoneNumber, setPhoneNumber] = useState('')
+    const [fullName, setFullName] = useState((user as any)?.fullName || (user as any)?.name || (user as any)?.displayName || '')
+    const [email, setEmail] = useState(user?.email || '')
     const [softpayMessage, setSoftpayMessage] = useState<string | null>(null)
 
     useEffect(() => {
@@ -269,7 +282,7 @@ export default function PricingPage() {
                             <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
                                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Paiement Rapide</h3>
                                 <button
-                                    onClick={() => { setIsPaymentModalOpen(false); setSoftpayMessage(null); }}
+                                    onClick={() => { setIsPaymentModalOpen(false); setSoftpayMessage(null); setPaymentStatus('cancelled'); }}
                                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                                 >
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -296,24 +309,68 @@ export default function PricingPage() {
                                     </div>
                                 ) : (
                                     <>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                    Nom et Prénom
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={fullName}
+                                                    onChange={(e) => setFullName(e.target.value)}
+                                                    placeholder="John Doe"
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-shadow"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                    Email
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    value={email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    placeholder="john@email.com"
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-shadow"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Pays
+                                            </label>
+                                            <select
+                                                value={selectedCountry}
+                                                onChange={(e) => {
+                                                    setSelectedCountry(e.target.value)
+                                                    const country = COUNTRIES.find(c => c.id === e.target.value)
+                                                    if (country && country.methods.length > 0) {
+                                                        setPaymentMethod(country.methods[0].id)
+                                                    }
+                                                }}
+                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-shadow"
+                                            >
+                                                {COUNTRIES.map(country => (
+                                                    <option key={country.id} value={country.id}>{country.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                 Moyen de paiement
                                             </label>
-                                            <div className="grid grid-cols-1 gap-3">
-                                                {[
-                                                    { id: 'wave_senegal', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-                                                    { id: 'orange_money_senegal', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200' },
-                                                    { id: 'free_money_senegal', name: 'Free Money', color: 'bg-red-50 text-red-700 border-red-200' }
-                                                ].map(method => (
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {COUNTRIES.find(c => c.id === selectedCountry)?.methods.map(method => (
                                                     <button
                                                         key={method.id}
                                                         onClick={() => setPaymentMethod(method.id as any)}
                                                         className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${paymentMethod === method.id ? method.color + ' ring-2 ring-offset-2 ring-current' : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:text-gray-300'}`}
                                                     >
-                                                        <span className="font-semibold">{method.name}</span>
+                                                        <span className="font-semibold text-sm">{method.name}</span>
                                                         {paymentMethod === method.id && (
-                                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                                             </svg>
                                                         )}
@@ -331,13 +388,13 @@ export default function PricingPage() {
                                                 value={phoneNumber}
                                                 onChange={(e) => setPhoneNumber(e.target.value)}
                                                 placeholder="Ex: 77 123 45 67"
-                                                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-shadow"
+                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-shadow"
                                             />
                                         </div>
 
                                         <button
                                             onClick={submitSoftPay}
-                                            disabled={isLoading !== null || !phoneNumber}
+                                            disabled={isLoading !== null || !phoneNumber || !fullName || !email}
                                             className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
                                         >
                                             {isLoading === selectedPlanForModal ? (

@@ -321,21 +321,46 @@ api.post('/payment/softpay', authMiddleware, async (req: any, res) => {
     }
 
     // LIVE MODE
-    let softpayUrl = '';
-    let softpayPayload: any = {};
+    const endpointPath = paymentMethod.replace(/_/g, '-');
+    const softpayUrl = `https://app.paydunya.com/api/v1/softpay/${endpointPath}`;
+    
+    const softpayPayload = {
+      // Generic parameters
+      customer_name: fullName || req.user.id,
+      customer_email: email || 'test@site2app.online',
+      phone_number: phoneNumber,
+      phone_phone: phoneNumber,
+      invoice_token: invoiceToken,
+      payment_token: invoiceToken,
+      
+      // Wave parameters
+      wave_senegal_fullName: fullName || req.user.id,
+      wave_senegal_email: email || 'test@site2app.online',
+      wave_senegal_phone: phoneNumber,
+      wave_senegal_payment_token: invoiceToken,
+      
+      // Wave CI parameters (guessing based on pattern if needed)
+      wave_ci_fullName: fullName || req.user.id,
+      wave_ci_email: email || 'test@site2app.online',
+      wave_ci_phone: phoneNumber,
+      wave_ci_payment_token: invoiceToken,
 
-    if (paymentMethod === 'wave_senegal') {
-      softpayUrl = 'https://app.paydunya.com/api/v1/softpay/wave-senegal';
-      softpayPayload = { wave_senegal_fullName: fullName || req.user.id, wave_senegal_email: email || 'test@site2app.online', wave_senegal_phone: phoneNumber, wave_senegal_payment_token: invoiceToken };
-    } else if (paymentMethod === 'orange_money_senegal') {
-      softpayUrl = 'https://app.paydunya.com/api/v1/softpay/new-orange-money-senegal';
-      softpayPayload = { customer_name: fullName || req.user.id, customer_email: email || 'test@site2app.online', phone_number: phoneNumber, invoice_token: invoiceToken };
-    } else if (paymentMethod === 'free_money_senegal') {
-      softpayUrl = 'https://app.paydunya.com/api/v1/softpay/free-money-senegal';
-      softpayPayload = { customer_name: fullName || req.user.id, customer_email: email || 'test@site2app.online', phone_number: phoneNumber, payment_token: invoiceToken };
-    } else {
-      return res.status(400).json({ error: 'Moyen de paiement non supporté' });
-    }
+      // Expresso parameters
+      expresso_sn_fullName: fullName || req.user.id,
+      expresso_sn_email: email || 'test@site2app.online',
+      expresso_sn_phone: phoneNumber,
+
+      // Celtiis parameters
+      celtiis_cash_customer_fullname: fullName || req.user.id,
+      celtiis_cash_customer_email: email || 'test@site2app.online',
+      celtiis_cash_phone_number: phoneNumber,
+
+      // Djamo parameters
+      djamo_fullName: fullName || req.user.id,
+      djamo_email: email || 'test@site2app.online',
+      djamo_phone: phoneNumber,
+      djamo_payment_token: invoiceToken
+    };
 
     const softRes = await fetch(softpayUrl, {
       method: 'POST',
