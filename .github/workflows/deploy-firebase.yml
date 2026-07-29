@@ -63,6 +63,10 @@ jobs:
           echo "GITHUB_PAT=$GITHUB_PAT" >> functions/.env
           echo "GITHUB_REPO=$GITHUB_REPO" >> functions/.env
           echo "BUILDER_SECRET=$BUILDER_SECRET" >> functions/.env
+          echo "PAYDUNYA_MASTER_KEY=${{ secrets.PAYDUNYA_MASTER_KEY }}" >> functions/.env
+          echo "PAYDUNYA_PRIVATE_KEY=${{ secrets.PAYDUNYA_PRIVATE_KEY }}" >> functions/.env
+          echo "PAYDUNYA_TOKEN=${{ secrets.PAYDUNYA_TOKEN }}" >> functions/.env
+          echo "PAYDUNYA_MODE=live" >> functions/.env
           echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
           export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
           npx firebase-tools deploy --only functions,firestore,storage --project ${{ secrets.FIREBASE_PROJECT_ID }} --force --non-interactive
