@@ -206,8 +206,8 @@ api.post('/payment/create-invoice', authMiddleware, async (req: any, res) => {
         plan: plan,
       },
       actions: {
-        cancel_url: 'https://site2app.online/dashboard/pricing',
-        return_url: 'https://site2app.online/dashboard',
+        cancel_url: 'https://site2app.online/dashboard/pricing?payment=cancelled',
+        return_url: 'https://site2app.online/dashboard/pricing?payment=success',
         callback_url: 'https://us-central1-site2app-ba735.cloudfunctions.net/api/api/payment/webhook'
       }
     };

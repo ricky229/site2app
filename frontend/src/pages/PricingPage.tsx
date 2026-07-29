@@ -1,13 +1,32 @@
-import { useState } from 'react'
-import { Check, X, Shield, Zap, Infinity } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Check, X, Shield, Zap, Infinity, Loader2 } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
+import confetti from 'canvas-confetti'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function PricingPage() {
     const { user } = useAuthStore()
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
     const [isLoading, setIsLoading] = useState<string | null>(null)
+    const [paymentStatus, setPaymentStatus] = useState<'success' | 'cancelled' | null>(null)
+
+    useEffect(() => {
+        const status = searchParams.get('payment')
+        if (status === 'success') {
+            setPaymentStatus('success')
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#3b82f6', '#10b981', '#fbbf24']
+            })
+        } else if (status === 'cancelled') {
+            setPaymentStatus('cancelled')
+        }
+    }, [searchParams])
 
     const handleSubscribe = async (plan: string) => {
         if (!user) {
@@ -28,13 +47,93 @@ export default function PricingPage() {
             const serverMsg = e.response?.data?.error || e.message;
             const details = e.response?.data?.details ? JSON.stringify(e.response.data.details) : '';
             alert('Erreur: ' + serverMsg + (details ? '\nDétails: ' + details : ''));
-        } finally {
-            setIsLoading(null)
+            setIsLoading(null);
         }
     }
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-white pt-32 pb-20 px-6">
+        <div className="min-h-screen bg-zinc-950 text-white pt-32 pb-20 px-6 relative overflow-hidden">
+            <AnimatePresence>
+                {isLoading && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-md"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="bg-zinc-900 border border-white/10 p-10 rounded-3xl flex flex-col items-center max-w-sm text-center shadow-2xl shadow-blue-500/20"
+                        >
+                            <Loader2 className="w-16 h-16 text-blue-500 animate-spin mb-6" />
+                            <h3 className="text-2xl font-bold mb-2">Préparation du paiement</h3>
+                            <p className="text-zinc-400">Connexion sécurisée à PayDunya en cours. Veuillez patienter pour la redirection...</p>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {paymentStatus === 'success' && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-md"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            className="bg-zinc-900 border border-green-500/30 p-10 rounded-3xl flex flex-col items-center max-w-sm text-center shadow-2xl shadow-green-500/20 relative"
+                        >
+                            <button onClick={() => { setPaymentStatus(null); navigate('/dashboard/pricing', { replace: true }) }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+                                <X size={20} />
+                            </button>
+                            <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
+                                <Check className="w-10 h-10 text-green-500" />
+                            </div>
+                            <h3 className="text-3xl font-extrabold mb-3 text-white">Félicitations !</h3>
+                            <p className="text-zinc-400 mb-8">Votre paiement a été traité avec succès. Votre nouveau forfait est désormais actif.</p>
+                            <button 
+                                onClick={() => navigate('/dashboard')}
+                                className="w-full py-3 rounded-xl bg-green-500 text-white font-bold hover:bg-green-600 transition-colors"
+                            >
+                                Commencer à créer
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {paymentStatus === 'cancelled' && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-md"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.8, opacity: 0, y: 50 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            className="bg-zinc-900 border border-red-500/30 p-10 rounded-3xl flex flex-col items-center max-w-sm text-center shadow-2xl shadow-red-500/20 relative"
+                        >
+                            <button onClick={() => { setPaymentStatus(null); navigate('/dashboard/pricing', { replace: true }) }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+                                <X size={20} />
+                            </button>
+                            <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
+                                <X className="w-10 h-10 text-red-500" />
+                            </div>
+                            <h3 className="text-3xl font-extrabold mb-3 text-white">Paiement Annulé</h3>
+                            <p className="text-zinc-400 mb-8">La transaction a été annulée ou a échoué. Aucun montant ne vous a été débité.</p>
+                            <button 
+                                onClick={() => { setPaymentStatus(null); navigate('/dashboard/pricing', { replace: true }) }}
+                                className="w-full py-3 rounded-xl bg-zinc-800 text-white font-bold hover:bg-zinc-700 transition-colors"
+                            >
+                                Réessayer
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-16">
                     <h1 className="text-4xl md:text-5xl font-extrabold mb-6 tracking-tight">Tarification simple & transparente</h1>
