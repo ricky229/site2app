@@ -421,11 +421,12 @@ api.post('/payment/softpay', authMiddleware, async (req: any, res) => {
 
 api.post('/payment/webhook', express.json(), async (req: any, res) => {
   try {
-    const data = req.body;
+    const rawBody = req.body;
+    const data = rawBody.data || rawBody;
     
     // DEBUG: Save the exact payload to Firestore so we can inspect it!
     await db.collection('webhook_logs').add({
-      payload: data,
+      payload: rawBody,
       receivedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
