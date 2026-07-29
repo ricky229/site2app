@@ -8,36 +8,35 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const COUNTRIES = [
     { id: 'senegal', flag: 'sn', name: 'Sénégal', methods: [ 
-        { id: 'wave_senegal', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoImg: 'https://logo.clearbit.com/wave.com', logoText: 'W', logoBg: '#1c3faa' }, 
-        { id: 'new_orange_money_senegal', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg', logoText: 'OM', logoBg: '#ff7900' }, 
-        { id: 'free_money_senegal', name: 'Free Money', color: 'bg-red-50 text-red-700 border-red-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/8/82/Free_logo_2019.svg', logoText: 'F', logoBg: '#da291c' }, 
-        { id: 'expresso_senegal', name: 'Expresso', color: 'bg-gray-100 text-gray-700 border-gray-300', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/1/18/Expresso_Telecom_Logo.png', logoText: 'EX', logoBg: '#595959' } 
+        { id: 'wave_senegal', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoImg: '/logos/wave.png', logoText: 'W', logoBg: '#1c3faa' }, 
+        { id: 'new_orange_money_senegal', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: '/logos/orange.png', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'free_money_senegal', name: 'Free Money', color: 'bg-red-50 text-red-700 border-red-200', logoImg: '/logos/free.png', logoText: 'F', logoBg: '#da291c' }, 
+        { id: 'expresso_senegal', name: 'Expresso', color: 'bg-gray-100 text-gray-700 border-gray-300', logoImg: '/logos/expresso.png', logoText: 'EX', logoBg: '#595959' } 
     ] },
     { id: 'ci', flag: 'ci', name: 'Côte d\'Ivoire', methods: [ 
-        { id: 'wave_ci', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoImg: 'https://logo.clearbit.com/wave.com', logoText: 'W', logoBg: '#1c3faa' }, 
-        { id: 'orange_money_ci', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg', logoText: 'OM', logoBg: '#ff7900' }, 
-        { id: 'mtn_ci', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/MTN_Logo.svg', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
-        { id: 'moov_ci', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: 'https://upload.wikimedia.org/wikipedia/fr/a/a3/Moov_Africa_logo.png', logoText: 'M', logoBg: '#0054a6' } 
+        { id: 'wave_ci', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoImg: '/logos/wave.png', logoText: 'W', logoBg: '#1c3faa' }, 
+        { id: 'orange_money_ci', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: '/logos/orange.png', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'mtn_ci', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoImg: '/logos/mtn.png', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
+        { id: 'moov_ci', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: '/logos/moov.png', logoText: 'M', logoBg: '#0054a6' } 
     ] },
     { id: 'burkina', flag: 'bf', name: 'Burkina Faso', methods: [ 
-        { id: 'orange_money_burkina', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg', logoText: 'OM', logoBg: '#ff7900' }, 
-        { id: 'moov_burkina', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: 'https://upload.wikimedia.org/wikipedia/fr/a/a3/Moov_Africa_logo.png', logoText: 'M', logoBg: '#0054a6' } 
+        { id: 'orange_money_burkina', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: '/logos/orange.png', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'moov_burkina', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: '/logos/moov.png', logoText: 'M', logoBg: '#0054a6' } 
     ] },
     { id: 'benin', flag: 'bj', name: 'Bénin', methods: [ 
-        { id: 'mtn_benin', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/MTN_Logo.svg', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
-        { id: 'moov_benin', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: 'https://upload.wikimedia.org/wikipedia/fr/a/a3/Moov_Africa_logo.png', logoText: 'M', logoBg: '#0054a6' }, 
-        { id: 'celtiis_cash', name: 'Celtiis', color: 'bg-green-50 text-green-700 border-green-200', logoImg: 'https://logo.clearbit.com/celtiis.bj', logoText: 'C', logoBg: '#008b45' } 
+        { id: 'mtn_benin', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoImg: '/logos/mtn.png', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
+        { id: 'moov_benin', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: '/logos/moov.png', logoText: 'M', logoBg: '#0054a6' }, 
+        { id: 'celtiis_cash', name: 'Celtiis', color: 'bg-green-50 text-green-700 border-green-200', logoImg: '/logos/celtiis.png', logoText: 'C', logoBg: '#008b45' } 
     ] },
     { id: 'togo', flag: 'tg', name: 'Togo', methods: [ 
-        { id: 't_money_togo', name: 'T-Money', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoImg: 'https://logo.clearbit.com/togocom.tg', logoText: 'TM', logoBg: '#ffcc00', logoColor: '#000' }, 
-        { id: 'moov_togo', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: 'https://upload.wikimedia.org/wikipedia/fr/a/a3/Moov_Africa_logo.png', logoText: 'M', logoBg: '#0054a6' } 
+        { id: 'moov_togo', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: '/logos/moov.png', logoText: 'M', logoBg: '#0054a6' } 
     ] },
     { id: 'mali', flag: 'ml', name: 'Mali', methods: [ 
-        { id: 'orange_money_mali', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/c/c8/Orange_logo.svg', logoText: 'OM', logoBg: '#ff7900' }, 
-        { id: 'moov_mali', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: 'https://upload.wikimedia.org/wikipedia/fr/a/a3/Moov_Africa_logo.png', logoText: 'M', logoBg: '#0054a6' } 
+        { id: 'orange_money_mali', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoImg: '/logos/orange.png', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'moov_mali', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoImg: '/logos/moov.png', logoText: 'M', logoBg: '#0054a6' } 
     ] },
     { id: 'cameroun', flag: 'cm', name: 'Cameroun', methods: [ 
-        { id: 'mtn_cameroun', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoImg: 'https://upload.wikimedia.org/wikipedia/commons/a/a5/MTN_Logo.svg', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' } 
+        { id: 'mtn_cameroun', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoImg: '/logos/mtn.png', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' } 
     ] }
 ]
 
