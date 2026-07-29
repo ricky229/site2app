@@ -35,10 +35,6 @@ export function DashboardLayout() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                // md:ml-64 makes room for the sidebar on desktop
-                // pt-16 makes room for the top bar on mobile
-                // pb-24 makes room for the bottom nav on mobile
-                // md:pt-0 and md:pb-8 resets padding on desktop
                 className={`md:ml-64 min-h-screen flex flex-col ${isWizard ? '' : 'pt-16 pb-24 md:pt-0 md:pb-8'}`}
             >
                 <Outlet />
@@ -59,6 +55,55 @@ export function DashboardLayout() {
                     },
                 }}
             />
+        </div>
+    )
+}
+
+export function AdminLayout() {
+    const { user, isAuthenticated } = useAuthStore()
+    const location = useLocation()
+    const [darkMode] = useState(() => localStorage.getItem('site2app_theme') === 'dark')
+
+    useEffect(() => {
+        if (darkMode) document.documentElement.classList.add('dark')
+        else document.documentElement.classList.remove('dark')
+    }, [darkMode])
+
+    if (!isAuthenticated) {
+        return <Navigate to="/auth/login" state={{ from: location }} replace />
+    }
+
+    // SECURITY CHECK: If user is not admin, redirect to user dashboard
+    if (user?.role !== 'admin') {
+        return <Navigate to="/dashboard" replace />
+    }
+
+    // Admin gets a clean, full-width interface separated from the normal user sidebar
+    return (
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            {/* Topbar specific for admin */}
+            <div className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 z-50 flex items-center justify-between px-6 shadow-sm">
+                <div className="flex items-center gap-2">
+                    <span className="font-bold text-xl text-gray-900 dark:text-white tracking-tight">Site2App</span>
+                    <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded ml-2">ADMIN</span>
+                </div>
+                <div>
+                    <a href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-lg">
+                        Quitter l'Admin
+                    </a>
+                </div>
+            </div>
+
+            <motion.main
+                key={location.pathname}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                className="pt-16 min-h-screen"
+            >
+                <Outlet />
+            </motion.main>
+            <Toaster position="top-center" />
         </div>
     )
 }

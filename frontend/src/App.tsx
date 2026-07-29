@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { DashboardLayout, AuthLayout } from './components/layout/Layouts'
+import { DashboardLayout, AuthLayout, AdminLayout } from './components/layout/Layouts'
 
 // Pages
 import LandingPage from './pages/LandingPage'
@@ -50,6 +50,10 @@ export default function App() {
             <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/settings/:tab" element={<SettingsPage />} />
+          </Route>
+
+          {/* Secure Admin Dashboard */}
+          <Route element={<AdminLayout />}>
             <Route path="/admin" element={<AdminPage />} />
           </Route>
 
