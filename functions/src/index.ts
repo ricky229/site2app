@@ -171,6 +171,99 @@ api.delete('/user', authMiddleware, async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
+// PAYDUNYA ROUTES
+// ----------------------------------------------------------------------
+api.post('/payment/create-invoice', authMiddleware, async (req: any, res) => {
+  try {
+    const { plan } = req.body;
+    if (!plan || (plan !== 'yearly' && plan !== 'lifetime')) {
+      return res.status(400).json({ error: 'Plan invalide.' });
+    }
+
+    const PAYDUNYA_MASTER_KEY = process.env.PAYDUNYA_MASTER_KEY;
+    const PAYDUNYA_PRIVATE_KEY = process.env.PAYDUNYA_PRIVATE_KEY;
+    const PAYDUNYA_TOKEN = process.env.PAYDUNYA_TOKEN;
+    const PAYDUNYA_MODE = process.env.PAYDUNYA_MODE || 'test';
+
+    if (!PAYDUNYA_MASTER_KEY || !PAYDUNYA_PRIVATE_KEY || !PAYDUNYA_TOKEN) {
+      console.error('[PayDunya] Clés API manquantes.');
+      return res.status(500).json({ error: 'Configuration de paiement serveur manquante.' });
+    }
+
+    const amount = plan === 'yearly' ? 25000 : 75000;
+    const description = plan === 'yearly' ? 'Abonnement Annuel Site2App' : 'Accès À Vie Site2App';
+
+    const payload = {
+      invoice: {
+        total_amount: amount,
+        description: description,
+      },
+      store: {
+        name: 'Site2App',
+      },
+      custom_data: {
+        userId: req.user.id,
+        plan: plan,
+      },
+      actions: {
+        cancel_url: 'https://site2app.online/dashboard/pricing',
+        return_url: 'https://site2app.online/dashboard',
+        callback_url: 'https://us-central1-site2app-ba735.cloudfunctions.net/api/api/payment/webhook'
+      }
+    };
+
+    const response = await fetch('https://app.paydunya.com/api/v1/checkout-invoice/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'PAYDUNYA-MASTER-KEY': PAYDUNYA_MASTER_KEY,
+        'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_PRIVATE_KEY,
+        'PAYDUNYA-TOKEN': PAYDUNYA_TOKEN,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+    if (data.response_code === '00') {
+      return res.json({ invoiceUrl: data.response_text });
+    } else {
+      console.error('[PayDunya] Erreur:', data);
+      return res.status(500).json({ error: 'Erreur lors de la création de la facture' });
+    }
+  } catch (err: any) {
+    console.error('[PayDunya] Exception:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.post('/payment/webhook', express.json(), async (req: any, res) => {
+  try {
+    const { data } = req.body;
+    if (!data || !data.custom_data) {
+      return res.status(400).send('Invalid payload');
+    }
+
+    const { userId, plan } = data.custom_data;
+    const status = data.status; // e.g. "completed"
+
+    if (status === 'completed') {
+      await db.collection('users').doc(userId).update({
+        plan: plan,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      console.log(`[PayDunya] Succès: Plan ${plan} activé pour l'utilisateur ${userId}`);
+    } else {
+      console.log(`[PayDunya] Statut de paiement ${status} pour l'utilisateur ${userId}`);
+    }
+
+    res.status(200).send('OK');
+  } catch (err: any) {
+    console.error('[PayDunya Webhook] Erreur:', err);
+    res.status(500).send('Internal Error');
+  }
+});
+
+// ----------------------------------------------------------------------
 // BUILD ROUTES
 // ----------------------------------------------------------------------
 api.post('/build', authMiddleware, async (req, res) => {
@@ -185,6 +278,18 @@ api.post('/build', authMiddleware, async (req, res) => {
     const buildId = req.body.buildId || Date.now().toString();
     const isNewBuild = !req.body.buildId;
     const finalPackage = packageName || `com.site2app.${(appName || 'myapp').toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '.').replace(/\.+/g, '.').replace(/^\.+|\.+$/g, '')}`;
+
+    if (isNewBuild) {
+        // App limit check
+        const userPlan = req.user.plan || 'free';
+        const limit = userPlan === 'free' ? 1 : (userPlan === 'yearly' ? 10 : 99999);
+        const userBuildsSnap = await db.collection('builds').where('userId', '==', req.user.id).get();
+        const activeApps = new Set(userBuildsSnap.docs.map(d => d.data().packageName)).size;
+        if (activeApps >= limit) {
+            return res.status(403).json({ error: `Limite atteinte. Votre plan (${userPlan}) vous autorise ${limit} application(s).` });
+        }
+    }
+
 
     // Get max version code for this package without requiring a composite index
     const existingBuilds = await db.collection('builds')
@@ -273,6 +378,7 @@ api.post('/build', authMiddleware, async (req, res) => {
       packageName: buildData.packageName,
       options: {
         buildId,
+        userPlan: req.user?.plan || 'free',
         statusBarColor: statusBarColor || primaryColor || '#3461f5',
         themeColor: themeColor || primaryColor || '#3461f5',
         splashBgColor: splashBgColor || primaryColor || '#3461f5',

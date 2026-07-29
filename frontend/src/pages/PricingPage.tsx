@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Check, X, Shield, Zap, Infinity } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { useNavigate } from 'react-router-dom'
-import { nodeApi } from '../lib/api'
+import { api } from '../lib/api'
 
 export default function PricingPage() {
     const { user } = useAuthStore()
@@ -17,7 +17,7 @@ export default function PricingPage() {
 
         setIsLoading(plan)
         try {
-            const res = await nodeApi.post('/payment/create-invoice', { plan })
+            const res = await api.post('/payment/create-invoice', { plan })
             
             if (res.data && res.data.invoiceUrl) {
                 window.location.href = res.data.invoiceUrl

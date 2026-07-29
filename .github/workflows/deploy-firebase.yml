@@ -60,7 +60,7 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
           BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}
         run: |
-          echo "GITHUB_PAT=$GITHUB_PAT" > functions/.env
+          echo "GITHUB_PAT=$GITHUB_PAT" >> functions/.env
           echo "GITHUB_REPO=$GITHUB_REPO" >> functions/.env
           echo "BUILDER_SECRET=$BUILDER_SECRET" >> functions/.env
           echo "$FIREBASE_SERVICE_ACCOUNT" > service-account.json
