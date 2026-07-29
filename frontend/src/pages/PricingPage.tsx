@@ -94,6 +94,17 @@ export default function PricingPage() {
                         setValidationCountdown(null);
                         setPaymentStatus('cancelled');
                         setSoftpayMessage("Le paiement a été annulé.");
+                    } else if (freshUser.lastPaymentStatus === 'completed') {
+                        setValidationCountdown(null);
+                        setPaymentStatus('success');
+                        setIsPaymentModalOpen(false); // CLOSE THE MODAL!
+                        setSoftpayMessage(null);
+                        confetti({
+                            particleCount: 150,
+                            spread: 70,
+                            origin: { y: 0.6 },
+                            colors: ['#3b82f6', '#10b981', '#fbbf24']
+                        });
                     }
                 } catch (e) {
                     console.error('Erreur lors de la vérification du statut', e);
@@ -116,6 +127,7 @@ export default function PricingPage() {
         const status = searchParams.get('payment')
         if (status === 'success') {
             setPaymentStatus('success')
+            setIsPaymentModalOpen(false)
             setValidationCountdown(null)
             confetti({
                 particleCount: 150,
@@ -125,23 +137,9 @@ export default function PricingPage() {
             })
         } else if (status === 'cancelled') {
             setPaymentStatus('cancelled')
+            setIsPaymentModalOpen(false)
         }
     }, [searchParams])
-
-    useEffect(() => {
-        if (user && user.plan && user.plan !== 'free') {
-            if (isPaymentModalOpen || validationCountdown !== null) {
-                setPaymentStatus('success')
-                setValidationCountdown(null)
-                confetti({
-                    particleCount: 150,
-                    spread: 70,
-                    origin: { y: 0.6 },
-                    colors: ['#3b82f6', '#10b981', '#fbbf24']
-                })
-            }
-        }
-    }, [user?.plan, isPaymentModalOpen, validationCountdown])
 
     const handleSubscribe = async (plan: string) => {
         if (!user) {
