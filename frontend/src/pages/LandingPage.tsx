@@ -112,8 +112,8 @@ export default function LandingPage() {
             </AnimatePresence>
 
             {/* HERO SECTION */}
-            <main className="relative z-10 pt-40 pb-20 lg:pt-52 lg:pb-32 px-6 flex flex-col items-center justify-center text-center">
-                <motion.div initial="hidden" animate="visible" variants={stagger} className="max-w-4xl mx-auto w-full">
+            <main className="relative z-10 pt-40 pb-20 lg:pt-52 lg:pb-32 px-4 sm:px-6 flex flex-col items-center justify-center text-center w-full min-w-[100px]">
+                <motion.div initial="hidden" animate="visible" variants={stagger} className="max-w-4xl mx-auto w-full min-w-[100px]">
                     
                     <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-white/10 text-zinc-300 text-xs font-semibold mb-8">
                         <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
@@ -129,9 +129,9 @@ export default function LandingPage() {
                         Convertissez n'importe quel site web en application iOS et Android ultra-performante. Push, Mode Hors-Ligne et Monétisation natifs. Zéro code.
                     </motion.p>
 
-                    <motion.div variants={fadeUp} className="flex flex-col items-center gap-4 w-full max-w-md mx-auto">
-                        <div className="relative w-full group">
-                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                    <motion.div variants={fadeUp} className="flex flex-col items-center gap-4 w-full max-w-md mx-auto min-w-[100px]">
+                        <div className="relative w-full group min-w-[100px]">
+                            <div className="absolute inset-y-0 left-3 sm:left-4 flex items-center pointer-events-none">
                                 <Globe className="text-zinc-500" size={18} />
                             </div>
                             <input 
@@ -139,11 +139,11 @@ export default function LandingPage() {
                                 placeholder="https://votre-site.com"
                                 value={urlInput}
                                 onChange={e => setUrlInput(e.target.value)}
-                                className="w-full pl-12 pr-32 py-4 bg-zinc-900 border border-white/10 hover:border-white/20 rounded-full text-white placeholder-zinc-500 font-medium text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-xl"
+                                className="w-full pl-10 sm:pl-12 pr-28 sm:pr-32 py-4 bg-zinc-900 border border-white/10 hover:border-white/20 rounded-full text-white placeholder-zinc-500 font-medium text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-xl"
                             />
                             <button 
                                 onClick={handleCreate}
-                                className="absolute inset-y-1.5 right-1.5 bg-white hover:bg-zinc-200 text-black px-6 rounded-full font-bold transition-all flex items-center gap-2 cursor-pointer text-sm"
+                                className="absolute inset-y-1.5 right-1.5 bg-white hover:bg-zinc-200 text-black px-4 sm:px-6 rounded-full font-bold transition-all flex items-center gap-1 sm:gap-2 cursor-pointer text-xs sm:text-sm whitespace-nowrap"
                             >
                                 Créer <ArrowRight size={16} />
                             </button>
@@ -197,8 +197,8 @@ export default function LandingPage() {
             </main>
 
             {/* BENTO GRID FEATURES */}
-            <section id="features" className="py-24 px-6 relative z-10 bg-zinc-950 border-t border-white/5">
-                <div className="max-w-6xl mx-auto">
+            <section id="features" className="py-24 px-4 sm:px-6 relative z-10 bg-zinc-950 border-t border-white/5">
+                <div className="max-w-6xl mx-auto w-full min-w-[100px]">
                     <div className="text-left mb-16">
                         <h2 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">Fonctionnalités natives.</h2>
                         <p className="text-zinc-400 text-lg max-w-xl">Tout l'écosystème mobile, injecté directement dans votre application web existante.</p>
@@ -249,8 +249,8 @@ export default function LandingPage() {
             </section>
 
             {/* HOW IT WORKS (Timeline) */}
-            <section id="how-it-works" className="py-24 px-6 relative z-10 border-t border-white/5">
-                <div className="max-w-4xl mx-auto">
+            <section id="how-it-works" className="py-24 px-4 sm:px-6 relative z-10 border-t border-white/5">
+                <div className="max-w-4xl mx-auto w-full min-w-[100px]">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl font-bold mb-4">Déploiement en 3 étapes.</h2>
                     </div>
@@ -278,18 +278,77 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            {/* PRICING SECTION */}
+            <section id="pricing" className="py-24 px-6 relative z-10 border-t border-white/5 bg-zinc-950">
+                <div className="max-w-6xl mx-auto w-full min-w-[100px]">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">Tarification claire.</h2>
+                        <p className="text-zinc-400 text-lg max-w-xl mx-auto">Choisissez le forfait qui correspond le mieux à votre projet.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {/* Plan Gratuit */}
+                        <div className="rounded-3xl bg-zinc-900/50 border border-white/10 p-8 flex flex-col hover:border-white/20 transition-all w-full min-w-[100px]">
+                            <h3 className="text-xl font-bold mb-2">Test</h3>
+                            <div className="flex items-baseline gap-2 mb-6">
+                                <span className="text-4xl font-extrabold">0</span>
+                                <span className="text-zinc-500 font-medium">FCFA</span>
+                            </div>
+                            <p className="text-sm text-zinc-400 mb-8">Idéal pour tester l'application générée.</p>
+                            <ul className="space-y-4 mb-8 flex-1">
+                                <li className="flex items-center gap-3 text-sm text-zinc-300"><CheckCircle size={16} className="text-zinc-500" /> Génération APK</li>
+                                <li className="flex items-center gap-3 text-sm text-zinc-300"><CheckCircle size={16} className="text-zinc-500" /> Bannière Publicitaire (Test)</li>
+                            </ul>
+                            <Link to="/auth/register" className="w-full text-center py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 font-semibold transition-colors">Commencer gratuitement</Link>
+                        </div>
+
+                        {/* Plan Annuel */}
+                        <div className="rounded-3xl bg-gradient-to-b from-blue-900/40 to-zinc-900/50 border border-blue-500/30 p-8 flex flex-col relative transform md:-translate-y-4 shadow-2xl shadow-blue-900/20 w-full min-w-[100px]">
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Populaire</div>
+                            <h3 className="text-xl font-bold mb-2 text-white">Annuel</h3>
+                            <div className="flex items-baseline gap-2 mb-6">
+                                <span className="text-4xl font-extrabold text-white">Abonnement</span>
+                            </div>
+                            <p className="text-sm text-zinc-400 mb-8">Pour les professionnels sérieux.</p>
+                            <ul className="space-y-4 mb-8 flex-1">
+                                <li className="flex items-center gap-3 text-sm text-zinc-100"><CheckCircle size={16} className="text-blue-500" /> Génération APK Illimitée</li>
+                                <li className="flex items-center gap-3 text-sm text-zinc-100"><CheckCircle size={16} className="text-blue-500" /> Notifications Push natives</li>
+                                <li className="flex items-center gap-3 text-sm text-zinc-100"><CheckCircle size={16} className="text-blue-500" /> Sans publicité / Votre AdMob</li>
+                                <li className="flex items-center gap-3 text-sm text-zinc-100"><CheckCircle size={16} className="text-blue-500" /> Support prioritaire</li>
+                            </ul>
+                            <Link to="/auth/register" className="w-full text-center py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-500/25 transition-all">S'abonner</Link>
+                        </div>
+
+                        {/* Plan Lifetime */}
+                        <div className="rounded-3xl bg-zinc-900/50 border border-white/10 p-8 flex flex-col hover:border-white/20 transition-all w-full min-w-[100px]">
+                            <h3 className="text-xl font-bold mb-2">À Vie</h3>
+                            <div className="flex items-baseline gap-2 mb-6">
+                                <span className="text-4xl font-extrabold">Unique</span>
+                            </div>
+                            <p className="text-sm text-zinc-400 mb-8">Payez une fois, profitez à vie.</p>
+                            <ul className="space-y-4 mb-8 flex-1">
+                                <li className="flex items-center gap-3 text-sm text-zinc-300"><CheckCircle size={16} className="text-amber-500" /> Tout le plan Annuel inclus</li>
+                                <li className="flex items-center gap-3 text-sm text-zinc-300"><CheckCircle size={16} className="text-amber-500" /> Mises à jour à vie gratuites</li>
+                                <li className="flex items-center gap-3 text-sm text-zinc-300"><CheckCircle size={16} className="text-amber-500" /> Zéro abonnement récurrent</li>
+                            </ul>
+                            <Link to="/auth/register" className="w-full text-center py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 font-semibold transition-colors">Acheter à vie</Link>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* CTA SECTION */}
-            <section className="py-32 px-6 relative z-10 border-t border-white/5 bg-zinc-900/30">
-                <div className="max-w-4xl mx-auto text-center relative z-10">
-                    <h2 className="text-4xl md:text-5xl font-extrabold mb-6 tracking-tight">Passez au niveau supérieur.</h2>
+            <section className="py-32 px-4 sm:px-6 relative z-10 border-t border-white/5 bg-zinc-900/30">
+                <div className="max-w-4xl mx-auto text-center relative z-10 w-full min-w-[100px]">
+                    <h2 className="text-4xl md:text-5xl font-extrabold mb-6 tracking-tight break-words">Passez au niveau supérieur.</h2>
                     <p className="text-lg text-zinc-400 mb-10 max-w-xl mx-auto font-medium">
                         Offrez à vos utilisateurs l'expérience mobile qu'ils méritent en moins de 3 minutes.
                     </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Link to="/auth/register" className="w-full sm:w-auto bg-white text-black px-8 py-3.5 rounded-full text-sm font-bold hover:bg-zinc-200 transition-colors">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+                        <Link to="/auth/register" className="w-full sm:w-auto bg-white text-black px-8 py-3.5 rounded-full text-sm font-bold hover:bg-zinc-200 transition-colors text-center">
                             Commencer maintenant
                         </Link>
-                        <Link to="/auth/login" className="w-full sm:w-auto bg-zinc-900 border border-white/10 text-white px-8 py-3.5 rounded-full text-sm font-semibold hover:bg-zinc-800 transition-colors">
+                        <Link to="/auth/login" className="w-full sm:w-auto bg-zinc-900 border border-white/10 text-white px-8 py-3.5 rounded-full text-sm font-semibold hover:bg-zinc-800 transition-colors text-center">
                             J'ai déjà un compte
                         </Link>
                     </div>
@@ -297,8 +356,8 @@ export default function LandingPage() {
             </section>
 
             {/* FOOTER */}
-            <footer className="border-t border-white/10 py-10 px-6 relative z-10">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <footer className="border-t border-white/10 py-10 px-4 sm:px-6 relative z-10">
+                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 w-full min-w-[100px]">
                     <div className="flex items-center gap-2">
                         <Zap size={16} className="text-zinc-500" />
                         <span className="font-bold text-lg tracking-tight text-zinc-500">Site2App</span>
