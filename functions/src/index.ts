@@ -252,6 +252,111 @@ api.post('/payment/create-invoice', authMiddleware, async (req: any, res) => {
   }
 });
 
+api.post('/payment/softpay', authMiddleware, async (req: any, res) => {
+  try {
+    const { plan, paymentMethod, phoneNumber, fullName, email } = req.body;
+    if (!plan || (plan !== 'yearly' && plan !== 'lifetime')) {
+      return res.status(400).json({ error: 'Plan invalide.' });
+    }
+    if (!paymentMethod || !phoneNumber) {
+      return res.status(400).json({ error: 'Moyen de paiement et numéro de téléphone requis.' });
+    }
+
+    const PAYDUNYA_MASTER_KEY = process.env.PAYDUNYA_MASTER_KEY;
+    const PAYDUNYA_PRIVATE_KEY = process.env.PAYDUNYA_PRIVATE_KEY;
+    const PAYDUNYA_TOKEN = process.env.PAYDUNYA_TOKEN;
+    const PAYDUNYA_MODE = process.env.PAYDUNYA_MODE || 'test';
+
+    if (!PAYDUNYA_MASTER_KEY || !PAYDUNYA_PRIVATE_KEY || !PAYDUNYA_TOKEN) {
+      return res.status(500).json({ error: 'Configuration serveur manquante.' });
+    }
+
+    const amount = plan === 'yearly' ? 25000 : 75000;
+    const description = plan === 'yearly' ? 'Abonnement Annuel Site2App' : 'Accès À Vie Site2App';
+
+    const payload = {
+      invoice: { total_amount: amount, description: description },
+      store: { name: 'Site2App' },
+      custom_data: { userId: req.user.id, plan: plan },
+      actions: {
+        cancel_url: 'https://site2app.online/dashboard/pricing?payment=cancelled',
+        return_url: 'https://site2app.online/dashboard/pricing?payment=success',
+        callback_url: 'https://us-central1-site2app-ba735.cloudfunctions.net/api/api/payment/webhook'
+      }
+    };
+
+    // 1. Generate Checkout Invoice Token
+    const baseUrl = PAYDUNYA_MODE === 'test' ? 'https://app.paydunya.com/sandbox-api/v1' : 'https://app.paydunya.com/api/v1';
+    const invoiceRes = await fetch(`${baseUrl}/checkout-invoice/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'PAYDUNYA-MASTER-KEY': PAYDUNYA_MASTER_KEY,
+        'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_PRIVATE_KEY,
+        'PAYDUNYA-TOKEN': PAYDUNYA_TOKEN,
+        'PAYDUNYA-MODE': PAYDUNYA_MODE
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const invoiceData = await invoiceRes.json();
+    if (invoiceData.response_code !== '00') {
+      return res.status(500).json({ error: 'Erreur génération facture', details: invoiceData });
+    }
+
+    const invoiceToken = invoiceData.token;
+
+    // 2. Call SoftPay
+    if (PAYDUNYA_MODE === 'test') {
+      // Mock responses in test mode because Sandbox Softpay endpoints don't exist
+      if (paymentMethod === 'wave_senegal') {
+        return res.json({ success: true, url: invoiceData.response_text }); // Redirect to sandbox checkout for simulation
+      } else if (paymentMethod === 'orange_money_senegal') {
+        return res.json({ success: true, url: invoiceData.response_text, other_url: { om_url: invoiceData.response_text } });
+      } else if (paymentMethod === 'free_money_senegal') {
+        return res.json({ success: true, message: 'Opération réussie, Veuillez tapez #150# pour finaliser votre paiement.' });
+      } else {
+        return res.json({ success: true, url: invoiceData.response_text });
+      }
+    }
+
+    // LIVE MODE
+    let softpayUrl = '';
+    let softpayPayload: any = {};
+
+    if (paymentMethod === 'wave_senegal') {
+      softpayUrl = 'https://app.paydunya.com/api/v1/softpay/wave-senegal';
+      softpayPayload = { wave_senegal_fullName: fullName || req.user.id, wave_senegal_email: email || 'test@site2app.online', wave_senegal_phone: phoneNumber, wave_senegal_payment_token: invoiceToken };
+    } else if (paymentMethod === 'orange_money_senegal') {
+      softpayUrl = 'https://app.paydunya.com/api/v1/softpay/new-orange-money-senegal';
+      softpayPayload = { customer_name: fullName || req.user.id, customer_email: email || 'test@site2app.online', phone_number: phoneNumber, invoice_token: invoiceToken };
+    } else if (paymentMethod === 'free_money_senegal') {
+      softpayUrl = 'https://app.paydunya.com/api/v1/softpay/free-money-senegal';
+      softpayPayload = { customer_name: fullName || req.user.id, customer_email: email || 'test@site2app.online', phone_number: phoneNumber, payment_token: invoiceToken };
+    } else {
+      return res.status(400).json({ error: 'Moyen de paiement non supporté' });
+    }
+
+    const softRes = await fetch(softpayUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'PAYDUNYA-MASTER-KEY': PAYDUNYA_MASTER_KEY,
+        'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_PRIVATE_KEY,
+        'PAYDUNYA-TOKEN': PAYDUNYA_TOKEN,
+      },
+      body: JSON.stringify(softpayPayload)
+    });
+
+    const softData = await softRes.json();
+    return res.json(softData);
+
+  } catch (err: any) {
+    console.error('[SoftPay] Exception:', err);
+    res.status(500).json({ error: 'Exception interne SoftPay', details: err.message });
+  }
+});
+
 api.post('/payment/webhook', express.json(), async (req: any, res) => {
   try {
     const { data } = req.body;

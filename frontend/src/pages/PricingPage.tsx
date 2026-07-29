@@ -12,6 +12,11 @@ export default function PricingPage() {
     const [searchParams] = useSearchParams()
     const [isLoading, setIsLoading] = useState<string | null>(null)
     const [paymentStatus, setPaymentStatus] = useState<'success' | 'cancelled' | null>(null)
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+    const [selectedPlanForModal, setSelectedPlanForModal] = useState<string | null>(null)
+    const [paymentMethod, setPaymentMethod] = useState<'wave_senegal' | 'orange_money_senegal' | 'free_money_senegal'>('wave_senegal')
+    const [phoneNumber, setPhoneNumber] = useState('')
+    const [softpayMessage, setSoftpayMessage] = useState<string | null>(null)
 
     useEffect(() => {
         const status = searchParams.get('payment')
@@ -30,18 +35,38 @@ export default function PricingPage() {
 
     const handleSubscribe = async (plan: string) => {
         if (!user) {
-            navigate('/auth/login')
+            navigate('/register')
             return
         }
+        setSelectedPlanForModal(plan)
+        setIsPaymentModalOpen(true)
+        setSoftpayMessage(null)
+    }
 
-        setIsLoading(plan)
+    const submitSoftPay = async () => {
+        if (!phoneNumber) {
+            alert('Veuillez entrer un numéro de téléphone valide.')
+            return
+        }
+        setIsLoading(selectedPlanForModal)
+        setSoftpayMessage(null)
         try {
-            const res = await api.post('/payment/create-invoice', { plan })
+            const res = await api.post('/payment/softpay', {
+                plan: selectedPlanForModal,
+                paymentMethod,
+                phoneNumber
+            })
+
+            const data = res.data
             
-            if (res.data && res.data.invoiceUrl) {
-                window.location.href = res.data.invoiceUrl
+            if (data.url) {
+                window.location.href = data.url
+            } else if (data.message) {
+                setSoftpayMessage(data.message)
+                setIsLoading(null)
             } else {
-                alert('Erreur lors de la création de la facture.')
+                alert('Paiement initié, veuillez vérifier votre téléphone.')
+                setIsLoading(null)
             }
         } catch (e: any) {
             const serverMsg = e.response?.data?.error || e.message;
@@ -226,6 +251,114 @@ export default function PricingPage() {
                     <p className="text-zinc-500 text-sm mb-4">Paiements sécurisés avec PayDunya (Orange Money, Wave, Free Money, etc.)</p>
                 </div>
             </div>
+            {/* Payment Modal */}
+            <AnimatePresence>
+                {isPaymentModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/60"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Paiement Rapide</h3>
+                                <button
+                                    onClick={() => { setIsPaymentModalOpen(false); setSoftpayMessage(null); }}
+                                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                                >
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-6">
+                                {softpayMessage ? (
+                                    <div className="text-center py-8 space-y-4">
+                                        <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mb-4">
+                                            <svg className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <h4 className="text-lg font-medium text-gray-900 dark:text-white">Validation en cours</h4>
+                                        <p className="text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl font-medium">
+                                            {softpayMessage}
+                                        </p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                                            Ne fermez pas cette fenêtre. La page se mettra à jour automatiquement une fois le paiement confirmé.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Moyen de paiement
+                                            </label>
+                                            <div className="grid grid-cols-1 gap-3">
+                                                {[
+                                                    { id: 'wave_senegal', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+                                                    { id: 'orange_money_senegal', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200' },
+                                                    { id: 'free_money_senegal', name: 'Free Money', color: 'bg-red-50 text-red-700 border-red-200' }
+                                                ].map(method => (
+                                                    <button
+                                                        key={method.id}
+                                                        onClick={() => setPaymentMethod(method.id as any)}
+                                                        className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${paymentMethod === method.id ? method.color + ' ring-2 ring-offset-2 ring-current' : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:text-gray-300'}`}
+                                                    >
+                                                        <span className="font-semibold">{method.name}</span>
+                                                        {paymentMethod === method.id && (
+                                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Numéro de téléphone
+                                            </label>
+                                            <input
+                                                type="tel"
+                                                value={phoneNumber}
+                                                onChange={(e) => setPhoneNumber(e.target.value)}
+                                                placeholder="Ex: 77 123 45 67"
+                                                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-shadow"
+                                            />
+                                        </div>
+
+                                        <button
+                                            onClick={submitSoftPay}
+                                            disabled={isLoading !== null || !phoneNumber}
+                                            className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed"
+                                        >
+                                            {isLoading === selectedPlanForModal ? (
+                                                <>
+                                                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Préparation...
+                                                </>
+                                            ) : (
+                                                'Confirmer le paiement'
+                                            )}
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
