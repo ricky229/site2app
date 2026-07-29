@@ -7,13 +7,38 @@ import confetti from 'canvas-confetti'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const COUNTRIES = [
-    { id: 'senegal', name: 'Sénégal', methods: [ { id: 'wave_senegal', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200' }, { id: 'new_orange_money_senegal', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200' }, { id: 'free_money_senegal', name: 'Free Money', color: 'bg-red-50 text-red-700 border-red-200' }, { id: 'expresso_senegal', name: 'Expresso', color: 'bg-gray-100 text-gray-700 border-gray-300' } ] },
-    { id: 'ci', name: 'Côte d\'Ivoire', methods: [ { id: 'wave_ci', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200' }, { id: 'orange_money_ci', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200' }, { id: 'mtn_ci', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' }, { id: 'moov_ci', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300' } ] },
-    { id: 'burkina', name: 'Burkina Faso', methods: [ { id: 'orange_money_burkina', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200' }, { id: 'moov_burkina', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300' } ] },
-    { id: 'benin', name: 'Bénin', methods: [ { id: 'mtn_benin', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' }, { id: 'moov_benin', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300' }, { id: 'celtiis_cash', name: 'Celtiis', color: 'bg-green-50 text-green-700 border-green-200' } ] },
-    { id: 'togo', name: 'Togo', methods: [ { id: 't_money_togo', name: 'T-Money', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' }, { id: 'moov_togo', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300' } ] },
-    { id: 'mali', name: 'Mali', methods: [ { id: 'orange_money_mali', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200' }, { id: 'moov_mali', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300' } ] },
-    { id: 'cameroun', name: 'Cameroun', methods: [ { id: 'mtn_cameroun', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200' } ] }
+    { id: 'senegal', name: '🇸🇳 Sénégal', methods: [ 
+        { id: 'wave_senegal', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoText: 'W', logoBg: '#1c3faa' }, 
+        { id: 'new_orange_money_senegal', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'free_money_senegal', name: 'Free Money', color: 'bg-red-50 text-red-700 border-red-200', logoText: 'F', logoBg: '#da291c' }, 
+        { id: 'expresso_senegal', name: 'Expresso', color: 'bg-gray-100 text-gray-700 border-gray-300', logoText: 'EX', logoBg: '#595959' } 
+    ] },
+    { id: 'ci', name: '🇨🇮 Côte d\'Ivoire', methods: [ 
+        { id: 'wave_ci', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoText: 'W', logoBg: '#1c3faa' }, 
+        { id: 'orange_money_ci', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'mtn_ci', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
+        { id: 'moov_ci', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
+    ] },
+    { id: 'burkina', name: '🇧🇫 Burkina Faso', methods: [ 
+        { id: 'orange_money_burkina', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'moov_burkina', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
+    ] },
+    { id: 'benin', name: '🇧🇯 Bénin', methods: [ 
+        { id: 'mtn_benin', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
+        { id: 'moov_benin', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' }, 
+        { id: 'celtiis_cash', name: 'Celtiis', color: 'bg-green-50 text-green-700 border-green-200', logoText: 'C', logoBg: '#008b45' } 
+    ] },
+    { id: 'togo', name: '🇹🇬 Togo', methods: [ 
+        { id: 't_money_togo', name: 'T-Money', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'TM', logoBg: '#ffcc00', logoColor: '#000' }, 
+        { id: 'moov_togo', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
+    ] },
+    { id: 'mali', name: '🇲🇱 Mali', methods: [ 
+        { id: 'orange_money_mali', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
+        { id: 'moov_mali', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
+    ] },
+    { id: 'cameroun', name: '🇨🇲 Cameroun', methods: [ 
+        { id: 'mtn_cameroun', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' } 
+    ] }
 ]
 
 export default function PricingPage() {
@@ -368,9 +393,17 @@ export default function PricingPage() {
                                                         onClick={() => setPaymentMethod(method.id as any)}
                                                         className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all ${paymentMethod === method.id ? method.color + ' ring-2 ring-offset-2 ring-current' : 'border-gray-200 text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:text-gray-300'}`}
                                                     >
-                                                        <span className="font-semibold text-sm">{method.name}</span>
+                                                        <div className="flex items-center space-x-3">
+                                                            <div 
+                                                                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm"
+                                                                style={{ backgroundColor: (method as any).logoBg, color: (method as any).logoColor || '#fff' }}
+                                                            >
+                                                                {(method as any).logoText}
+                                                            </div>
+                                                            <span className="font-semibold text-sm">{method.name}</span>
+                                                        </div>
                                                         {paymentMethod === method.id && (
-                                                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                                             </svg>
                                                         )}
