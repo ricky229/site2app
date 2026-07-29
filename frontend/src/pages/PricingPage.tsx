@@ -7,36 +7,36 @@ import confetti from 'canvas-confetti'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const COUNTRIES = [
-    { id: 'senegal', name: '🇸🇳 Sénégal', methods: [ 
+    { id: 'senegal', flag: 'sn', name: 'Sénégal', methods: [ 
         { id: 'wave_senegal', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoText: 'W', logoBg: '#1c3faa' }, 
         { id: 'new_orange_money_senegal', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
         { id: 'free_money_senegal', name: 'Free Money', color: 'bg-red-50 text-red-700 border-red-200', logoText: 'F', logoBg: '#da291c' }, 
         { id: 'expresso_senegal', name: 'Expresso', color: 'bg-gray-100 text-gray-700 border-gray-300', logoText: 'EX', logoBg: '#595959' } 
     ] },
-    { id: 'ci', name: '🇨🇮 Côte d\'Ivoire', methods: [ 
+    { id: 'ci', flag: 'ci', name: 'Côte d\'Ivoire', methods: [ 
         { id: 'wave_ci', name: 'Wave', color: 'bg-blue-50 text-blue-700 border-blue-200', logoText: 'W', logoBg: '#1c3faa' }, 
         { id: 'orange_money_ci', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
         { id: 'mtn_ci', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
         { id: 'moov_ci', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
     ] },
-    { id: 'burkina', name: '🇧🇫 Burkina Faso', methods: [ 
+    { id: 'burkina', flag: 'bf', name: 'Burkina Faso', methods: [ 
         { id: 'orange_money_burkina', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
         { id: 'moov_burkina', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
     ] },
-    { id: 'benin', name: '🇧🇯 Bénin', methods: [ 
+    { id: 'benin', flag: 'bj', name: 'Bénin', methods: [ 
         { id: 'mtn_benin', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' }, 
         { id: 'moov_benin', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' }, 
         { id: 'celtiis_cash', name: 'Celtiis', color: 'bg-green-50 text-green-700 border-green-200', logoText: 'C', logoBg: '#008b45' } 
     ] },
-    { id: 'togo', name: '🇹🇬 Togo', methods: [ 
+    { id: 'togo', flag: 'tg', name: 'Togo', methods: [ 
         { id: 't_money_togo', name: 'T-Money', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'TM', logoBg: '#ffcc00', logoColor: '#000' }, 
         { id: 'moov_togo', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
     ] },
-    { id: 'mali', name: '🇲🇱 Mali', methods: [ 
+    { id: 'mali', flag: 'ml', name: 'Mali', methods: [ 
         { id: 'orange_money_mali', name: 'Orange Money', color: 'bg-orange-50 text-orange-700 border-orange-200', logoText: 'OM', logoBg: '#ff7900' }, 
         { id: 'moov_mali', name: 'Moov', color: 'bg-blue-50 text-blue-800 border-blue-300', logoText: 'M', logoBg: '#0054a6' } 
     ] },
-    { id: 'cameroun', name: '🇨🇲 Cameroun', methods: [ 
+    { id: 'cameroun', flag: 'cm', name: 'Cameroun', methods: [ 
         { id: 'mtn_cameroun', name: 'MTN', color: 'bg-yellow-50 text-yellow-700 border-yellow-200', logoText: 'MTN', logoBg: '#ffcc00', logoColor: '#000' } 
     ] }
 ]
@@ -55,6 +55,8 @@ export default function PricingPage() {
     const [fullName, setFullName] = useState((user as any)?.fullName || (user as any)?.name || (user as any)?.displayName || '')
     const [email, setEmail] = useState(user?.email || '')
     const [softpayMessage, setSoftpayMessage] = useState<string | null>(null)
+    const [softpayUrl, setSoftpayUrl] = useState<string | null>(null)
+    const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false)
 
     useEffect(() => {
         const status = searchParams.get('payment')
@@ -98,7 +100,8 @@ export default function PricingPage() {
             const data = res.data
             
             if (data.url) {
-                window.location.href = data.url
+                setSoftpayUrl(data.url)
+                setIsLoading(null)
             } else if (data.message) {
                 setSoftpayMessage(data.message)
                 setIsLoading(null)
@@ -305,9 +308,14 @@ export default function PricingPage() {
                             className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
                         >
                             <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Paiement Rapide</h3>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                                    <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    </svg>
+                                    <span>Paiement sécurisé</span>
+                                </h3>
                                 <button
-                                    onClick={() => { setIsPaymentModalOpen(false); setSoftpayMessage(null); setPaymentStatus('cancelled'); }}
+                                    onClick={() => { setIsPaymentModalOpen(false); setSoftpayMessage(null); setPaymentStatus('cancelled'); setSoftpayUrl(null); }}
                                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                                 >
                                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -317,7 +325,33 @@ export default function PricingPage() {
                             </div>
 
                             <div className="p-6 space-y-6">
-                                {softpayMessage ? (
+                                {softpayUrl ? (
+                                    <div className="text-center py-8 space-y-4">
+                                        <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mb-4">
+                                            <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+                                        <h4 className="text-lg font-medium text-gray-900 dark:text-white">Presque terminé !</h4>
+                                        <p className="text-gray-600 dark:text-gray-300">
+                                            Veuillez cliquer sur le bouton ci-dessous pour valider le paiement dans votre application sans quitter le site.
+                                        </p>
+                                        <a 
+                                            href={softpayUrl} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="inline-flex items-center justify-center w-full px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium shadow-lg transition-colors"
+                                        >
+                                            Ouvrir l'application de paiement
+                                            <svg className="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                        </a>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                                            Une fois validé, vous pouvez fermer cette fenêtre. La page se mettra à jour toute seule.
+                                        </p>
+                                    </div>
+                                ) : softpayMessage ? (
                                     <div className="text-center py-8 space-y-4">
                                         <div className="mx-auto w-16 h-16 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mb-4">
                                             <svg className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -365,21 +399,38 @@ export default function PricingPage() {
                                             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                                 Pays
                                             </label>
-                                            <select
-                                                value={selectedCountry}
-                                                onChange={(e) => {
-                                                    setSelectedCountry(e.target.value)
-                                                    const country = COUNTRIES.find(c => c.id === e.target.value)
-                                                    if (country && country.methods.length > 0) {
-                                                        setPaymentMethod(country.methods[0].id)
-                                                    }
-                                                }}
-                                                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-shadow"
-                                            >
-                                                {COUNTRIES.map(country => (
-                                                    <option key={country.id} value={country.id}>{country.name}</option>
-                                                ))}
-                                            </select>
+                                            <div className="relative">
+                                                <div 
+                                                    onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)} 
+                                                    className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 flex items-center justify-between cursor-pointer focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    <div className="flex items-center space-x-3">
+                                                        <img src={`https://flagcdn.com/w20/${COUNTRIES.find(c => c.id === selectedCountry)?.flag}.png`} alt="" className="w-6 rounded-sm shadow-sm" />
+                                                        <span className="text-gray-900 dark:text-white">{COUNTRIES.find(c => c.id === selectedCountry)?.name}</span>
+                                                    </div>
+                                                    <svg className={`w-5 h-5 text-gray-500 transition-transform ${isCountryDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </div>
+                                                {isCountryDropdownOpen && (
+                                                    <div className="absolute z-10 w-full mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                                                        {COUNTRIES.map(country => (
+                                                            <div 
+                                                                key={country.id} 
+                                                                onClick={() => { 
+                                                                    setSelectedCountry(country.id); 
+                                                                    setPaymentMethod(country.methods[0].id); 
+                                                                    setIsCountryDropdownOpen(false); 
+                                                                }} 
+                                                                className={`flex items-center space-x-3 px-4 py-3 cursor-pointer transition-colors ${selectedCountry === country.id ? 'bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                                                            >
+                                                                <img src={`https://flagcdn.com/w20/${country.flag}.png`} alt="" className="w-6 rounded-sm shadow-sm" />
+                                                                <span className={`text-gray-900 dark:text-white ${selectedCountry === country.id ? 'font-medium' : ''}`}>{country.name}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div>
