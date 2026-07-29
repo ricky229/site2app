@@ -1413,20 +1413,38 @@ api.get('/admin/stats', authMiddleware, requireAdmin, async (req, res) => {
     const usersSnapshot = await db.collection('users').get();
     const buildsSnapshot = await db.collection('builds').get();
     
-    // Very basic MRR estimation (just summing up prices of paid plans)
-    // In reality, this requires subscription management logic.
+    // Fetch current pricing to calculate accurate stats
+    let prices = { starter: 200, pro: 200 };
+    try {
+        const settingsDoc = await db.collection('settings').doc('pricing').get();
+        if (settingsDoc.exists) {
+            const data = settingsDoc.data();
+            if (data?.pricing) {
+                prices = { ...prices, ...data.pricing };
+            }
+        }
+    } catch(e) {
+        console.error("Could not fetch pricing for stats", e);
+    }
+
     let mrr = 0;
+    let totalRevenue = 0;
+    
     usersSnapshot.forEach(doc => {
       const plan = doc.data().plan;
-      if (plan === 'starter') mrr += 25000;
-      else if (plan === 'pro') mrr += 75000;
-      else if (plan === 'enterprise') mrr += 150000; // approximation
+      if (plan === 'yearly') {
+          mrr += (prices.starter || 0) / 12;
+          totalRevenue += (prices.starter || 0);
+      } else if (plan === 'lifetime') {
+          totalRevenue += (prices.pro || 0);
+      }
     });
 
     res.json({
       totalUsers: usersSnapshot.size,
       totalBuilds: buildsSnapshot.size,
-      mrr: mrr
+      mrr: Math.round(mrr),
+      totalRevenue: totalRevenue
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
