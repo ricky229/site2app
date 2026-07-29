@@ -311,10 +311,10 @@ export default function PricingPage() {
                         </div>
 
                         <button 
-                            disabled={user?.plan === 'free' || !user?.plan}
-                            className={`w-full py-3 rounded-xl font-bold transition-colors ${(user?.plan === 'free' || !user?.plan) ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed' : 'bg-zinc-800 text-white hover:bg-zinc-700'}`}
+                            disabled={user?.plan === 'free' || !user?.plan || user?.plan === 'yearly' || user?.plan === 'lifetime'}
+                            className={`w-full py-3 rounded-xl font-bold transition-colors ${(user?.plan === 'free' || !user?.plan || user?.plan === 'yearly' || user?.plan === 'lifetime') ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed' : 'bg-zinc-800 text-white hover:bg-zinc-700'}`}
                         >
-                            {user?.plan === 'free' || !user?.plan ? 'Forfait actuel' : 'Choisir ce forfait'}
+                            {user?.plan === 'free' || !user?.plan ? 'Forfait actuel' : (user?.plan === 'yearly' || user?.plan === 'lifetime') ? 'Forfait inférieur' : 'Choisir ce forfait'}
                         </button>
                     </div>
 
@@ -340,10 +340,10 @@ export default function PricingPage() {
 
                         <button 
                             onClick={() => handleSubscribe('yearly')}
-                            disabled={isLoading === 'yearly' || user?.plan === 'yearly'}
-                            className={`w-full py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 ${user?.plan === 'yearly' ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                            disabled={isLoading === 'yearly' || user?.plan === 'yearly' || user?.plan === 'lifetime'}
+                            className={`w-full py-3 rounded-xl font-bold transition-colors flex items-center justify-center gap-2 ${(user?.plan === 'yearly' || user?.plan === 'lifetime') ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                         >
-                            {user?.plan === 'yearly' ? 'Forfait actuel' : isLoading === 'yearly' ? 'Redirection...' : 'Choisir ce forfait'}
+                            {user?.plan === 'yearly' ? 'Forfait actuel' : user?.plan === 'lifetime' ? 'Inclus dans À Vie' : isLoading === 'yearly' ? 'Redirection...' : 'Choisir ce forfait'}
                         </button>
                     </div>
 
