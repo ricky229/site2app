@@ -186,8 +186,8 @@ api.post('/payment/create-invoice', authMiddleware, async (req: any, res) => {
     const PAYDUNYA_MODE = process.env.PAYDUNYA_MODE || 'test';
 
     if (!PAYDUNYA_MASTER_KEY || !PAYDUNYA_PRIVATE_KEY || !PAYDUNYA_TOKEN) {
-      console.error('[PayDunya] Clés API manquantes.');
-      return res.status(500).json({ error: 'Configuration de paiement serveur manquante.', details: { master: !!PAYDUNYA_MASTER_KEY, private: !!PAYDUNYA_PRIVATE_KEY, token: !!PAYDUNYA_TOKEN } });
+      console.error('[PayDunya] Clés API manquantes. Vérifiez vos GitHub Secrets.');
+      return res.status(500).json({ error: 'Configuration serveur manquante. Veuillez vérifier que les secrets GitHub (PAYDUNYA_MASTER_KEY, PAYDUNYA_PRIVATE_KEY, PAYDUNYA_TOKEN) sont bien configurés et non vides.', details: { master: !!PAYDUNYA_MASTER_KEY, private: !!PAYDUNYA_PRIVATE_KEY, token: !!PAYDUNYA_TOKEN } });
     }
 
     const amount = plan === 'yearly' ? 25000 : 75000;
