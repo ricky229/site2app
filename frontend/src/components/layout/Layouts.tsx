@@ -6,11 +6,21 @@ import { useAuthStore } from '../../store/authStore'
 import { Toaster } from 'react-hot-toast'
 
 export function DashboardLayout() {
-    const { isAuthenticated } = useAuthStore()
+    const { isAuthenticated, updateUser } = useAuthStore()
     const location = useLocation()
     const [darkMode, setDarkMode] = useState(() => {
         return localStorage.getItem('site2app_theme') === 'dark'
     })
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            import('../../lib/api').then(({ api }) => {
+                api.get('/auth/me').then(res => {
+                    if (res.data) updateUser(res.data)
+                }).catch(() => {})
+            })
+        }
+    }, [isAuthenticated, updateUser])
 
     useEffect(() => {
         if (darkMode) {
