@@ -172,18 +172,18 @@ export default function Step1Url() {
     )
 
     return (
-        <div className="max-w-4xl mx-auto p-3 sm:p-4 md:p-6">
+        <div className="max-w-2xl mx-auto">
             <div className="mb-8">
-                <div className="step-bubble mb-4">1</div>
-                <h2 className="text-2xl md:text-3xl font-bold mb-2 break-words">Entrez l'URL de votre site</h2>
-                <p className="text-sm md:text-base" style={{ color: 'var(--text-secondary)' }}>
-                    Notre IA va analyser votre site et extraire automatiquement les couleurs, le logo et la structure.
+                <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center font-black text-xl mb-6 shadow-sm border border-blue-500/20">1</div>
+                <h2 className="text-3xl md:text-4xl font-black mb-3 tracking-tight text-[var(--text-primary)]">URL de l'application</h2>
+                <p className="text-lg text-[var(--text-muted)] font-medium">
+                    Entrez l'URL de votre site. Notre IA s'occupe d'analyser le design et la structure.
                 </p>
             </div>
 
             {/* URL Input */}
-            <div className="card p-4 md:p-6 mb-6">
-                <div className="flex flex-col sm:flex-row gap-3">
+            <div className="bg-[var(--surface-1)] border border-[var(--border)] rounded-[2rem] p-6 mb-8 shadow-sm">
+                <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1 min-w-0">
                         <Input
                             inputSize="lg"
@@ -194,11 +194,12 @@ export default function Step1Url() {
                             icon={<Globe size={20} />}
                             error={error}
                             onKeyDown={e => e.key === 'Enter' && handleAnalyze()}
+                            className="bg-white dark:bg-zinc-900 border-2 rounded-xl focus:ring-4 focus:ring-blue-500/20 transition-all shadow-sm"
                         />
                     </div>
                     <Button
                         size="lg"
-                        className="w-full sm:w-auto mt-2 sm:mt-0"
+                        className="w-full sm:w-auto h-[52px] rounded-xl font-bold shadow-lg shadow-blue-500/20"
                         onClick={handleAnalyze}
                         loading={analysisState === 'loading'}
                         icon={<Search size={20} />}
@@ -208,13 +209,13 @@ export default function Step1Url() {
                     </Button>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mt-4">
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Exemples :</span>
-                    {['https://monshop.fr', 'https://blog-express.fr', 'https://restaurpro.fr'].map(ex => (
+                <div className="flex flex-wrap gap-2 mt-4 items-center">
+                    <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">Exemples :</span>
+                    {['https://monshop.fr', 'https://blog-express.fr'].map(ex => (
                         <button
                             key={ex}
                             onClick={() => setUrl(ex)}
-                            className="text-xs px-2 py-1 rounded-md transition-colors"
+                            className="text-xs px-3 py-1.5 rounded-full font-medium transition-colors border border-transparent hover:border-blue-500/30"
                             style={{ background: 'var(--surface-2)', color: 'var(--brand-500)' }}
                         >
                             {ex}
@@ -227,22 +228,18 @@ export default function Step1Url() {
             <AnimatePresence>
                 {analysisState === 'loading' && (
                     <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="card p-6 mb-6"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
                     >
-                        <div className="flex items-center gap-3 mb-5">
-                            <Loader2 size={22} className="animate-spin" style={{ color: 'var(--brand-500)' }} />
-                            <div>
-                                <p className="font-semibold">Analyse en cours...</p>
-                                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{loadingSteps[loadingStep]}</p>
+                        <div className="bg-[var(--surface-1)] border border-[var(--border)] rounded-[2rem] p-8 mb-8 text-center shadow-sm">
+                            <Loader2 size={32} className="animate-spin mx-auto text-blue-500 mb-4" />
+                            <p className="font-bold text-lg mb-1">{loadingSteps[loadingStep]}</p>
+                            <div className="w-48 mx-auto h-1.5 bg-[var(--surface-2)] rounded-full mt-4 overflow-hidden">
+                                <div className="h-full bg-blue-500 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
                             </div>
                         </div>
-                        <div className="progress-bar mb-2">
-                            <div className="progress-fill" style={{ width: `${progress}%` }} />
-                        </div>
-                        <p className="text-xs text-right" style={{ color: 'var(--text-muted)' }}>{Math.round(progress)}%</p>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -253,135 +250,55 @@ export default function Step1Url() {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
+                        className="space-y-6"
                     >
-                        <div className="flex items-center gap-2 mb-5">
-                            <CheckCircle size={20} style={{ color: '#10b981' }} />
-                            <h3 className="font-bold text-lg">Analyse terminée !</h3>
-                            <button
-                                onClick={handleAnalyze}
-                                className="ml-auto btn btn-ghost btn-sm gap-1"
-                            >
-                                <RefreshCw size={14} /> Relancer
+                        <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-4 rounded-2xl">
+                            <CheckCircle size={24} />
+                            <h3 className="font-bold text-lg">Analyse terminée ! Le rendu est visible sur le simulateur.</h3>
+                            <button onClick={handleAnalyze} className="ml-auto btn btn-ghost btn-sm p-2 hover:bg-emerald-500/20 rounded-full transition-colors">
+                                <RefreshCw size={16} />
                             </button>
                         </div>
 
-                        <div className="grid md:grid-cols-5 gap-5">
-                            {/* Left: Screenshot */}
-                            <div className="md:col-span-2">
-                                <div className="card overflow-hidden" style={{ padding: 0 }}>
-                                    <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 relative overflow-hidden">
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <div className="text-center">
-                                                <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center mx-auto mb-3">
-                                                    <Globe size={28} color="white" />
-                                                </div>
-                                                <p className="font-bold text-gray-700">{analysis.title}</p>
-                                                <p className="text-sm text-gray-500">{new URL(analysis.url).hostname}</p>
-                                            </div>
-                                        </div>
+                        <div className="grid sm:grid-cols-2 gap-6">
+                            {/* Color Palette */}
+                            <div className="bg-[var(--surface-1)] border border-[var(--border)] p-6 rounded-[2rem]">
+                                <h4 className="font-bold mb-4 flex items-center gap-2 text-[var(--text-primary)]">
+                                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center">
+                                        <Zap size={16} />
                                     </div>
-                                    <div className="p-4">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            {analysis.favicon && (
-                                                <img src={analysis.favicon} alt="favicon" className="w-5 h-5 rounded" />
-                                            )}
-                                            <span className="font-bold truncate">{analysis.title}</span>
-                                        </div>
-                                        <p className="text-sm truncate" style={{ color: 'var(--text-secondary)' }}>{analysis.description}</p>
-                                        <a
-                                            href={analysis.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center gap-1 text-xs mt-2"
-                                            style={{ color: 'var(--brand-500)' }}
-                                        >
-                                            <ExternalLink size={11} /> {analysis.url}
-                                        </a>
-                                    </div>
-                                </div>
-
-                                {/* Color Palette */}
-                                <div className="card p-4 mt-4">
-                                    <p className="font-semibold text-sm mb-3">Palette détectée</p>
-                                    <div className="flex gap-2">
-                                        {analysis.colors.map((c, i) => (
-                                            <div key={i} className="flex-1 h-10 rounded-lg border" style={{ background: c, borderColor: 'var(--border)' }} title={c} />
-                                        ))}
-                                    </div>
-                                    <div className="flex gap-2 mt-1">
-                                        {analysis.colors.map((c, i) => (
-                                            <p key={i} className="flex-1 text-xs text-center font-mono" style={{ color: 'var(--text-muted)' }}>{c}</p>
-                                        ))}
-                                    </div>
+                                    Couleurs détectées
+                                </h4>
+                                <div className="flex gap-3">
+                                    {analysis.colors.slice(0,4).map((c, i) => (
+                                        <div key={i} className="flex-1 aspect-square rounded-xl shadow-inner border border-black/5" style={{ background: c }} title={c} />
+                                    ))}
                                 </div>
                             </div>
 
-                            {/* Right: Details */}
-                            <div className="md:col-span-3 space-y-4">
-                                {/* Site Health */}
-                                <div className="card p-5">
-                                    <h4 className="font-semibold mb-4">Santé du site</h4>
-                                    <div className="grid grid-cols-2 gap-3 mb-5">
-                                        {[
-                                            { icon: Shield, label: 'SSL/HTTPS', ok: analysis.ssl, color: '#10b981' },
-                                            { icon: Smartphone, label: 'Responsive', ok: analysis.responsive, color: '#3b82f6' },
-                                        ].map(item => (
-                                            <div key={item.label} className="flex items-center gap-3 p-3 rounded-xl"
-                                                style={{ background: item.ok ? `${item.color}10` : 'rgba(239,68,68,0.08)' }}>
-                                                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                                                    style={{ background: item.ok ? `${item.color}20` : 'rgba(239,68,68,0.15)' }}>
-                                                    <item.icon size={16} style={{ color: item.ok ? item.color : '#ef4444' }} />
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs font-semibold">{item.label}</p>
-                                                    <p className="text-xs" style={{ color: item.ok ? item.color : '#ef4444' }}>
-                                                        {item.ok ? '✓ Oui' : '✗ Non'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
+                            {/* Health */}
+                            <div className="bg-[var(--surface-1)] border border-[var(--border)] p-6 rounded-[2rem]">
+                                <h4 className="font-bold mb-4 flex items-center gap-2 text-[var(--text-primary)]">
+                                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                                        <Shield size={16} />
                                     </div>
-
-                                    <div className="space-y-3">
-                                        <ScoreBar score={analysis.performanceScore} label="Performance" color="#3461f5" />
-                                        <ScoreBar score={analysis.ssl ? 100 : 0} label="Sécurité" color="#10b981" />
-                                        <ScoreBar score={analysis.responsive ? 95 : 30} label="Mobile-Friendly" color="#7c3aed" />
+                                    Santé du site
+                                </h4>
+                                <div className="space-y-4">
+                                    <ScoreBar score={analysis.performanceScore} label="Performance" color="#3b82f6" />
+                                    <div className="flex justify-between items-center text-sm font-medium">
+                                        <span className="text-[var(--text-muted)]">Sécurisé (SSL)</span>
+                                        <span className={analysis.ssl ? 'text-emerald-500' : 'text-amber-500'}>
+                                            {analysis.ssl ? 'Oui' : 'Non'}
+                                        </span>
                                     </div>
-
-                                    <div className="mt-4 flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                                        <Clock size={14} />
-                                        Temps de chargement : <strong>{analysis.loadTime}s</strong>
+                                    <div className="flex justify-between items-center text-sm font-medium">
+                                        <span className="text-[var(--text-muted)]">Responsive</span>
+                                        <span className={analysis.responsive ? 'text-emerald-500' : 'text-amber-500'}>
+                                            {analysis.responsive ? 'Oui' : 'Moyen'}
+                                        </span>
                                     </div>
                                 </div>
-
-                                {/* Pages Found */}
-                                <div className="card p-5">
-                                    <h4 className="font-semibold mb-3">Pages détectées</h4>
-                                    <div className="space-y-2">
-                                        {analysis.pages.map((page, i) => (
-                                            <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg"
-                                                style={{ background: 'var(--surface-1)' }}>
-                                                <Globe size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                                                <span className="text-sm font-medium">{page.title}</span>
-                                                <span className="text-xs truncate flex-1" style={{ color: 'var(--text-muted)' }}>{page.url}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Check issues */}
-                                {!analysis.ssl && (
-                                    <div className="card p-4 flex items-center gap-3"
-                                        style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.3)' }}>
-                                        <AlertCircle size={18} style={{ color: '#f59e0b', flexShrink: 0 }} />
-                                        <div>
-                                            <p className="font-semibold text-sm" style={{ color: '#f59e0b' }}>Site sans HTTPS</p>
-                                            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                                                Certaines fonctionnalités natives nécessitent HTTPS (géolocalisation, caméra).
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </motion.div>
@@ -393,20 +310,21 @@ export default function Step1Url() {
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="grid sm:grid-cols-3 gap-4"
+                    className="grid sm:grid-cols-2 gap-4"
                 >
                     {[
-                        { icon: Globe, title: 'N\'importe quel site', desc: 'WordPress, Shopify, site custom, React, Vue...', color: '#3461f5' },
-                        { icon: Zap, title: 'Analyse automatique', desc: 'Logo, couleurs, SSL, performance — tout extrait en 3 secondes.', color: '#7c3aed' },
-                        { icon: CheckCircle, title: '98.7% de succès', desc: 'Notre moteur de build garantit un APK/IPA fonctionnel.', color: '#10b981' },
+                        { icon: Globe, title: 'Tout site web', desc: 'WordPress, Shopify, Webflow...', color: '#3b82f6' },
+                        { icon: Zap, title: 'IA Rapide', desc: 'Couleurs et assets extraits en 3s.', color: '#8b5cf6' },
                     ].map(item => (
-                        <div key={item.title} className="card p-5 text-center">
-                            <div className="w-12 h-12 rounded-xl mx-auto mb-3 flex items-center justify-center"
-                                style={{ background: `${item.color}18`, color: item.color }}>
-                                <item.icon size={22} />
+                        <div key={item.title} className="bg-[var(--surface-1)] border border-[var(--border)] p-6 rounded-[2rem] flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
+                                style={{ background: `${item.color}15`, color: item.color }}>
+                                <item.icon size={24} />
                             </div>
-                            <h4 className="font-semibold mb-1">{item.title}</h4>
-                            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{item.desc}</p>
+                            <div>
+                                <h4 className="font-bold text-[var(--text-primary)] mb-1">{item.title}</h4>
+                                <p className="text-sm font-medium text-[var(--text-muted)] leading-relaxed">{item.desc}</p>
+                            </div>
                         </div>
                     ))}
                 </motion.div>

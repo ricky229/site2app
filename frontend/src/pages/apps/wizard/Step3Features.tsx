@@ -74,30 +74,30 @@ export default function Step3Features() {
     const enabledCount = Object.values(features).filter(Boolean).length
 
     return (
-        <div className="max-w-5xl mx-auto p-3 sm:p-4 md:p-6">
+        <div className="max-w-2xl mx-auto">
             <div className="mb-8">
-                <div className="step-bubble mb-4">3</div>
+                <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center font-black text-xl mb-6 shadow-sm border border-blue-500/20">3</div>
                 <div className="flex items-end justify-between">
                     <div>
-                        <h2 className="text-2xl md:text-3xl font-bold mb-2 break-words">Fonctionnalités & Add-ons</h2>
-                        <p className="text-sm md:text-base" style={{ color: 'var(--text-secondary)' }}>
+                        <h2 className="text-3xl md:text-4xl font-black mb-3 tracking-tight text-[var(--text-primary)]">Fonctionnalités & Add-ons</h2>
+                        <p className="text-lg text-[var(--text-muted)] font-medium">
                             Activez les fonctionnalités natives pour votre application.
                         </p>
                     </div>
-                    <div className="text-right">
-                        <div className="text-3xl font-bold" style={{ color: 'var(--brand-500)' }}>{enabledCount}</div>
-                        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>activées</p>
+                    <div className="text-right pb-1">
+                        <div className="text-3xl font-black text-blue-500">{enabledCount}</div>
+                        <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">activées</p>
                     </div>
                 </div>
             </div>
 
             <div className="space-y-6">
                 {featureGroups.map(group => (
-                    <div key={group.title} className="card p-5">
-                        <h3 className="font-bold mb-4 flex items-center gap-2 text-base">
+                    <div key={group.title} className="bg-[var(--surface-1)] border border-[var(--border)] rounded-[2rem] p-6 shadow-sm">
+                        <h3 className="font-bold mb-4 flex items-center gap-2 text-lg text-[var(--text-primary)]">
                             {group.title}
                         </h3>
-                        <div className="grid sm:grid-cols-2 gap-3">
+                        <div className="grid sm:grid-cols-2 gap-4">
                             {group.features.map(feature => {
                                 const isPremium = feature.plan === 'premium'
                                 const isLocked = isPremium && (!user || user.plan === 'free')
@@ -106,13 +106,13 @@ export default function Step3Features() {
                                 return (
                                     <motion.div
                                         key={feature.key}
-                                        whileHover={isLocked ? {} : { scale: 1.01 }}
+                                        whileHover={isLocked ? {} : { scale: 1.02 }}
                                         onMouseEnter={() => setHoveredFeature(feature.key)}
                                         onMouseLeave={() => setHoveredFeature(null)}
-                                        className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${isLocked ? 'opacity-60 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
+                                        className={`flex items-start gap-4 p-4 rounded-2xl border-2 transition-all ${isLocked ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
                                         style={{
-                                            borderColor: isChecked ? feature.color + '40' : 'var(--border)',
-                                            background: isChecked ? `${feature.color}08` : 'var(--surface-1)',
+                                            borderColor: isChecked ? feature.color : 'var(--border)',
+                                            background: isChecked ? `${feature.color}10` : 'var(--surface-0)',
                                         }}
                                         onClick={() => {
                                             if (isLocked) {
@@ -123,47 +123,44 @@ export default function Step3Features() {
                                         }}
                                     >
                                         <div
-                                            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
+                                            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-all"
                                             style={{
-                                                background: isChecked ? `${feature.color}20` : 'var(--surface-2)',
-                                                color: isChecked ? feature.color : 'var(--text-muted)',
+                                                background: isChecked ? feature.color : 'var(--surface-2)',
+                                                color: isChecked ? '#fff' : 'var(--text-muted)',
                                             }}
                                         >
-                                            <feature.icon size={19} />
+                                            <feature.icon size={20} />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-semibold text-sm">{feature.label}</span>
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="font-bold text-sm text-[var(--text-primary)]">{feature.label}</span>
+                                                <div onClick={e => e.stopPropagation()}>
+                                                    <Toggle
+                                                        checked={isChecked}
+                                                        onChange={v => {
+                                                            if (!isLocked) toggleFeature(feature.key, v)
+                                                        }}
+                                                        size="sm"
+                                                        disabled={isLocked}
+                                                    />
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex flex-wrap gap-1 mb-1">
                                                 {feature.badge && (
-                                                    <span className="badge badge-success text-xs" style={{ fontSize: '0.65rem' }}>
+                                                    <span className="bg-emerald-500/10 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
                                                         {feature.badge}
                                                     </span>
                                                 )}
                                                 {isPremium && (
-                                                    <span className="badge text-xs bg-amber-500/10 text-amber-600" style={{ fontSize: '0.65rem' }}>PREMIUM</span>
+                                                    <span className="bg-amber-500/10 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">PREMIUM</span>
                                                 )}
                                             </div>
-                                            {hoveredFeature === feature.key && (
-                                                <motion.p
-                                                    initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto' }}
-                                                    className="text-xs mt-1"
-                                                    style={{ color: 'var(--text-secondary)' }}
-                                                >
-                                                    {feature.description}
-                                                    {isLocked && <span className="block mt-1 font-bold text-amber-500">Forfait Premium requis.</span>}
-                                                </motion.p>
-                                            )}
-                                        </div>
-                                        <div onClick={e => e.stopPropagation()}>
-                                            <Toggle
-                                                checked={isChecked}
-                                                onChange={v => {
-                                                    if (!isLocked) toggleFeature(feature.key, v)
-                                                }}
-                                                size="sm"
-                                                disabled={isLocked}
-                                            />
+
+                                            <p className="text-xs text-[var(--text-muted)] font-medium leading-relaxed">
+                                                {feature.description}
+                                            </p>
+                                            {isLocked && <span className="block mt-1 text-[10px] font-bold text-amber-500 uppercase tracking-wider">Premium requis</span>}
                                         </div>
                                     </motion.div>
                                 )
@@ -176,45 +173,47 @@ export default function Step3Features() {
             {/* AdMob Configuration Panel */}
             {state.config.features?.admob && (
                 <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-6 p-4 rounded-xl border border-[var(--border)] bg-[var(--surface-2)]"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-6 overflow-hidden"
                 >
-                    <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                        <DollarSign size={16} className="text-amber-500" /> Configuration AdMob (Monétisation)
-                    </h3>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">App ID AdMob (Obligatoire)</label>
-                            <input
-                                type="text"
-                                className="w-full bg-[var(--surface-1)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                                placeholder="ca-app-pub-xxxxxxxxxxxxxxxx~xxxxxxxxxx"
-                                value={state.config.admobAppId || ''}
-                                onChange={e => updateConfig({ admobAppId: e.target.value })}
-                            />
-                            <p className="text-[10px] text-[var(--text-muted)] mt-1">Nécessaire pour le fonctionnement de l'application Android.</p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-[var(--surface-1)] border-2 border-amber-500/30 rounded-[2rem] p-6 shadow-sm">
+                        <h3 className="font-bold mb-4 flex items-center gap-2 text-amber-600 dark:text-amber-500">
+                            <DollarSign size={20} /> Configuration AdMob (Monétisation)
+                        </h3>
+                        <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">ID Annonce Bannière</label>
+                                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-1">App ID AdMob (Obligatoire)</label>
                                 <input
                                     type="text"
-                                    className="w-full bg-[var(--surface-1)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                                    placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
-                                    value={state.config.admobBannerId || ''}
-                                    onChange={e => updateConfig({ admobBannerId: e.target.value })}
+                                    className="w-full bg-[var(--surface-0)] border-2 border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
+                                    placeholder="ca-app-pub-xxxxxxxxxxxxxxxx~xxxxxxxxxx"
+                                    value={state.config.admobAppId || ''}
+                                    onChange={e => updateConfig({ admobAppId: e.target.value })}
                                 />
+                                <p className="text-xs text-[var(--text-muted)] mt-1 font-medium">Nécessaire pour le fonctionnement de l'application Android.</p>
                             </div>
-                            <div>
-                                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">ID Annonce Interstitiel</label>
-                                <input
-                                    type="text"
-                                    className="w-full bg-[var(--surface-1)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                                    placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
-                                    value={state.config.admobInterstitialId || ''}
-                                    onChange={e => updateConfig({ admobInterstitialId: e.target.value })}
-                                />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-[var(--text-primary)] mb-1">ID Annonce Bannière</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-[var(--surface-0)] border-2 border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
+                                        placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                                        value={state.config.admobBannerId || ''}
+                                        onChange={e => updateConfig({ admobBannerId: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-[var(--text-primary)] mb-1">ID Annonce Interstitiel</label>
+                                    <input
+                                        type="text"
+                                        className="w-full bg-[var(--surface-0)] border-2 border-[var(--border)] rounded-xl px-4 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all outline-none"
+                                        placeholder="ca-app-pub-xxxxxxxxxxxxxxxx/xxxxxxxxxx"
+                                        value={state.config.admobInterstitialId || ''}
+                                        onChange={e => updateConfig({ admobInterstitialId: e.target.value })}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -222,12 +221,13 @@ export default function Step3Features() {
             )}
 
             {/* Info banner */}
-            <div className="mt-6 p-4 rounded-xl flex items-start gap-3"
-                style={{ background: 'rgba(52,97,245,0.08)', border: '1px solid rgba(52,97,245,0.2)' }}>
-                <Info size={16} style={{ color: 'var(--brand-500)', flexShrink: 0, marginTop: '2px' }} />
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+            <div className="mt-8 p-5 rounded-2xl flex items-start gap-4 bg-blue-500/5 border border-blue-500/20">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                    <Info size={18} />
+                </div>
+                <p className="text-sm text-[var(--text-secondary)] font-medium leading-relaxed">
                     Chaque fonctionnalité activée ajoute automatiquement les permissions Android/iOS nécessaires
-                    dans le manifest, ainsi que le code natif correspondant. Aucune configuration manuelle requise.
+                    dans le manifest, ainsi que le code natif correspondant. <strong className="text-[var(--text-primary)]">Aucune configuration manuelle requise.</strong>
                 </p>
             </div>
         </div>

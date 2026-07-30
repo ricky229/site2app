@@ -11,6 +11,7 @@ import Step2Customization from './wizard/Step2Customization'
 import Step3Features from './wizard/Step3Features'
 import Step4Preview from './wizard/Step4Preview'
 import Step5Build from './wizard/Step5Build'
+import AppSimulator from './wizard/AppSimulator'
 import Button from '../../components/ui/Button'
 
 const steps = [
@@ -96,104 +97,101 @@ export default function CreateAppPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col" style={{ background: 'var(--surface-1)' }}>
-            {/* Top Bar */}
-            <div className="sticky top-0 z-30 border-b flex-shrink-0"
-                style={{ background: 'var(--surface-0)', borderColor: 'var(--border)' }}>
-                <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center gap-2 md:gap-4">
-                    <button onClick={handleClose} className="btn btn-ghost btn-sm p-1 md:p-2 -ml-2" title="Fermer">
-                        <X size={20} />
-                    </button>
-                    <div className="h-5 w-[1px]" style={{ background: 'var(--border)' }} />
-                    <h1 className="font-semibold text-sm md:text-base truncate min-w-0" style={{ maxWidth: '60%' }}>
-                        {id ? 'Modifier l\'application' : 'Créer une application'}
-                    </h1>
+        <div className="min-h-screen flex flex-col bg-[var(--surface-0)] overflow-hidden">
+            {/* Minimalist Top Bar */}
+            <div className="sticky top-0 z-40 border-b bg-[var(--surface-0)]/80 backdrop-blur-md flex-shrink-0"
+                style={{ borderColor: 'var(--border)' }}>
+                <div className="max-w-[1600px] mx-auto px-4 md:px-8 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <button onClick={handleClose} className="btn btn-ghost btn-sm p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors" title="Fermer">
+                            <X size={20} />
+                        </button>
+                        <div className="h-5 w-[1px] bg-[var(--border)]" />
+                        <h1 className="font-bold text-sm md:text-base text-[var(--text-primary)]">
+                            {id ? 'Modifier l\'application' : 'Créer une application'}
+                        </h1>
+                    </div>
 
-                    <div className="flex-1 hidden md:block">
-                        {/* Progress connector */}
-                        <div className="flex items-center justify-center gap-2">
-                            {steps.map((step, i) => (
-                                <div key={step.id} className="flex items-center gap-2">
-                                    <div className="wizard-step">
-                                        <div className={`wizard-step-number w-8 h-8 text-sm ${currentStep === step.id ? 'active' : currentStep > step.id ? 'completed' : ''}`}>
-                                            {currentStep > step.id ? '✓' : step.id}
-                                        </div>
-                                        <span className="text-xs whitespace-nowrap" style={{
-                                            color: currentStep === step.id ? 'var(--brand-500)' : currentStep > step.id ? '#10b981' : 'var(--text-muted)',
-                                            fontWeight: currentStep === step.id ? 600 : 400,
-                                        }}>{step.short}</span>
-                                    </div>
-                                    {i < steps.length - 1 && (
-                                        <div className={`wizard-connector ${currentStep > step.id ? 'completed' : ''}`}
-                                            style={{ width: 32 }} />
-                                    )}
+                    <div className="flex items-center gap-3">
+                        {steps.map((step, i) => (
+                            <div key={step.id} className="flex items-center gap-3">
+                                <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold transition-all
+                                    ${currentStep === step.id ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20' 
+                                    : currentStep > step.id ? 'bg-emerald-500 text-white' : 'bg-[var(--surface-2)] text-[var(--text-muted)]'}`}>
+                                    {currentStep > step.id ? '✓' : step.id}
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="md:hidden ml-auto flex-shrink-0">
-                        <span className="badge badge-brand text-xs">Étape {currentStep}/{steps.length}</span>
+                                {i < steps.length - 1 && (
+                                    <div className={`w-4 md:w-8 h-[2px] rounded-full transition-all ${currentStep > step.id ? 'bg-emerald-500' : 'bg-[var(--surface-2)]'}`} />
+                                )}
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>
 
-            {/* Step Content */}
-            <div className="flex-1">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={currentStep}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.25 }}
-                        className="h-full"
-                    >
-                        {currentStep === 1 && <Step1Url />}
-                        {currentStep === 2 && <Step2Customization />}
-                        {currentStep === 3 && <Step3Features />}
-                        {currentStep === 4 && <Step4Preview />}
-                        {currentStep === 5 && <Step5Build />}
-                    </motion.div>
-                </AnimatePresence>
-            </div>
-
-            {/* Bottom Navigation (hide on step 5) */}
-            {currentStep < 5 && (
-                <div className="sticky bottom-0 border-t flex-shrink-0"
-                    style={{ background: 'var(--surface-0)', borderColor: 'var(--border)' }}>
-                    <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-                        <Button
-                            variant="ghost"
-                            onClick={currentStep === 1 ? handleClose : prevStep}
-                            icon={<ChevronLeft size={16} />}
-                        >
-                            {currentStep === 1 ? 'Annuler' : 'Précédent'}
-                        </Button>
-
-                        <div className="flex items-center gap-2">
-                            {steps.map(s => (
-                                <div
-                                    key={s.id}
-                                    className="w-2 h-2 rounded-full transition-all"
-                                    style={{
-                                        background: currentStep >= s.id ? 'var(--brand-500)' : 'var(--surface-3)',
-                                        width: currentStep === s.id ? '20px' : '8px',
-                                    }}
-                                />
-                            ))}
-                        </div>
-
-                        <Button
-                            onClick={nextStep}
-                            disabled={!canGoNext()}
-                            iconRight={<ChevronRight size={16} />}
-                        >
-                            {currentStep === 4 ? 'Lancer le build' : 'Continuer'}
-                        </Button>
+            {/* Split View Content */}
+            <div className="flex-1 flex flex-col lg:flex-row overflow-hidden max-w-[1600px] w-full mx-auto relative">
+                
+                {/* Left Column (Forms) */}
+                <div className="w-full lg:w-[55%] flex flex-col h-full overflow-y-auto bg-[var(--surface-0)] relative z-10 scrollbar-hide">
+                    
+                    {/* Form Steps */}
+                    <div className="flex-1 px-4 sm:px-8 md:px-12 py-10 pb-32 max-w-2xl mx-auto w-full">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={currentStep}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.3 }}
+                                className="h-full"
+                            >
+                                {currentStep === 1 && <Step1Url />}
+                                {currentStep === 2 && <Step2Customization />}
+                                {currentStep === 3 && <Step3Features />}
+                                {currentStep === 4 && <Step4Preview />}
+                                {currentStep === 5 && <Step5Build />}
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
+
+                    {/* Bottom Navigation for Left Column */}
+                    {currentStep < 5 && (
+                        <div className="sticky bottom-0 bg-[var(--surface-0)]/95 backdrop-blur-md border-t border-[var(--border)] p-4 md:px-12 flex justify-between items-center shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-20">
+                            <Button
+                                variant="ghost"
+                                onClick={currentStep === 1 ? handleClose : prevStep}
+                                icon={<ChevronLeft size={16} />}
+                                className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                            >
+                                {currentStep === 1 ? 'Annuler' : 'Précédent'}
+                            </Button>
+
+                            <Button
+                                onClick={nextStep}
+                                disabled={!canGoNext()}
+                                iconRight={<ChevronRight size={16} />}
+                                className="shadow-lg shadow-blue-500/20"
+                            >
+                                {currentStep === 4 ? 'Lancer le build' : 'Continuer'}
+                            </Button>
+                        </div>
+                    )}
                 </div>
-            )}
+
+                {/* Right Column (Simulator) */}
+                <div className="hidden lg:flex w-full lg:w-[45%] bg-[var(--surface-1)] border-l border-[var(--border)] items-center justify-center p-8 sticky top-16 h-[calc(100vh-4rem)] overflow-hidden">
+                    {currentStep < 5 ? (
+                        <AppSimulator />
+                    ) : (
+                        <div className="text-center opacity-50">
+                            <p className="text-lg font-bold">Génération en cours...</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+            
+            {/* Mobile floating simulator toggle? (Optional, maybe later) */}
         </div>
     )
 }
