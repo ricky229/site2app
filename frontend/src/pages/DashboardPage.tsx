@@ -297,8 +297,8 @@ export default function DashboardPage() {
 
             <div className="grid xl:grid-cols-3 gap-8 min-w-[50px] min-w-0">
                 {/* Apps List */}
-                <div className="xl:col-span-2">
-                    <div className="flex items-center justify-between mb-6">
+                <div className="xl:col-span-2 min-w-[50px] min-w-0">
+                    <div className="flex items-center justify-between mb-6 min-w-[50px] min-w-0">
                         <h2 className="text-2xl font-black tracking-tight flex items-center gap-3">
                             Vos Applications
                             <span className="px-3 py-1 rounded-full text-xs bg-blue-500/10 text-blue-500">
@@ -310,7 +310,7 @@ export default function DashboardPage() {
                         </Link>
                     </div>
                     
-                    <div className="space-y-5">
+                    <div className="space-y-5 min-w-[50px] min-w-0">
                         {(apps || []).length === 0 ? (
                             <div className="rounded-[2rem] p-12 text-center border-2 border-dashed border-[var(--border)]" style={{ background: 'var(--surface-1)' }}>
                                 <div className="w-24 h-24 rounded-full bg-[var(--surface-2)] flex items-center justify-center mx-auto mb-6">
