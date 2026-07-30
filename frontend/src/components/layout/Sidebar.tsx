@@ -22,6 +22,8 @@ export default function Sidebar() {
     const { user } = useAuthStore()
     const [scrolled, setScrolled] = useState(false)
 
+    const isWizard = location.pathname.includes('/create') || (location.pathname.startsWith('/apps/') && location.pathname !== '/apps')
+
     useEffect(() => {
         const handleScroll = () => {
             setScrolled(window.scrollY > 20)
