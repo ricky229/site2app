@@ -84,16 +84,25 @@ export default function AnalyticsPage() {
              const now = new Date()
              const periodStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000)
              
-             const periodNotifs = notifs.filter((n: any) => new Date(n['Created Date'] || n.createdAt) >= periodStart)
-             const periodDevices = devices.filter((d: any) => new Date(d['Created Date'] || d.createdAt) >= periodStart)
+             const parseDate = (val: any) => {
+                 if (!val) return new Date(0);
+                 if (val._seconds) return new Date(val._seconds * 1000);
+                 return new Date(val);
+             };
+
+             const periodNotifs = notifs.filter((n: any) => parseDate(n['Created Date'] || n.createdAt) >= periodStart)
+             const periodDevices = devices.filter((d: any) => parseDate(d['Created Date'] || d.createdAt || d.updatedAt) >= periodStart)
 
              const totalSent = periodNotifs.reduce((sum: number, n: any) => sum + (n.stats?.successCount || 0) + (n.stats?.failureCount || 0) + (n.sentCount || n.sent || 0), 0)
              const totalDelivered = periodNotifs.reduce((sum: number, n: any) => sum + (n.stats?.successCount || n.deliveredCount || n.delivered || 0), 0)
              const avgDeliveryRate = totalSent > 0 ? Math.round((totalDelivered / totalSent) * 100) : 0
              
+             // Fallback to activeUsers on apps if devices array is empty
+             const totalDevices = devices.length > 0 ? devices.length : apps.reduce((sum: number, a: any) => sum + (a.activeUsers || 0), 0);
+
              const summary = {
                  totalApps: apps.length,
-                 totalDevices: devices.length,
+                 totalDevices,
                  totalSent,
                  totalDelivered,
                  avgDeliveryRate
@@ -107,7 +116,7 @@ export default function AnalyticsPage() {
              }
              
              periodNotifs.forEach((n: any) => {
-                 const d1 = new Date(n['Created Date'] || n.createdAt)
+                 const d1 = parseDate(n['Created Date'] || n.createdAt)
                  if (isNaN(d1.getTime())) return;
                  const key = d1.toISOString().split('T')[0]
                  if (dailyData[key]) {
@@ -117,7 +126,7 @@ export default function AnalyticsPage() {
              })
              
              periodDevices.forEach((d: any) => {
-                 const d1 = new Date(d['Created Date'] || d.createdAt)
+                 const d1 = parseDate(d['Created Date'] || d.createdAt || d.updatedAt)
                  if (isNaN(d1.getTime())) return;
                  const key = d1.toISOString().split('T')[0]
                  if (dailyData[key]) {
@@ -158,7 +167,7 @@ export default function AnalyticsPage() {
                  }
              })
              
-             const topNotifications = periodNotifs.sort((a: any, b: any) => new Date(b['Created Date'] || b.createdAt).getTime() - new Date(a['Created Date'] || a.createdAt).getTime()).slice(0, 5).map((n: any) => {
+             const topNotifications = periodNotifs.sort((a: any, b: any) => parseDate(b['Created Date'] || b.createdAt).getTime() - parseDate(a['Created Date'] || a.createdAt).getTime()).slice(0, 5).map((n: any) => {
                  const nSent = (n.stats?.successCount || 0) + (n.stats?.failureCount || 0) + (n.sentCount || n.sent || 0);
                  const nDeliv = (n.stats?.successCount || n.deliveredCount || n.delivered || 0);
                  return {
@@ -172,12 +181,12 @@ export default function AnalyticsPage() {
                  }
              })
              
-             const recentDevices = periodDevices.sort((a: any, b: any) => new Date(b['Created Date'] || b.createdAt).getTime() - new Date(a['Created Date'] || a.createdAt).getTime()).slice(0, 5).map((d: any) => ({
+             const recentDevices = periodDevices.sort((a: any, b: any) => parseDate(b['Created Date'] || b.createdAt || b.updatedAt).getTime() - parseDate(a['Created Date'] || a.createdAt || a.updatedAt).getTime()).slice(0, 5).map((d: any) => ({
                  os: d.os || 'android',
                  buildName: d.appName || 'App',
                  id: (d.deviceId || d._id || '').slice(0, 15) + '...',
                  fullId: d.deviceId || d._id,
-                 registeredAt: d['Created Date'] || d.createdAt
+                 registeredAt: d['Created Date'] || d.createdAt || d.updatedAt
              }))
 
              return {
