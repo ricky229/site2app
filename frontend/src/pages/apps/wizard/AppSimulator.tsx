@@ -17,7 +17,6 @@ export default function AppSimulator() {
     const isDarkStatusBar = config.statusBar?.style === 'dark'
     const statusTextColor = isDarkStatusBar ? 'rgba(0,0,0,0.8)' : '#ffffff'
 
-    const showSplash = currentStep === 2 && !config.name // Just an example logic or when loading
     const showUrl = siteAnalysis?.url
 
     return (
@@ -106,19 +105,19 @@ export default function AppSimulator() {
                             </motion.div>
                         )}
 
-                        {currentStep > 1 && showUrl && (
+                        {currentStep > 1 && showUrl && currentStep !== 5 && (
                             <motion.iframe
                                 key="iframe"
                                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
                                 src={siteAnalysis.url}
-                                className="w-full h-full bg-white border-0"
+                                className="w-full h-full bg-white border-0 z-10 relative"
                                 sandbox="allow-same-origin allow-scripts allow-forms"
                                 title="App Preview"
                             />
                         )}
 
-                        {/* Splash screen simulation on demand or if no URL */}
-                        {showSplash && (
+                        {/* Splash screen simulation during build */}
+                        {currentStep === 5 && (
                             <motion.div
                                 key="splash"
                                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

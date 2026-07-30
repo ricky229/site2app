@@ -92,45 +92,49 @@ export default function Sidebar() {
             </aside>
 
             {/* Mobile Top Bar */}
-            <div className={`md:hidden fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled ? 'bg-[var(--surface-0)]/80 backdrop-blur-xl border-b border-[var(--border)] shadow-sm' : 'bg-transparent'}`}>
-                <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-600 text-white shadow-md">
-                            <Zap size={16} fill="currentColor" />
+            {!isWizard && (
+                <div className={`md:hidden fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled ? 'bg-[var(--surface-0)]/80 backdrop-blur-xl border-b border-[var(--border)] shadow-sm' : 'bg-transparent'}`}>
+                    <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-600 text-white shadow-md">
+                                <Zap size={16} fill="currentColor" />
+                            </div>
+                            <span className="font-black text-lg tracking-tight text-[var(--text-primary)]">Site2App</span>
                         </div>
-                        <span className="font-black text-lg tracking-tight text-[var(--text-primary)]">Site2App</span>
+                        <button
+                            onClick={() => navigate('/apps/create')}
+                            className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400 rounded-full"
+                        >
+                            <Plus size={18} strokeWidth={3} />
+                        </button>
                     </div>
-                    <button
-                        onClick={() => navigate('/apps/create')}
-                        className="flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400 rounded-full"
-                    >
-                        <Plus size={18} strokeWidth={3} />
-                    </button>
                 </div>
-            </div>
+            )}
 
             {/* Mobile Bottom Navigation */}
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[var(--surface-0)]/90 backdrop-blur-xl border-t border-[var(--border)] z-50 pb-safe">
-                <div className="flex items-center justify-around p-2">
-                    {navItems.map(item => {
-                        const active = location.pathname.startsWith(item.path)
-                        return (
-                            <Link
-                                key={item.path}
-                                to={item.path}
-                                className={`flex flex-col items-center justify-center w-16 p-1 rounded-xl transition-all ${
-                                    active ? 'text-blue-600 dark:text-blue-400' : 'text-[var(--text-muted)]'
-                                }`}
-                            >
-                                <div className={`flex items-center justify-center w-10 h-8 rounded-full mb-1 transition-colors ${active ? 'bg-blue-100 dark:bg-blue-500/20' : 'bg-transparent'}`}>
-                                    <item.icon size={20} strokeWidth={active ? 2.5 : 2} />
-                                </div>
-                                <span className="text-[10px] font-semibold">{item.label}</span>
-                            </Link>
-                        )
-                    })}
-                </div>
-            </nav>
+            {!isWizard && (
+                <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[var(--surface-0)]/90 backdrop-blur-xl border-t border-[var(--border)] z-50 pb-safe">
+                    <div className="flex items-center justify-around p-2">
+                        {navItems.map(item => {
+                            const active = location.pathname.startsWith(item.path)
+                            return (
+                                <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    className={`flex flex-col items-center justify-center w-16 p-1 rounded-xl transition-all ${
+                                        active ? 'text-blue-600 dark:text-blue-400' : 'text-[var(--text-muted)]'
+                                    }`}
+                                >
+                                    <div className={`flex items-center justify-center w-10 h-8 rounded-full mb-1 transition-colors ${active ? 'bg-blue-100 dark:bg-blue-500/20' : 'bg-transparent'}`}>
+                                        <item.icon size={20} strokeWidth={active ? 2.5 : 2} />
+                                    </div>
+                                    <span className="text-[10px] font-semibold">{item.label}</span>
+                                </Link>
+                            )
+                        })}
+                    </div>
+                </nav>
+            )}
         </>
     )
 }
