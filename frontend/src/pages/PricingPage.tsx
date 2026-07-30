@@ -375,7 +375,7 @@ export default function PricingPage() {
                 
                 {/* PayDunya Logos */}
                 <div className="mt-16 text-center">
-                    <p className="text-zinc-500 text-sm mb-4">Paiements sécurisés avec PayDunya (Orange Money, Wave, Free Money, etc.)</p>
+                    <p className="text-zinc-500 text-sm mb-4">Paiements sécurisés avec (Orange Money, Wave, Free Money, etc.)</p>
                 </div>
             </div>
             {/* Payment Modal */}
