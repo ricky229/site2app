@@ -292,7 +292,7 @@ export default function PricingPage() {
                     <p className="text-zinc-400 text-lg max-w-2xl mx-auto">Choisissez le forfait qui correspond le mieux à vos besoins. Aucun frais caché.</p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <div className="grid md:grid-cols-3 gap-[25px] max-w-5xl mx-auto min-w-[50px] min-w-0">
                     {/* Free Plan */}
                     <div className="bg-zinc-900 border border-white/10 rounded-2xl p-8 flex flex-col relative">
                         <div className="mb-8">

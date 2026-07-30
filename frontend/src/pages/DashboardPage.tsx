@@ -76,7 +76,7 @@ const PremiumStatCard = ({ title, value, icon: Icon, color, delay }: any) => (
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay, duration: 0.5, ease: "easeOut" }}
-        className="relative overflow-hidden rounded-3xl p-6 border group"
+        className="relative overflow-hidden rounded-3xl p-6 border group min-w-[50px] min-w-0"
         style={{
             background: 'var(--surface-1)',
             borderColor: 'var(--border)',
@@ -117,7 +117,7 @@ const PremiumAppCard = ({ app, delay }: any) => {
             transition={{ delay, duration: 0.4 }}
             whileHover={{ y: -4, scale: 1.01 }}
             onClick={() => navigate(`/apps/${app.id}`)}
-            className="group cursor-pointer rounded-3xl p-5 md:p-6 relative overflow-hidden"
+            className="group cursor-pointer rounded-3xl p-5 md:p-6 relative overflow-hidden min-w-[50px] min-w-0"
             style={{
                 background: 'var(--surface-1)',
                 border: '1px solid var(--border)',
@@ -145,20 +145,20 @@ const PremiumAppCard = ({ app, delay }: any) => {
                 <StatusBadge status={app.status} />
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-6 relative z-10">
+            <div className="grid grid-cols-3 gap-3 mb-6 relative z-10 min-w-[50px] min-w-0">
                 {[
                     { label: 'Téléchargements', value: formatNumber(app.downloadCount), icon: Download },
                     { label: 'Utilisateurs', value: formatNumber(app.activeUsers), icon: Users },
                     { label: 'Version', value: app.version, icon: Package },
                 ].map((s, i) => (
-                    <div key={i} className="rounded-2xl p-3 md:p-4 text-center border border-[var(--border)]" style={{ background: 'var(--surface-2)' }}>
+                    <div key={i} className="rounded-2xl p-3 md:p-4 text-center border border-[var(--border)] min-w-[50px] min-w-0" style={{ background: 'var(--surface-2)' }}>
                         <p className="text-xl md:text-2xl font-black text-[var(--text-primary)] mb-1">{s.value}</p>
                         <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{s.label}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="flex items-center justify-between relative z-10 pt-5 border-t border-[var(--border)]">
+            <div className="flex flex-wrap items-center justify-between relative z-10 pt-5 border-t border-[var(--border)] gap-2 min-w-[50px] min-w-0">
                 <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-muted)]">
                     <Clock size={16} />
                     {app.lastBuiltAt ? formatRelativeTime(app.lastBuiltAt) : 'Jamais buildé'}
@@ -244,7 +244,7 @@ export default function DashboardPage() {
             </motion.div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 mb-10 min-w-[50px] min-w-0">
                 <PremiumStatCard
                     title="Applications actives"
                     value={stats?.totalApps ?? 0}
@@ -295,7 +295,7 @@ export default function DashboardPage() {
                 </motion.div>
             )}
 
-            <div className="grid xl:grid-cols-3 gap-8">
+            <div className="grid xl:grid-cols-3 gap-8 min-w-[50px] min-w-0">
                 {/* Apps List */}
                 <div className="xl:col-span-2">
                     <div className="flex items-center justify-between mb-6">
@@ -351,13 +351,13 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Right Column */}
-                <div className="space-y-6">
+                <div className="space-y-6 min-w-[50px] min-w-0">
                     {/* Premium Quick Actions */}
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.4 }}
-                        className="rounded-[2rem] p-8 relative overflow-hidden"
+                        className="rounded-[2rem] p-8 relative overflow-hidden min-w-[50px] min-w-0"
                         style={{ background: 'var(--surface-1)', border: '1px solid var(--border)', boxShadow: '0 10px 40px rgba(0,0,0,0.02)' }}
                     >
                         <div className="flex items-center gap-3 mb-8">

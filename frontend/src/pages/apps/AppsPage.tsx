@@ -87,7 +87,7 @@ const PremiumAppCard = ({ app, delay }: any) => {
             transition={{ delay, duration: 0.4 }}
             whileHover={{ y: -4, scale: 1.01 }}
             onClick={() => navigate(`/apps/${app.id}`)}
-            className="group cursor-pointer rounded-3xl p-5 md:p-6 relative overflow-hidden flex flex-col"
+            className="group cursor-pointer rounded-3xl p-5 md:p-6 relative overflow-hidden flex flex-col min-w-[50px] min-w-0"
             style={{
                 background: 'var(--surface-1)',
                 border: '1px solid var(--border)',
@@ -115,20 +115,20 @@ const PremiumAppCard = ({ app, delay }: any) => {
                 <StatusBadge status={app.status} />
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-6 relative z-10 flex-1">
+            <div className="grid grid-cols-3 gap-3 mb-6 relative z-10 flex-1 min-w-[50px] min-w-0">
                 {[
                     { label: 'Tlchargements', value: formatNumber(app.downloadCount) },
                     { label: 'Utilisateurs', value: formatNumber(app.activeUsers) },
                     { label: 'Version', value: app.version },
                 ].map((s, i) => (
-                    <div key={i} className="rounded-2xl p-2 md:p-3 text-center border border-[var(--border)] flex flex-col justify-center" style={{ background: 'var(--surface-2)' }}>
+                    <div key={i} className="rounded-2xl p-2 md:p-3 text-center border border-[var(--border)] flex flex-col justify-center min-w-[50px] min-w-0" style={{ background: 'var(--surface-2)' }}>
                         <p className="text-lg md:text-xl font-black text-[var(--text-primary)] mb-0.5">{s.value}</p>
                         <p className="text-[9px] md:text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">{s.label}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="flex items-center justify-between relative z-10 pt-4 border-t border-[var(--border)] mb-4">
+            <div className="flex flex-wrap items-center justify-between relative z-10 pt-4 border-t border-[var(--border)] mb-4 gap-2 min-w-[50px] min-w-0">
                 <div className="flex items-center gap-2 text-[11px] md:text-xs font-medium text-[var(--text-muted)]">
                     <Clock size={14} />
                     {app.lastBuiltAt ? formatRelativeTime(app.lastBuiltAt) : 'Jamais build'}
@@ -141,7 +141,7 @@ const PremiumAppCard = ({ app, delay }: any) => {
             </div>
 
             {/* Actions overlay / bottom strip */}
-            <div className="flex gap-2 relative z-10" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-wrap gap-2 relative z-10 min-w-[50px] min-w-0" onClick={e => e.stopPropagation()}>
                 <button
                     className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--surface-3)] hover:text-blue-500 transition-colors cursor-pointer"
                     onClick={() => navigate(`/apps/${app.id}`)}
@@ -290,7 +290,7 @@ export default function AppsPage() {
                     )}
                 </motion.div>
             ) : (
-                <div className={`grid gap-6 ${view === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+                <div className={`grid gap-6 ${view === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'} min-w-[50px] min-w-0`}>
                     <AnimatePresence>
                         {filtered.map((app, i) => (
                             <PremiumAppCard key={app.id} app={app} delay={i * 0.05} />
