@@ -358,9 +358,9 @@ export default function LandingPage() {
                         <span className="font-bold text-lg tracking-tight text-zinc-500">Site2App</span>
                     </div>
                     <div className="flex gap-6 text-xs text-zinc-600 font-medium">
-                        <a href="#" className="hover:text-zinc-300 transition-colors">CGV</a>
-                        <a href="#" className="hover:text-zinc-300 transition-colors">Confidentialité</a>
-                        <a href="#" className="hover:text-zinc-300 transition-colors">Contact</a>
+                        <Link to="/terms" className="hover:text-zinc-300 transition-colors">CGV</Link>
+                        <Link to="/privacy" className="hover:text-zinc-300 transition-colors">Confidentialité</Link>
+                        <a href="mailto:support@site2app.com" className="hover:text-zinc-300 transition-colors">Contact</a>
                     </div>
                 </div>
             </footer>
