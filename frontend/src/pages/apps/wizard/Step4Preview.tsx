@@ -21,7 +21,6 @@ export default function Step4Preview() {
     const phoneH = isPortrait ? 640 : 340
 
     return (
-    return (
         <div className="max-w-2xl mx-auto">
             <div className="mb-8">
                 <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center font-black text-xl mb-6 shadow-sm border border-blue-500/20">4</div>
