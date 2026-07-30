@@ -24,8 +24,8 @@ export default function Step4Preview() {
         <div className="max-w-2xl mx-auto">
             <div className="mb-8">
                 <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center font-black text-xl mb-6 shadow-sm border border-blue-500/20">4</div>
-                <h2 className="text-3xl md:text-4xl font-black mb-3 tracking-tight text-[var(--text-primary)]">Résumé & Confirmation</h2>
-                <p className="text-lg text-[var(--text-muted)] font-medium">
+                <h2 className="text-2xl md:text-3xl font-black mb-3 tracking-tight text-[var(--text-primary)]">Résumé & Confirmation</h2>
+                <p className="text-base md:text-lg text-[var(--text-muted)] font-medium">
                     Vérifiez la configuration de votre application avant de lancer la génération.
                 </p>
             </div>

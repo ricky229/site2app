@@ -97,7 +97,7 @@ export default function CreateAppPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-[var(--surface-0)] overflow-hidden">
+        <div className="h-[100dvh] flex flex-col bg-[var(--surface-0)] overflow-hidden">
             {/* Minimalist Top Bar */}
             <div className="sticky top-0 z-40 border-b bg-[var(--surface-0)]/80 backdrop-blur-md flex-shrink-0"
                 style={{ borderColor: 'var(--border)' }}>
@@ -112,16 +112,16 @@ export default function CreateAppPage() {
                         </h1>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 md:gap-3">
                         {steps.map((step, i) => (
-                            <div key={step.id} className="flex items-center gap-3">
+                            <div key={step.id} className="flex items-center gap-2 md:gap-3">
                                 <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold transition-all
                                     ${currentStep === step.id ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20' 
-                                    : currentStep > step.id ? 'bg-emerald-500 text-white' : 'bg-[var(--surface-2)] text-[var(--text-muted)]'}`}>
+                                    : currentStep > step.id ? 'bg-emerald-500 text-white' : 'bg-[var(--surface-2)] text-[var(--text-muted)] hidden md:flex'}`}>
                                     {currentStep > step.id ? '✓' : step.id}
                                 </div>
                                 {i < steps.length - 1 && (
-                                    <div className={`w-4 md:w-8 h-[2px] rounded-full transition-all ${currentStep > step.id ? 'bg-emerald-500' : 'bg-[var(--surface-2)]'}`} />
+                                    <div className={`w-2 md:w-8 h-[2px] rounded-full transition-all ${currentStep > step.id ? 'bg-emerald-500' : 'bg-[var(--surface-2)]'} hidden md:block`} />
                                 )}
                             </div>
                         ))}
@@ -136,7 +136,7 @@ export default function CreateAppPage() {
                 <div className="w-full lg:w-[55%] flex flex-col h-full overflow-y-auto bg-[var(--surface-0)] relative z-10 scrollbar-hide">
                     
                     {/* Form Steps */}
-                    <div className="flex-1 px-4 sm:px-8 md:px-12 py-10 pb-32 max-w-2xl mx-auto w-full">
+                    <div className="flex-1 px-4 sm:px-8 md:px-12 py-6 md:py-10 pb-32 max-w-2xl mx-auto w-full">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={currentStep}

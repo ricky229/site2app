@@ -328,7 +328,7 @@ export default function Step5Build() {
             {phase !== 'done' && phase !== 'error' && (
                 <div className="mb-8">
                     <div className="step-bubble mb-4">5</div>
-                    <h2 className="text-3xl font-bold mb-2">Build & Téléchargement</h2>
+                    <h2 className="text-2xl md:text-3xl font-bold mb-2">Build & Téléchargement</h2>
                     <p style={{ color: 'var(--text-secondary)' }}>
                         Choisissez la plateforme cible et lancez la génération de votre application.
                     </p>
@@ -446,7 +446,7 @@ export default function Step5Build() {
                         <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
                             <CheckCircle size={40} className="text-green-600" />
                         </div>
-                        <h2 className="text-3xl font-bold mb-2">🎉 Application prête !</h2>
+                        <h2 className="text-2xl md:text-3xl font-bold mb-2">🎉 Application prête !</h2>
                         <p className="mb-8 text-secondary">Votre APK a été générée avec succès.</p>
 
                         <div className="max-w-md mx-auto card p-6 mb-8">

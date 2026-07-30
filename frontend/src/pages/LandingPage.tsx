@@ -115,7 +115,7 @@ export default function LandingPage() {
             <main className="relative z-10 pt-40 pb-20 lg:pt-52 lg:pb-32 px-4 sm:px-6 flex flex-col items-center justify-center text-center w-full min-w-[100px]">
                 <motion.div initial="hidden" animate="visible" variants={stagger} className="max-w-4xl mx-auto w-full min-w-[100px]">
                     
-                    <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl font-extrabold mb-6 tracking-tighter leading-[1.1]">
+                    <motion.h1 variants={fadeUp} className="text-4xl md:text-6xl font-extrabold mb-6 tracking-tighter leading-[1.1]">
                         Le moteur natif de <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-500">votre application web.</span>
                     </motion.h1>
@@ -195,7 +195,7 @@ export default function LandingPage() {
             <section id="features" className="py-24 px-4 sm:px-6 relative z-10 bg-zinc-950 border-t border-white/5">
                 <div className="max-w-6xl mx-auto w-full min-w-[100px]">
                     <div className="text-left mb-16">
-                        <h2 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">Fonctionnalités natives.</h2>
+                        <h2 className="text-2xl md:text-4xl font-bold mb-4 tracking-tight">Fonctionnalités natives.</h2>
                         <p className="text-zinc-400 text-lg max-w-xl">Tout l'écosystème mobile, injecté directement dans votre application web existante.</p>
                     </div>
 
@@ -277,7 +277,7 @@ export default function LandingPage() {
             <section id="pricing" className="py-24 px-6 relative z-10 border-t border-white/5 bg-zinc-950">
                 <div className="max-w-6xl mx-auto w-full min-w-[100px]">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-5xl font-bold mb-4 tracking-tight">Tarification claire.</h2>
+                        <h2 className="text-2xl md:text-4xl font-bold mb-4 tracking-tight">Tarification claire.</h2>
                         <p className="text-zinc-400 text-lg max-w-xl mx-auto">Choisissez le forfait qui correspond le mieux à votre projet.</p>
                     </div>
 
@@ -286,7 +286,7 @@ export default function LandingPage() {
                         <div className="rounded-3xl bg-zinc-900/50 border border-white/10 p-8 flex flex-col hover:border-white/20 transition-all w-full min-w-[100px]">
                             <h3 className="text-xl font-bold mb-2">Test</h3>
                             <div className="flex items-baseline gap-2 mb-6">
-                                <span className="text-4xl font-extrabold">0</span>
+                                <span className="text-3xl md:text-4xl font-extrabold">0</span>
                                 <span className="text-zinc-500 font-medium">FCFA</span>
                             </div>
                             <p className="text-sm text-zinc-400 mb-8">Idéal pour tester l'application générée.</p>
@@ -302,7 +302,7 @@ export default function LandingPage() {
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Populaire</div>
                             <h3 className="text-xl font-bold mb-2 text-white">Annuel</h3>
                             <div className="flex items-baseline gap-2 mb-6">
-                                <span className="text-4xl font-extrabold text-white">Abonnement</span>
+                                <span className="text-3xl md:text-4xl font-extrabold text-white">Abonnement</span>
                             </div>
                             <p className="text-sm text-zinc-400 mb-8">Pour les professionnels sérieux.</p>
                             <ul className="space-y-4 mb-8 flex-1">
@@ -318,7 +318,7 @@ export default function LandingPage() {
                         <div className="rounded-3xl bg-zinc-900/50 border border-white/10 p-8 flex flex-col hover:border-white/20 transition-all w-full min-w-[100px]">
                             <h3 className="text-xl font-bold mb-2">À Vie</h3>
                             <div className="flex items-baseline gap-2 mb-6">
-                                <span className="text-4xl font-extrabold">Unique</span>
+                                <span className="text-3xl md:text-4xl font-extrabold">Unique</span>
                             </div>
                             <p className="text-sm text-zinc-400 mb-8">Payez une fois, profitez à vie.</p>
                             <ul className="space-y-4 mb-8 flex-1">
@@ -335,7 +335,7 @@ export default function LandingPage() {
             {/* CTA SECTION */}
             <section className="py-32 px-4 sm:px-6 relative z-10 border-t border-white/5 bg-zinc-900/30">
                 <div className="max-w-4xl mx-auto text-center relative z-10 w-full min-w-[100px]">
-                    <h2 className="text-4xl md:text-5xl font-extrabold mb-6 tracking-tight break-words">Passez au niveau supérieur.</h2>
+                    <h2 className="text-3xl md:text-4xl font-extrabold mb-6 tracking-tight break-words">Passez au niveau supérieur.</h2>
                     <p className="text-lg text-zinc-400 mb-10 max-w-xl mx-auto font-medium">
                         Offrez à vos utilisateurs l'expérience mobile qu'ils méritent en moins de 3 minutes.
                     </p>
