@@ -258,7 +258,7 @@ export default function NotificationsPage() {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 mb-6 border-b overflow-x-auto whitespace-nowrap hide-scroll min-w-[50px] min-w-0" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex flex-wrap gap-2 mb-6 border-b min-w-[50px] min-w-0" style={{ borderColor: 'var(--border)' }}>
                 {[
                     { id: 'compose', label: 'Composer', icon: Plus },
                     { id: 'history', label: 'Historique', icon: Clock },
@@ -406,17 +406,10 @@ export default function NotificationsPage() {
                                 )}
                                 <div className="flex gap-3">
                                     <Button
-                                        variant="secondary"
-                                        onClick={() => setPreview(true)}
-                                        icon={<Bell size={16} />}
-                                    >
-                                        Prévisualiser
-                                    </Button>
-                                    <Button
                                         onClick={handleSend}
                                         loading={sendMutation.isPending}
                                         icon={form.scheduled ? <Clock size={16} /> : <Send size={16} />}
-                                        className="flex-1"
+                                        className="flex-1 w-full"
                                     >
                                         {form.scheduled ? 'Programmer' : 'Envoyer maintenant'}
                                     </Button>
