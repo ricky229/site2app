@@ -106,9 +106,9 @@ const PremiumStatCard = ({ title, value, icon: Icon, color, delay }: any) => (
 const PremiumAppCard = ({ app, delay }: any) => {
     const navigate = useNavigate()
     const colors: Record<string, string> = {
-        '1': '#3461f5', '2': '#7c3aed', '3': '#10b981',
+        '1': '#3b82f6', '2': '#8b5cf6', '3': '#10b981',
     }
-    const color = colors[app.id] || '#3461f5'
+    const color = colors[app.id] || '#3b82f6'
 
     return (
         <motion.div
@@ -117,7 +117,7 @@ const PremiumAppCard = ({ app, delay }: any) => {
             transition={{ delay, duration: 0.4 }}
             whileHover={{ y: -4, scale: 1.01 }}
             onClick={() => navigate(`/apps/${app.id}`)}
-            className="group cursor-pointer rounded-3xl px-3 py-5 sm:p-5 md:p-6 relative overflow-hidden min-w-[50px] min-w-0"
+            className="group cursor-pointer rounded-3xl px-3 py-5 sm:p-5 md:p-6 relative overflow-hidden flex flex-col min-w-[50px] min-w-0"
             style={{
                 background: 'var(--surface-1)',
                 border: '1px solid var(--border)',
@@ -129,47 +129,47 @@ const PremiumAppCard = ({ app, delay }: any) => {
                  
             <div className="flex justify-between items-start mb-6 relative z-10">
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-white shadow-xl flex-shrink-0"
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-white shadow-xl flex-shrink-0"
                         style={{ background: `linear-gradient(135deg, ${color}, ${color}dd)` }}>
                         {app.icon ? (
                             <img src={app.icon.startsWith('//') ? 'https:' + app.icon : app.icon} alt="App icon" className="w-full h-full object-cover rounded-2xl" />
                         ) : (
-                            <span className="text-2xl">{(app.name || 'A').slice(0, 2).toUpperCase()}</span>
+                            <span className="text-xl">{(app.name || 'A').slice(0, 2).toUpperCase()}</span>
                         )}
                     </div>
-                    <div>
-                        <h3 className="font-extrabold text-xl text-[var(--text-primary)] group-hover:text-blue-500 transition-colors">{app.name}</h3>
-                        <p className="text-sm font-medium text-[var(--text-muted)] mt-1">{app.url}</p>
+                    <div className="overflow-hidden">
+                        <h3 className="font-bold text-lg text-[var(--text-primary)] group-hover:text-blue-500 transition-colors truncate">{app.name}</h3>
+                        <p className="text-xs font-medium text-[var(--text-muted)] mt-1 truncate">{app.url}</p>
                     </div>
                 </div>
                 <StatusBadge status={app.status} />
             </div>
 
-            <div className="grid grid-cols-3 gap-2 md:gap-3 mb-6 relative z-10 min-w-[50px] min-w-0">
+            <div className="grid grid-cols-3 gap-2 md:gap-3 mb-6 relative z-10 flex-1 min-w-[50px] min-w-0">
                 {[
-                    { label: 'Télécharg.', value: formatNumber(app.downloadCount), icon: Download },
-                    { label: 'Utilisateurs', value: formatNumber(app.activeUsers), icon: Users },
-                    { label: 'Version', value: app.version, icon: Package },
+                    { label: 'Télécharg.', value: formatNumber(app.downloadCount) },
+                    { label: 'Utilisateurs', value: formatNumber(app.activeUsers) },
+                    { label: 'Version', value: app.version },
                 ].map((s, i) => (
-                    <div key={i} className="rounded-2xl p-1 md:p-4 text-center border border-[var(--border)] min-w-[50px] min-w-0" style={{ background: 'var(--surface-2)' }}>
-                        <p className="text-xl md:text-2xl font-black text-[var(--text-primary)] mb-1">{s.value}</p>
-                        <p className="text-[8px] sm:text-[9px] md:text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider truncate px-0.5">{s.label}</p>
+                    <div key={i} className="rounded-2xl p-1 md:p-3 text-center border border-[var(--border)] flex flex-col justify-center min-w-[50px] min-w-0" style={{ background: 'var(--surface-2)' }}>
+                        <p className="text-lg md:text-xl font-black text-[var(--text-primary)] mb-0.5">{s.value}</p>
+                        <p className="text-[8px] sm:text-[9px] md:text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider truncate px-0.5">{s.label}</p>
                     </div>
                 ))}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between relative z-10 pt-5 border-t border-[var(--border)] gap-2 min-w-[50px] min-w-0">
-                <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-muted)]">
-                    <Clock size={16} />
+            <div className="flex flex-wrap items-center justify-between relative z-10 pt-4 border-t border-[var(--border)] mb-0 gap-2 min-w-[50px] min-w-0">
+                <div className="flex items-center gap-2 text-[11px] md:text-xs font-medium text-[var(--text-muted)]">
+                    <Clock size={14} />
                     {app.lastBuiltAt ? formatRelativeTime(app.lastBuiltAt) : 'Jamais buildé'}
                 </div>
-                <div className="flex items-center gap-3">
-                    <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] tracking-wide">
+                <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] tracking-wide">
                         {platformLabel(app.platform)}
                     </span>
                     {app.status === 'building' && (
-                        <span className="flex items-center gap-2 text-xs font-bold text-blue-500 bg-blue-500/10 px-4 py-1.5 rounded-full">
-                            <Loader2 size={14} className="animate-spin" /> Compilation...
+                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-blue-500 bg-blue-500/10 px-3 py-1 rounded-full">
+                            <Loader2 size={12} className="animate-spin" /> Compil...
                         </span>
                     )}
                 </div>
