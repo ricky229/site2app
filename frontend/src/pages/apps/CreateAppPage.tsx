@@ -97,7 +97,7 @@ export default function CreateAppPage() {
     }
 
     return (
-        <div className="h-[100dvh] flex flex-col bg-[var(--surface-0)] overflow-hidden">
+        <div className="h-full flex flex-col bg-[var(--surface-0)] overflow-hidden">
             {/* Minimalist Top Bar */}
             <div className="sticky top-0 z-40 border-b bg-[var(--surface-0)]/80 backdrop-blur-md flex-shrink-0"
                 style={{ borderColor: 'var(--border)' }}>

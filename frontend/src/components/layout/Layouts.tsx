@@ -38,14 +38,14 @@ export function DashboardLayout() {
     const isWizard = location.pathname.includes('/create') || (location.pathname.startsWith('/apps/') && location.pathname !== '/apps')
 
     return (
-        <div className="min-h-screen bg-[var(--surface-0)] md:bg-[var(--surface-1)]">
+        <div className="h-[100dvh] bg-[var(--surface-0)] md:bg-[var(--surface-1)] overflow-hidden flex flex-col relative">
             <Sidebar />
             <motion.main
                 key={location.pathname}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className={`md:ml-64 min-h-screen flex flex-col ${isWizard ? '' : 'pt-16 pb-24 md:pt-0 md:pb-8'}`}
+                className={`flex-1 overflow-y-auto ${!isWizard ? 'md:ml-64 pt-20 md:pt-0' : ''}`}
             >
                 <Outlet />
             </motion.main>
