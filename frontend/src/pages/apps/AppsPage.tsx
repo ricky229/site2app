@@ -87,7 +87,7 @@ const PremiumAppCard = ({ app, delay }: any) => {
             transition={{ delay, duration: 0.4 }}
             whileHover={{ y: -4, scale: 1.01 }}
             onClick={() => navigate(`/apps/${app.id}`)}
-            className="group cursor-pointer rounded-3xl p-5 md:p-6 relative overflow-hidden flex flex-col min-w-[50px] min-w-0"
+            className="group cursor-pointer rounded-3xl px-3 py-5 sm:p-5 md:p-6 relative overflow-hidden flex flex-col min-w-[50px] min-w-0"
             style={{
                 background: 'var(--surface-1)',
                 border: '1px solid var(--border)',
@@ -115,15 +115,15 @@ const PremiumAppCard = ({ app, delay }: any) => {
                 <StatusBadge status={app.status} />
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-6 relative z-10 flex-1 min-w-[50px] min-w-0">
+            <div className="grid grid-cols-3 gap-2 md:gap-3 mb-6 relative z-10 flex-1 min-w-[50px] min-w-0">
                 {[
-                    { label: 'Tlchargements', value: formatNumber(app.downloadCount) },
+                    { label: 'Télécharg.', value: formatNumber(app.downloadCount) },
                     { label: 'Utilisateurs', value: formatNumber(app.activeUsers) },
                     { label: 'Version', value: app.version },
                 ].map((s, i) => (
-                    <div key={i} className="rounded-2xl p-2 md:p-3 text-center border border-[var(--border)] flex flex-col justify-center min-w-[50px] min-w-0" style={{ background: 'var(--surface-2)' }}>
+                    <div key={i} className="rounded-2xl p-1 md:p-3 text-center border border-[var(--border)] flex flex-col justify-center min-w-[50px] min-w-0" style={{ background: 'var(--surface-2)' }}>
                         <p className="text-lg md:text-xl font-black text-[var(--text-primary)] mb-0.5">{s.value}</p>
-                        <p className="text-[9px] md:text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">{s.label}</p>
+                        <p className="text-[8px] sm:text-[9px] md:text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider truncate px-0.5">{s.label}</p>
                     </div>
                 ))}
             </div>
@@ -235,20 +235,20 @@ export default function AppsPage() {
                     />
                 </div>
                 
-                <div className="flex items-center justify-between w-full md:w-auto gap-4 overflow-x-auto hide-scroll">
-                    <div className="flex items-center gap-2 bg-[var(--surface-2)] p-1.5 rounded-full border border-[var(--border)]">
+                <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between w-full md:w-auto gap-4">
+                    <div className="flex flex-wrap items-center gap-2 bg-[var(--surface-2)] p-1.5 rounded-3xl border border-[var(--border)]">
                         {['all', 'completed', 'building', 'failed'].map(status => (
                             <button
                                 key={status}
                                 onClick={() => setStatusFilter(status)}
-                                className={`px-4 py-2 rounded-full text-sm font-bold capitalize transition-all ${statusFilter === status ? 'bg-[var(--surface-0)] text-blue-500 shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
+                                className={`px-4 py-2 rounded-full text-sm font-bold capitalize transition-all flex-1 text-center whitespace-nowrap ${statusFilter === status ? 'bg-[var(--surface-0)] text-blue-500 shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}`}
                             >
                                 {status === 'all' ? 'Tous' : status === 'completed' ? 'Actives' : status === 'building' ? 'Builds' : 'Erreurs'}
                             </button>
                         ))}
                     </div>
 
-                    <div className="flex items-center bg-[var(--surface-2)] p-1.5 rounded-full border border-[var(--border)]">
+                    <div className="flex items-center justify-center bg-[var(--surface-2)] p-1.5 rounded-full border border-[var(--border)] w-full md:w-auto">
                         <button
                             onClick={() => setView('grid')}
                             className={`p-2 rounded-full transition-all ${view === 'grid' ? 'bg-[var(--surface-0)] text-blue-500 shadow-sm' : 'text-[var(--text-muted)]'}`}

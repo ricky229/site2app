@@ -117,7 +117,7 @@ const PremiumAppCard = ({ app, delay }: any) => {
             transition={{ delay, duration: 0.4 }}
             whileHover={{ y: -4, scale: 1.01 }}
             onClick={() => navigate(`/apps/${app.id}`)}
-            className="group cursor-pointer rounded-3xl p-5 md:p-6 relative overflow-hidden min-w-[50px] min-w-0"
+            className="group cursor-pointer rounded-3xl px-3 py-5 sm:p-5 md:p-6 relative overflow-hidden min-w-[50px] min-w-0"
             style={{
                 background: 'var(--surface-1)',
                 border: '1px solid var(--border)',
@@ -145,15 +145,15 @@ const PremiumAppCard = ({ app, delay }: any) => {
                 <StatusBadge status={app.status} />
             </div>
 
-            <div className="grid grid-cols-3 gap-3 mb-6 relative z-10 min-w-[50px] min-w-0">
+            <div className="grid grid-cols-3 gap-2 md:gap-3 mb-6 relative z-10 min-w-[50px] min-w-0">
                 {[
-                    { label: 'Téléchargements', value: formatNumber(app.downloadCount), icon: Download },
+                    { label: 'Télécharg.', value: formatNumber(app.downloadCount), icon: Download },
                     { label: 'Utilisateurs', value: formatNumber(app.activeUsers), icon: Users },
                     { label: 'Version', value: app.version, icon: Package },
                 ].map((s, i) => (
-                    <div key={i} className="rounded-2xl p-3 md:p-4 text-center border border-[var(--border)] min-w-[50px] min-w-0" style={{ background: 'var(--surface-2)' }}>
+                    <div key={i} className="rounded-2xl p-1 md:p-4 text-center border border-[var(--border)] min-w-[50px] min-w-0" style={{ background: 'var(--surface-2)' }}>
                         <p className="text-xl md:text-2xl font-black text-[var(--text-primary)] mb-1">{s.value}</p>
-                        <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">{s.label}</p>
+                        <p className="text-[8px] sm:text-[9px] md:text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider truncate px-0.5">{s.label}</p>
                     </div>
                 ))}
             </div>
