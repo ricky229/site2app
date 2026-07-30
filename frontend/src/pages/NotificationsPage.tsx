@@ -227,31 +227,38 @@ export default function NotificationsPage() {
     return (
         <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto w-full overflow-x-hidden">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold mb-1 flex items-center gap-3 break-words">
-                        <Bell size={24} className="md:w-7 md:h-7" style={{ color: 'var(--brand-500)' }} />
-                        Notifications Push
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 min-w-[50px]">
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-2xl md:text-3xl font-bold mb-1 flex items-center gap-3 break-words min-w-[50px]">
+                        <Bell size={24} className="md:w-7 md:h-7 flex-shrink-0" style={{ color: 'var(--brand-500)' }} />
+                        <span className="truncate">Notifications Push</span>
                     </h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>
-                        Communiquez directement avec vos utilisateurs via Firebase FCM.
+                    <p style={{ color: 'var(--text-secondary)' }} className="min-w-[50px] break-words text-sm md:text-base">
+                        Communiquez directement et instantanément avec vos utilisateurs.
                     </p>
                 </div>
-                <Select
-                    options={appOptions}
-                    value={selectedApp}
-                    onChange={e => setSelectedApp(e.target.value)}
-                />
+                <div className="w-full md:w-auto min-w-[50px]">
+                    <Select
+                        options={appOptions}
+                        value={selectedApp}
+                        onChange={e => setSelectedApp(e.target.value)}
+                        className="w-full"
+                    />
+                </div>
             </div>
 
             {/* Stats */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <StatCard title="Notifications envoyées" value={formatNumber(totalSent)} change={0} icon={<Send size={20} />} color="#3461f5" />
-            <StatCard title="Appareils actifs" value={formatNumber(devicesCount)} change={0} icon={<CheckCircle size={20} />} color="#10b981" />
-        </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 min-w-[50px] min-w-0">
+                <div className="min-w-[50px] min-w-0">
+                    <StatCard title="Notifications envoyées" value={formatNumber(totalSent)} change={0} icon={<Send size={20} />} color="#3461f5" />
+                </div>
+                <div className="min-w-[50px] min-w-0">
+                    <StatCard title="Appareils actifs" value={formatNumber(devicesCount)} change={0} icon={<CheckCircle size={20} />} color="#10b981" />
+                </div>
+            </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 mb-6 border-b overflow-x-auto whitespace-nowrap hide-scroll" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex gap-2 mb-6 border-b overflow-x-auto whitespace-nowrap hide-scroll min-w-[50px] min-w-0" style={{ borderColor: 'var(--border)' }}>
                 {[
                     { id: 'compose', label: 'Composer', icon: Plus },
                     { id: 'history', label: 'Historique', icon: Clock },
@@ -274,10 +281,10 @@ export default function NotificationsPage() {
 
             {/* Compose Tab */}
             {tab === 'compose' && (
-                <div className="grid lg:grid-cols-5 gap-6">
+                <div className="grid lg:grid-cols-5 gap-6 min-w-[50px] min-w-0">
                     {/* Form */}
-                    <div className="lg:col-span-3 space-y-5">
-                        <div className="card p-4 sm:p-6">
+                    <div className="lg:col-span-3 space-y-5 min-w-[50px] min-w-0">
+                        <div className="card p-4 sm:p-6 min-w-[50px] min-w-0">
                             <h3 className="font-bold mb-4 sm:mb-5 text-sm sm:text-base">Contenu de la notification</h3>
                             <div className="space-y-4">
                                 <Input
@@ -313,9 +320,9 @@ export default function NotificationsPage() {
                             </div>
                         </div>
 
-                        <div className="card p-4 sm:p-6">
+                        <div className="card p-4 sm:p-6 min-w-[50px] min-w-0">
                             <h3 className="font-bold mb-4 sm:mb-5 text-sm sm:text-base">Ciblage (Appareils Android)</h3>
-                            <div className="space-y-4">
+                            <div className="space-y-4 min-w-[50px]">
                                     <Select
                                         label="Mode d'envoi"
                                         options={[
@@ -380,9 +387,9 @@ export default function NotificationsPage() {
                                 </div>
                             </div>
 
-                            <div className="card p-4 sm:p-6">
+                            <div className="card p-4 sm:p-6 min-w-[50px] min-w-0">
                             <h3 className="font-bold mb-4 sm:mb-5 text-sm sm:text-base">Envoi</h3>
-                            <div className="space-y-4">
+                            <div className="space-y-4 min-w-[50px]">
                                 <Toggle
                                     label="Programmer l'envoi"
                                     description="Définir une date et heure d'envoi automatique"
@@ -419,8 +426,8 @@ export default function NotificationsPage() {
                     </div>
 
                     {/* Preview */}
-                    <div className="lg:col-span-2">
-                        <div className="sticky top-24">
+                    <div className="lg:col-span-2 min-w-[50px] min-w-0">
+                        <div className="sticky top-24 min-w-[50px]">
                             <p className="text-sm font-semibold mb-4" style={{ color: 'var(--text-secondary)' }}>Aperçu</p>
 
                             {/* Android notification */}
@@ -464,7 +471,7 @@ export default function NotificationsPage() {
 
             {/* History Tab */}
             {tab === 'history' && (
-                <div className="space-y-4">
+                <div className="space-y-4 min-w-[50px] min-w-0">
                     {notifications.length > 0 && (
                         <div className="flex justify-end mb-2">
                             <Button
