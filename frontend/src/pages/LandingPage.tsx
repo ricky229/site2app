@@ -115,11 +115,6 @@ export default function LandingPage() {
             <main className="relative z-10 pt-40 pb-20 lg:pt-52 lg:pb-32 px-4 sm:px-6 flex flex-col items-center justify-center text-center w-full min-w-[100px]">
                 <motion.div initial="hidden" animate="visible" variants={stagger} className="max-w-4xl mx-auto w-full min-w-[100px]">
                     
-                    <motion.div variants={fadeUp} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-white/10 text-zinc-300 text-xs font-semibold mb-8">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                        Site2App V2 est en ligne
-                    </motion.div>
-
                     <motion.h1 variants={fadeUp} className="text-5xl md:text-7xl font-extrabold mb-6 tracking-tighter leading-[1.1]">
                         Le moteur natif de <br />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-100 to-zinc-500">votre application web.</span>
