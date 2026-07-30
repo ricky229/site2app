@@ -37,7 +37,7 @@ const PremiumStatCard = ({ title, value, icon: Icon, color, delay }: any) => (
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay, duration: 0.5, ease: "easeOut" }}
-        className="relative overflow-hidden rounded-3xl p-6 border group"
+        className="relative overflow-hidden rounded-3xl p-6 border group min-w-[50px] min-w-0"
         style={{
             background: 'var(--surface-1)',
             borderColor: 'var(--border)',
@@ -251,7 +251,7 @@ export default function AnalyticsPage() {
             </motion.div>
 
             {/* KPI Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 mb-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 mb-10 min-w-[50px] min-w-0">
                 <PremiumStatCard
                     title="Notifs Envoyées"
                     value={formatNumber(summary.totalSent)}
@@ -283,13 +283,13 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Main Charts Row */}
-            <div className="grid lg:grid-cols-3 gap-8 mb-8">
+            <div className="grid lg:grid-cols-3 gap-8 mb-8 min-w-[50px] min-w-0">
                 {/* Notifications Area Chart */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                    className="lg:col-span-2 rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm"
+                    className="lg:col-span-2 rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm min-w-[50px] min-w-0"
                 >
-                    <div className="flex items-center justify-between mb-8">
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-8 min-w-[50px] min-w-0">
                         <h3 className="text-xl font-black text-[var(--text-primary)]">Performances des Notifications</h3>
                         <div className="flex gap-4 text-sm font-bold bg-[var(--surface-2)] px-4 py-2 rounded-xl">
                             <span className="flex items-center gap-2 text-blue-500">
@@ -329,7 +329,7 @@ export default function AnalyticsPage() {
                 {/* Platforms Donut Chart */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                    className="rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm flex flex-col"
+                    className="rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm flex flex-col min-w-[50px] min-w-0"
                 >
                     <h3 className="text-xl font-black text-[var(--text-primary)] mb-6">Plateformes</h3>
                     <div className="flex-1 min-h-[200px]">
@@ -369,11 +369,11 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Second Row */}
-            <div className="grid lg:grid-cols-3 gap-8 mb-8">
+            <div className="grid lg:grid-cols-3 gap-8 mb-8 min-w-[50px] min-w-0">
                 {/* Devices Bar Chart */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                    className="rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm"
+                    className="rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm min-w-[50px] min-w-0"
                 >
                     <h3 className="text-xl font-black text-[var(--text-primary)] mb-8">Acquisition (Appareils)</h3>
                     <div className="h-[220px]">
@@ -392,7 +392,7 @@ export default function AnalyticsPage() {
                 {/* Top Notifications */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                    className="lg:col-span-2 rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm"
+                    className="lg:col-span-2 rounded-[2rem] p-6 md:p-8 bg-[var(--surface-1)] border border-[var(--border)] shadow-sm min-w-[50px] min-w-0"
                 >
                     <h3 className="text-xl font-black text-[var(--text-primary)] mb-6">Campagnes récentes</h3>
                     <div className="space-y-4">
@@ -402,7 +402,7 @@ export default function AnalyticsPage() {
                                 <p className="text-[var(--text-muted)] font-medium">Aucune notification envoyée.</p>
                             </div>
                         ) : topNotifications.map((notif: any) => (
-                            <div key={notif.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-[var(--surface-2)] border border-transparent hover:border-[var(--border)] transition-all">
+                            <div key={notif.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-[var(--surface-2)] border border-transparent hover:border-[var(--border)] transition-all min-w-[50px] min-w-0">
                                 <div className="flex items-start gap-4">
                                     <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm"
                                         style={{ background: notif.deliveryRate >= 80 ? '#10b98122' : notif.deliveryRate > 0 ? '#f59e0b22' : '#ef444422' }}>
@@ -415,7 +415,7 @@ export default function AnalyticsPage() {
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-6 bg-[var(--surface-0)] px-5 py-3 rounded-xl border border-[var(--border)] self-start sm:self-auto">
+                                <div className="flex flex-wrap items-center gap-6 bg-[var(--surface-0)] px-5 py-3 rounded-xl border border-[var(--border)] self-start sm:self-auto min-w-[50px] min-w-0">
                                     <div className="text-center">
                                         <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wide">Envoyées</p>
                                         <p className="font-black text-blue-500">{formatNumber(notif.sent)}</p>
