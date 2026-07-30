@@ -133,31 +133,33 @@ export default function CreateAppPage() {
             <div className="flex-1 flex flex-col lg:flex-row overflow-hidden max-w-[1600px] w-full mx-auto relative">
                 
                 {/* Left Column (Forms) */}
-                <div className="w-full lg:w-[55%] flex flex-col h-full overflow-y-auto bg-[var(--surface-0)] relative z-10 scrollbar-hide">
+                <div className="w-full lg:w-[55%] flex flex-col h-full bg-[var(--surface-0)] relative z-10">
                     
-                    {/* Form Steps */}
-                    <div className="flex-1 px-4 sm:px-8 md:px-12 py-6 md:py-10 pb-32 max-w-2xl mx-auto w-full">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={currentStep}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                transition={{ duration: 0.3 }}
-                                className="h-full"
-                            >
-                                {currentStep === 1 && <Step1Url />}
-                                {currentStep === 2 && <Step2Customization />}
-                                {currentStep === 3 && <Step3Features />}
-                                {currentStep === 4 && <Step4Preview />}
-                                {currentStep === 5 && <Step5Build />}
-                            </motion.div>
-                        </AnimatePresence>
+                    {/* Form Steps (Scrolling area) */}
+                    <div className="flex-1 overflow-y-auto scrollbar-hide px-4 sm:px-8 md:px-12 py-6 md:py-10 pb-10">
+                        <div className="max-w-2xl mx-auto w-full h-full">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={currentStep}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.3 }}
+                                    className="h-full"
+                                >
+                                    {currentStep === 1 && <Step1Url />}
+                                    {currentStep === 2 && <Step2Customization />}
+                                    {currentStep === 3 && <Step3Features />}
+                                    {currentStep === 4 && <Step4Preview />}
+                                    {currentStep === 5 && <Step5Build />}
+                                </motion.div>
+                            </AnimatePresence>
+                        </div>
                     </div>
 
-                    {/* Bottom Navigation for Left Column */}
+                    {/* Bottom Navigation for Left Column (Fixed at bottom) */}
                     {currentStep < 5 && (
-                        <div className="sticky bottom-0 bg-[var(--surface-0)]/95 backdrop-blur-md border-t border-[var(--border)] p-4 md:px-12 flex justify-between items-center shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-20">
+                        <div className="flex-shrink-0 bg-[var(--surface-0)] border-t border-[var(--border)] p-4 md:px-12 flex justify-between items-center shadow-[0_-10px_40px_rgba(0,0,0,0.03)] z-20">
                             <Button
                                 variant="ghost"
                                 onClick={currentStep === 1 ? handleClose : prevStep}

@@ -194,7 +194,7 @@ export default function Step1Url() {
                             icon={<Globe size={20} />}
                             error={error}
                             onKeyDown={e => e.key === 'Enter' && handleAnalyze()}
-                            className="bg-white dark:bg-zinc-900 border-2 rounded-xl focus:ring-4 focus:ring-blue-500/20 transition-all shadow-sm"
+                            className="bg-white border-[1.5px] rounded-xl focus:ring-4 focus:ring-blue-500/20 transition-all shadow-sm text-black"
                         />
                     </div>
                     <Button
