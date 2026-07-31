@@ -149,6 +149,8 @@ export class BubbleService {
                 body: JSON.stringify({
                     buildId: deviceData.buildId,
                     os: deviceData.os,
+                    country: deviceData.country,
+                    city: deviceData.city,
                     lastSeen: new Date().toISOString()
                 })
             });

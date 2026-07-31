@@ -916,6 +916,25 @@ app.post('/node/devices/register', async (req: any, res) => {
     console.log(`[API] Device registration: deviceId=${deviceId?.substring(0, 20)}... buildId=${buildId}`);
     if (!deviceId || !buildId) return res.status(400).json({ error: 'Missing deviceId or buildId' });
 
+    let country = 'Inconnu';
+    let city = 'Inconnu';
+    const ip = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket?.remoteAddress;
+    if (ip) {
+        try {
+            const ipString = Array.isArray(ip) ? ip[0] : String(ip).split(',')[0].trim();
+            if (ipString && !ipString.includes('127.0.0.1') && !ipString.startsWith('192.168.') && !ipString.startsWith('10.')) {
+                const response = await fetch(`http://ip-api.com/json/${ipString}?fields=status,country,city`);
+                const data = await response.json();
+                if (data.status === 'success') {
+                    country = data.country || 'Inconnu';
+                    city = data.city || 'Inconnu';
+                }
+            }
+        } catch (err) {
+            console.error('[API] Erreur IP-API:', err);
+        }
+    }
+
     // Find the owner of this build to get the Bubble URL
     const build = builds.get(buildId);
     const buildOwnerId = build?.userId;
@@ -934,7 +953,7 @@ app.post('/node/devices/register', async (req: any, res) => {
     // 1. Sync to local memory
     const existingLocal = devices.get(deviceId);
     if (!existingLocal || existingLocal.buildId !== buildId) {
-        devices.set(deviceId, { id: deviceId, buildId, os: os || 'android', createdAt: new Date().toISOString() });
+        devices.set(deviceId, { id: deviceId, buildId, os: os || 'android', country, city, createdAt: new Date().toISOString() });
         saveDevices();
 
         if (build) {
@@ -949,7 +968,9 @@ app.post('/node/devices/register', async (req: any, res) => {
         await bubble.upsertDevice({
             pushToken: deviceId,
             buildId: buildId,
-            os: os || 'android'
+            os: os || 'android',
+            country,
+            city
         }, customBubbleUrl, customBubbleToken);
     } catch (e: any) {
         console.error(`[API] Bubble device sync failed (${customBubbleUrl}):`, e.message);
