@@ -1148,11 +1148,38 @@ api.post('/devices/register', async (req, res) => {
     const existingDevice = await deviceRef.get();
     const isNewDevice = !existingDevice.exists;
     
+    let country = existingDevice.exists ? (existingDevice.data()?.country || 'Inconnu') : 'Inconnu';
+    let city = existingDevice.exists ? (existingDevice.data()?.city || 'Inconnu') : 'Inconnu';
+    
+    // Update location only for new devices or if it was previously unknown
+    if (isNewDevice || country === 'Inconnu') {
+        const ip = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket?.remoteAddress;
+        if (ip) {
+            try {
+                let ipString = Array.isArray(ip) ? ip[0] : String(ip).split(',')[0].trim();
+                let apiUrl = `https://ipwho.is/${ipString}`;
+                if (!ipString || ipString.includes('127.0.0.1') || ipString === '::1' || ipString.startsWith('192.168.') || ipString.startsWith('10.')) {
+                    apiUrl = `https://ipwho.is/`;
+                }
+                const response = await fetch(apiUrl);
+                const data: any = await response.json();
+                if (data.success) {
+                    country = data.country || 'Inconnu';
+                    city = data.city || 'Inconnu';
+                }
+            } catch (err) {
+                console.error('Erreur IP geolocation:', err);
+            }
+        }
+    }
+
     await deviceRef.set({
       pushToken,
       buildId,
       userId,
       platform,
+      country,
+      city,
       createdAt: isNewDevice ? admin.firestore.FieldValue.serverTimestamp() : existingDevice.data()?.createdAt,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });

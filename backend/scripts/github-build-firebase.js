@@ -142,6 +142,7 @@ async function run() {
 
         const builderOptions = {
             buildId: buildId,
+            userPlan: buildData.userPlan || 'free',
             apiUrl: buildData.apiUrl || '',
             statusBarColor: themeColor,
             themeColor: themeColor,
