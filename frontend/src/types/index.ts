@@ -13,6 +13,7 @@ export interface User {
     firebaseKey?: string;
     googleServicesJson?: string;
     bubbleApiUrl?: string;
+    apiKey?: string;
 }
 
 export interface AuthState {

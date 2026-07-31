@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     LayoutDashboard, Smartphone, Bell, BarChart2, Settings,
-    Shield, Plus, Zap, CreditCard, Menu, X
+    Shield, Plus, Zap, CreditCard, Menu, X, Code2
 } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
 
@@ -13,6 +13,7 @@ const navItems = [
     { path: '/notifications', icon: Bell, label: 'Push' },
     { path: '/analytics', icon: BarChart2, label: 'Stats' },
     { path: '/dashboard/pricing', icon: CreditCard, label: 'Tarifs' },
+    { path: '/developer', icon: Code2, label: 'API' },
     { path: '/settings', icon: Settings, label: 'Profil' },
 ]
 

@@ -1080,8 +1080,8 @@ ${this.features.admob ? `    private AdView mAdView;
                     String currentUrl = webView.getUrl();
                     if (currentUrl != null) {
                         // Remove old token param if it exists, then append the new one
-                        currentUrl = currentUrl.replaceAll("([&?])s2a_token=[^&]+", "");
-                        String newUrl = currentUrl + (currentUrl.contains("?") ? "&" : "?") + "s2a_token=" + newToken;
+                        currentUrl = currentUrl.replaceAll("([&?])push_token=[^&]+", "");
+                        String newUrl = currentUrl + (currentUrl.contains("?") ? "&" : "?") + "push_token=" + newToken;
                         webView.loadUrl(newUrl);
                     }
                     String script = "(function() { window.SITE2APP_DEVICE_TOKEN = '" + newToken + "'; })();";
@@ -1219,8 +1219,8 @@ ${this.features.pullToRefresh ? `
         android.content.SharedPreferences prefs = getSharedPreferences("S2A_PREFS", android.content.Context.MODE_PRIVATE);
         String storedToken = prefs.getString("s2a_push_token", "");
         String baseUrl = "${this.appUrl}";
-        if (!storedToken.isEmpty() && !baseUrl.contains("s2a_token=")) {
-            baseUrl += (baseUrl.contains("?") ? "&" : "?") + "s2a_token=" + storedToken;
+        if (!storedToken.isEmpty() && !baseUrl.contains("push_token=")) {
+            baseUrl += (baseUrl.contains("?") ? "&" : "?") + "push_token=" + storedToken;
         }
 
 ${this.features.deepLinking ? `
@@ -1229,8 +1229,8 @@ ${this.features.deepLinking ? `
         Uri launchData = launchIntent != null ? launchIntent.getData() : null;
         if (launchData != null && launchData.toString().length() > 0) {
             String lUrl = launchData.toString();
-            if (!storedToken.isEmpty() && !lUrl.contains("s2a_token=")) {
-                lUrl += (lUrl.contains("?") ? "&" : "?") + "s2a_token=" + storedToken;
+            if (!storedToken.isEmpty() && !lUrl.contains("push_token=")) {
+                lUrl += (lUrl.contains("?") ? "&" : "?") + "push_token=" + storedToken;
             }
             webView.loadUrl(lUrl);
         } else {

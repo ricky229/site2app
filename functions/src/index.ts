@@ -96,12 +96,15 @@ api.post('/auth/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = uuidv4();
     
+    const apiKey = uuidv4();
+    
     const userData = {
       email,
       name: name || 'Utilisateur',
       password: hashedPassword,
       plan: 'free',
       role: 'user',
+      apiKey,
       firebaseKey: '',
       googleServicesJson: '',
       appsCount: 0,
@@ -112,7 +115,7 @@ api.post('/auth/register', async (req, res) => {
     await usersRef.doc(userId).set(userData);
     
     const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: '30d' });
-    const userSafe = { id: userId, email, name: userData.name, plan: 'free', role: 'user', firebaseKey: '', googleServicesJson: '' };
+    const userSafe = { id: userId, email, name: userData.name, plan: 'free', role: 'user', apiKey, firebaseKey: '', googleServicesJson: '' };
     res.json({ user: userSafe, token });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -141,6 +144,7 @@ api.post('/auth/login', async (req, res) => {
       name: user.name || 'Utilisateur',
       plan: user.plan || 'free',
       role: user.role || 'user',
+      apiKey: user.apiKey || '',
       firebaseKey: user.firebaseKey || '',
       googleServicesJson: user.googleServicesJson || '',
     };
@@ -176,6 +180,19 @@ api.delete('/user', authMiddleware, async (req, res) => {
     // In a real scenario, you'd also delete associated builds/notifications
     res.json({ success: true });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.post('/user/regenerate-api-key', authMiddleware, async (req, res) => {
+  try {
+    const newApiKey = uuidv4();
+    await db.collection('users').doc(req.user.id).update({
+      apiKey: newApiKey,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    res.json({ success: true, apiKey: newApiKey });
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -1028,6 +1045,45 @@ api.post('/notifications/send', authMiddleware, async (req, res) => {
     const result = await sendNotificationCore(req.user, req.body);
     res.json(result);
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.post('/external/send-push', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header (Bearer API_KEY)' });
+    }
+    const apiKey = authHeader.split(' ')[1];
+    
+    const usersRef = db.collection('users');
+    const snapshot = await usersRef.where('apiKey', '==', apiKey).limit(1).get();
+    
+    if (snapshot.empty) {
+      return res.status(401).json({ error: 'Invalid API Key' });
+    }
+    
+    const userDoc = snapshot.docs[0];
+    const user = { id: userDoc.id, ...userDoc.data() };
+    
+    const { token, tokens, title, body, message, actionUrl } = req.body;
+    const targetTokens = tokens || (token ? [token] : []);
+    
+    if (!targetTokens || targetTokens.length === 0) {
+      return res.status(400).json({ error: 'Missing token or tokens array in request body' });
+    }
+    
+    const payload = {
+      title: title || 'Notification',
+      body: body || message || '',
+      actionUrl,
+      target: targetTokens
+    };
+    
+    const result = await sendNotificationCore(user, payload);
+    res.json(result);
+  } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
 });
