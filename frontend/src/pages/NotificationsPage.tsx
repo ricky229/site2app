@@ -666,18 +666,18 @@ export default function NotificationsPage() {
                                 Intercepter le Push Token (Sur votre site)
                             </h3>
                             <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-                                L'application native Site2App est intelligente. Lorsqu'un visiteur ouvre votre application sur son téléphone, l'application modifie automatiquement l'URL de votre site pour y attacher son identifiant de notification (`s2a_token`).
+                                L'application native Site2App est intelligente. Lorsqu'un visiteur ouvre votre application sur son téléphone, l'application modifie automatiquement l'URL de votre site pour y attacher son identifiant de notification (`push_token`).
                                 <br /><br />
                                 <strong>Exemple d'URL générée en arrière-plan :</strong><br />
-                                <code className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded text-xs font-mono font-semibold border mt-1 inline-block" style={{ borderColor: 'var(--border)' }}>https://votre-site.com/?s2a_token=APA91bFoijuty...</code>
+                                <code className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded text-xs font-mono font-semibold border mt-1 inline-block" style={{ borderColor: 'var(--border)' }}>https://votre-site.com/?push_token=APA91bFoijuty...</code>
                             </p>
                             <p className="text-sm font-bold mt-4 mb-2">
                                 👉 Votre mission :
                             </p>
                             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                                Quand l'utilisateur s'inscrit ou se connecte sur votre site web, vérifiez si l'URL contient le paramètre <code>s2a_token</code>. Si oui, sauvegardez cette valeur dans votre base de données dans la fiche de votre utilisateur (créez une colonne "push_token").
+                                Quand l'utilisateur s'inscrit ou se connecte sur votre site web, vérifiez si l'URL contient le paramètre <code>push_token</code>. Si oui, sauvegardez cette valeur dans votre base de données dans la fiche de votre utilisateur (créez une colonne "push_token").
                                 <br /><br />
-                                <em>Exemple sur Bubble.io : Dans un Workflow "Page is loaded" &rarr; Action: Make changes to User &rarr; push_token = Get data from page URL (parameter: s2a_token).</em>
+                                <em>Exemple sur Bubble.io : Dans un Workflow "Page is loaded" &rarr; Action: Make changes to User &rarr; push_token = Get data from page URL (parameter: push_token).</em>
                             </p>
                         </div>
 

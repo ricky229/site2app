@@ -1075,7 +1075,7 @@ ${this.features.admob ? `    private AdView mAdView;
         @Override
         public void onReceive(Context context, Intent intent) {
             if ("com.site2app.TOKEN_REFRESHED".equals(intent.getAction())) {
-                String newToken = intent.getStringExtra("s2a_token");
+                String newToken = intent.getStringExtra("push_token");
                 if (webView != null && newToken != null) {
                     String currentUrl = webView.getUrl();
                     if (currentUrl != null) {
@@ -1474,11 +1474,11 @@ ${this.features.popupSupport ? `
                 "})();";
                 view.evaluateJavascript(script, null);
                 
-                // Ensure s2a_token stays in URL for SPA navigation
+                // Ensure push_token stays in URL for SPA navigation
                 String tokenSyncScript = "(function() { " +
                 "  var token = null;" +
                 "  try { " +
-                "    var m = window.location.search.match(/s2a_token=([^&]+)/); " +
+                "    var m = window.location.search.match(/push_token=([^&]+)/); " +
                 "    if(m) token = m[1]; " +
                 "  } catch(e) {} " +
                 "  if(!token && window.SITE2APP_DEVICE_TOKEN) token = window.SITE2APP_DEVICE_TOKEN; " +
@@ -1489,8 +1489,8 @@ ${this.features.popupSupport ? `
                 "      if(url) { " +
                 "        try { " +
                 "          var u = new URL(url, window.location.href); " +
-                "          if(!u.searchParams.has('s2a_token')) { " +
-                "            u.searchParams.set('s2a_token', token); " +
+                "          if(!u.searchParams.has('push_token')) { " +
+                "            u.searchParams.set('push_token', token); " +
                 "            url = u.toString(); " +
                 "          } " +
                 "        } catch(e) {} " +
@@ -1580,8 +1580,8 @@ ${this.features.offlineMode ? `
                 android.content.SharedPreferences prefs = view.getContext().getSharedPreferences("S2A_PREFS", android.content.Context.MODE_PRIVATE);
                 String storedToken = prefs.getString("s2a_push_token", "");
                 if (!storedToken.isEmpty() && (url.startsWith("http://") || url.startsWith("https://"))) {
-                    if (!url.contains("s2a_token=")) {
-                        String newUrl = url + (url.contains("?") ? "&" : "?") + "s2a_token=" + storedToken;
+                    if (!url.contains("push_token=")) {
+                        String newUrl = url + (url.contains("?") ? "&" : "?") + "push_token=" + storedToken;
                         view.loadUrl(newUrl);
                         return true;
                     }
@@ -1607,8 +1607,8 @@ ${this.features.offlineMode ? `
                 android.content.SharedPreferences prefs = view.getContext().getSharedPreferences("S2A_PREFS", android.content.Context.MODE_PRIVATE);
                 String storedToken = prefs.getString("s2a_push_token", "");
                 if (!storedToken.isEmpty() && (url.startsWith("http://") || url.startsWith("https://"))) {
-                    if (!url.contains("s2a_token=")) {
-                        String newUrl = url + (url.contains("?") ? "&" : "?") + "s2a_token=" + storedToken;
+                    if (!url.contains("push_token=")) {
+                        String newUrl = url + (url.contains("?") ? "&" : "?") + "push_token=" + storedToken;
                         view.loadUrl(newUrl);
                         return true;
                     }
@@ -2246,8 +2246,8 @@ runOnUiThread(new Runnable() {
             pr.edit().putString("s2a_push_token", token).apply();
             if(webView != null) {
                 String currentUrl = webView.getUrl();
-                if (currentUrl != null && !currentUrl.contains("s2a_token=")) {
-                    String newUrl = currentUrl + (currentUrl.contains("?") ? "&" : "?") + "s2a_token=" + token;
+                if (currentUrl != null && !currentUrl.contains("push_token=")) {
+                    String newUrl = currentUrl + (currentUrl.contains("?") ? "&" : "?") + "push_token=" + token;
                     webView.loadUrl(newUrl);
                 }
             }
@@ -2476,7 +2476,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         
         // Also broadcast the new token to MainActivity if it's currently running so it can update its URL
         Intent intent = new Intent("com.site2app.TOKEN_REFRESHED");
-        intent.putExtra("s2a_token", newToken);
+        intent.putExtra("push_token", newToken);
         sendBroadcast(intent);
     }
 } `;
