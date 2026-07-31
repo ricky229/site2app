@@ -492,26 +492,37 @@ const authMiddleware = async (req: any, res: any, next: any) => {
     try {
         const secret = process.env.JWT_SECRET || 'site2app_super_secret';
         const decoded = jwt.verify(token, secret) as any;
-        const bubbleUser = await bubble.getUserById(decoded.userId);
-        if (!bubbleUser) throw new Error('User not found in Bubble');
+        let bubbleUser = null;
+        try {
+            bubbleUser = await bubble.getUserById(decoded.userId);
+        } catch (e) {
+            console.warn('[Auth] Bubble user fetch failed, falling back to local only:', e.message);
+        }
         
-        const bubbleId = bubbleUser._id;
+        const bubbleId = decoded.userId;
+        const localUser = users.get(bubbleId);
+        
+        if (!bubbleUser && !localUser) {
+            throw new Error('User not found in both Bubble and Local DB');
+        }
+
+        bubbleUser = bubbleUser || {};
         
         // Load existing local user data (contains sensitive keys)
-        const localUser = users.get(bubbleId) || {};
+        const localUserSafe = localUser || {};
         
         // Merge: Bubble provides profile data, LOCAL provides sensitive config
-        // LOCAL keys ALWAYS win to prevent loss of Firebase credentials
+        // LOCAL keys ALWAYS win to prevent loss of Firebase credentials and admin modifications
         const userSafe = { 
             id: bubbleId,
-            email: bubbleUser.email || bubbleUser.emailAddress || localUser.email,
-            name: bubbleUser.name || localUser.name,
-            plan: bubbleUser.plan || localUser.plan || 'free',
-            role: bubbleUser.role || localUser.role || 'user',
+            email: localUserSafe.email || bubbleUser.email || bubbleUser.emailAddress,
+            name: localUserSafe.name || bubbleUser.name,
+            plan: localUserSafe.plan || bubbleUser.plan || 'free',
+            role: localUserSafe.role || bubbleUser.role || 'user',
             // Sensitive keys: ALWAYS from local storage (never from Bubble)
-            firebaseKey: localUser.firebaseKey || '',
-            googleServicesJson: localUser.googleServicesJson || '',
-            bubbleApiUrl: localUser.bubbleApiUrl || '',
+            firebaseKey: localUserSafe.firebaseKey || '',
+            googleServicesJson: localUserSafe.googleServicesJson || '',
+            bubbleApiUrl: localUserSafe.bubbleApiUrl || '',
         };
         
         users.set(bubbleId, userSafe);
