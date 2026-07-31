@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Key, Copy, CheckCircle2, RefreshCw, Code2, Webhook, Zap } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import { api } from '../api';
+import { api } from '../lib/api';
 import toast from 'react-hot-toast';
 import Button from '../components/ui/Button';
 
