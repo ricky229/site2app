@@ -921,14 +921,19 @@ app.post('/node/devices/register', async (req: any, res) => {
     const ip = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket?.remoteAddress;
     if (ip) {
         try {
-            const ipString = Array.isArray(ip) ? ip[0] : String(ip).split(',')[0].trim();
-            if (ipString && !ipString.includes('127.0.0.1') && !ipString.startsWith('192.168.') && !ipString.startsWith('10.')) {
-                const response = await fetch(`http://ip-api.com/json/${ipString}?fields=status,country,city`);
-                const data = await response.json();
-                if (data.status === 'success') {
-                    country = data.country || 'Inconnu';
-                    city = data.city || 'Inconnu';
-                }
+            let ipString = Array.isArray(ip) ? ip[0] : String(ip).split(',')[0].trim();
+            let apiUrl = `http://ip-api.com/json/${ipString}?fields=status,country,city`;
+            
+            // Allow fallback for local testing
+            if (!ipString || ipString.includes('127.0.0.1') || ipString === '::1' || ipString.startsWith('192.168.') || ipString.startsWith('10.')) {
+                apiUrl = `http://ip-api.com/json/?fields=status,country,city`;
+            }
+
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            if (data.status === 'success') {
+                country = data.country || 'Inconnu';
+                city = data.city || 'Inconnu';
             }
         } catch (err) {
             console.error('[API] Erreur IP-API:', err);
