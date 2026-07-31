@@ -583,6 +583,7 @@ export default function NotificationsPage() {
                                 <thead>
                                     <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
                                         <th className="py-3 px-4">Système</th>
+                                        <th className="py-3 px-4">Localisation</th>
                                         <th className="py-3 px-4">ID de l'Application</th>
                                         <th className="py-3 px-4">Date d'inscription</th>
                                         <th className="py-3 px-4">Token FCM Unique</th>
@@ -595,6 +596,9 @@ export default function NotificationsPage() {
                                             <td className="py-3 px-4 font-semibold text-emerald-600 flex items-center gap-2">
                                                 <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                                                 {device.os?.toUpperCase() || 'ANDROID'}
+                                            </td>
+                                            <td className="py-3 px-4 text-xs font-medium text-slate-700 dark:text-slate-300">
+                                                {(device.country && device.country !== 'Inconnu') ? `${device.city}, ${device.country}` : 'Inconnu'}
                                             </td>
                                             <td className="py-3 px-4 font-mono text-xs">{device.buildId || 'N/A'}</td>
                                             <td className="py-3 px-4">{formatDate(device.createdAt || device['Created Date'] || Date.now())}</td>

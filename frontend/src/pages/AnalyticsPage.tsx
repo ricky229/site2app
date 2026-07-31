@@ -453,6 +453,7 @@ export default function AnalyticsPage() {
                             <thead className="bg-[var(--surface-2)]">
                                 <tr>
                                     <th className="py-4 px-6 font-bold text-[var(--text-muted)] uppercase tracking-wider text-xs">OS</th>
+                                    <th className="py-4 px-6 font-bold text-[var(--text-muted)] uppercase tracking-wider text-xs">Localisation</th>
                                     <th className="py-4 px-6 font-bold text-[var(--text-muted)] uppercase tracking-wider text-xs">Application</th>
                                     <th className="py-4 px-6 font-bold text-[var(--text-muted)] uppercase tracking-wider text-xs">Identifiant (Token)</th>
                                     <th className="py-4 px-6 font-bold text-[var(--text-muted)] uppercase tracking-wider text-xs">Date d'inscription</th>
@@ -469,6 +470,9 @@ export default function AnalyticsPage() {
                                                 }}>
                                                 {device.os === 'android' ? '🤖 Android' : '🍎 iOS'}
                                             </span>
+                                        </td>
+                                        <td className="py-4 px-6 font-medium text-[var(--text-primary)]">
+                                            {(device.country && device.country !== 'Inconnu') ? `${device.city}, ${device.country}` : 'Inconnu'}
                                         </td>
                                         <td className="py-4 px-6 font-bold text-[var(--text-primary)]">{device.buildName}</td>
                                         <td className="py-4 px-6">
