@@ -139,11 +139,11 @@ export default function DeveloperPage() {
                     <div className="bg-[var(--surface-0)] rounded-xl overflow-hidden border border-[var(--border)] w-full">
                         <div className="bg-[var(--surface-2)] px-3 py-2 md:px-4 md:py-2 text-[10px] md:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-0 border-b border-[var(--border)]">
                             <span>Requête POST</span>
-                            <span className="text-blue-500 font-mono lowercase truncate w-full md:w-auto text-right md:text-left">https://us-central1-site2app-app.cloudfunctions.net/api/api/external/send-push</span>
+                            <span className="text-blue-500 font-mono lowercase truncate w-full md:w-auto text-right md:text-left">https://site2app.online/api/external/send-push</span>
                         </div>
                         <div className="p-3 md:p-4 overflow-x-auto w-full max-w-full">
                             <pre className="text-xs md:text-sm font-mono text-[var(--text-primary)] w-full">
-{`curl -X POST https://us-central1-site2app-app.cloudfunctions.net/api/api/external/send-push \\
+{`curl -X POST https://site2app.online/api/external/send-push \\
   -H "Authorization: Bearer sk_live_${user?.apiKey || 'VOTRE_CLE_API'}" \\
   -H "Content-Type: application/json" \\
   -d '{
