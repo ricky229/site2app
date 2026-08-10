@@ -3,22 +3,24 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
     Smartphone, Plus, Search, Download, Users, Clock,
-    Package, Filter, LayoutGrid, List, Eye, Play, Trash2
+    Package, Filter, LayoutGrid, List, Eye, Play, Trash2, Monitor
 } from 'lucide-react'
 import { StatusBadge } from '../../components/ui/Badge'
 import { formatRelativeTime, formatNumber, platformLabel } from '../../lib/utils'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../../store/authStore'
 import type { App } from '../../types'
-import { getBuilds as getAppsByUser, deleteBuild as deleteApp, publishApp } from '../../lib/api'
+import { getBuilds as getAppsByUser, deleteBuild as deleteApp, publishApp, getDesktopBuilds, deleteDesktopBuild, getBaseUrl } from '../../lib/api'
 
-async function fetchBuilds(userId: string): Promise<App[]> {
+async function fetchBuilds(userId: string): Promise<any[]> {
     if (!userId) return [];
-    const data = await getAppsByUser(userId);
-    let buildsArray: any[] = data || [];
+    try {
+        const [mobileData, desktopData] = await Promise.all([
+            getAppsByUser(userId).catch(() => []),
+            getDesktopBuilds().catch(() => [])
+        ]);
 
-    return buildsArray.map((b: any) => {
-        return {
+        const mobileBuilds = (mobileData || []).map((b: any) => ({
             ...b,
             id: b.id || b._id || String(Math.random()),
             name: b.appName || b.name || 'App',
@@ -31,9 +33,32 @@ async function fetchBuilds(userId: string): Promise<App[]> {
             activeUsers: b.activeUsers || 0,
             lastBuiltAt: b.createdAt || b['Created Date'] || b.startedAt || b.lastBuiltAt,
             apkUrl: b.apkFile || b.downloadUrl || (b.status === 'completed' ? `/node/download/${b.id || b._id}` : undefined),
-            icon: b.icon || b.config?.icon || b.logo || null
-        }
-    })
+            icon: b.icon || b.config?.icon || b.logo || null,
+            isDesktop: false
+        }));
+
+        const desktopBuilds = (desktopData || []).map((b: any) => ({
+            ...b,
+            id: b.id || b._id || String(Math.random()),
+            name: b.appName || b.name || 'Desktop App',
+            url: b.url || '',
+            status: b.status || 'pending',
+            platform: 'desktop',
+            version: '1.0',
+            versionCode: 1,
+            downloadCount: 0,
+            activeUsers: 0,
+            lastBuiltAt: b.startedAt || b.createdAt,
+            icon: b.icon || null,
+            isDesktop: true,
+            windowsUrl: b.downloads?.windows ? `${getBaseUrl()}/desktop/download/${b.id || b._id}/windows` : undefined,
+            macosUrl: b.downloads?.macos ? `${getBaseUrl()}/desktop/download/${b.id || b._id}/macos` : undefined
+        }));
+
+        return [...mobileBuilds, ...desktopBuilds].sort((a, b) => new Date(b.lastBuiltAt).getTime() - new Date(a.lastBuiltAt).getTime());
+    } catch {
+        return [];
+    }
 }
 
 const PremiumAppCard = ({ app, delay }: any) => {
@@ -54,7 +79,11 @@ const PremiumAppCard = ({ app, delay }: any) => {
             queryClient.setQueryData(queryKey, (old: any) => (old ? old.filter((a: any) => a.id !== id) : []));
 
             try {
-                await deleteApp(id)
+                if (app.isDesktop) {
+                    await deleteDesktopBuild(id)
+                } else {
+                    await deleteApp(id)
+                }
                 queryClient.invalidateQueries({ queryKey: ['builds'] })
                 alert('Application supprimée avec succès.')
             } catch (err: any) {
@@ -86,7 +115,7 @@ const PremiumAppCard = ({ app, delay }: any) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay, duration: 0.4 }}
             whileHover={{ y: -4, scale: 1.01 }}
-            onClick={() => navigate(`/apps/${app.id}`)}
+            onClick={() => navigate(`/apps/${app.id}${app.isDesktop ? '?platform=desktop' : ''}`)}
             className="group cursor-pointer rounded-3xl px-3 py-5 sm:p-5 md:p-6 relative overflow-hidden flex flex-col min-w-[50px] min-w-0"
             style={{
                 background: 'var(--surface-1)',
@@ -144,17 +173,35 @@ const PremiumAppCard = ({ app, delay }: any) => {
             <div className="flex flex-wrap gap-2 relative z-10 min-w-[50px] min-w-0" onClick={e => e.stopPropagation()}>
                 <button
                     className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--surface-3)] hover:text-blue-500 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/apps/${app.id}`)}
+                    onClick={() => navigate(`/apps/${app.id}${app.isDesktop ? '?platform=desktop' : ''}`)}
                 >
                     <Eye size={14} /> Modifier
                 </button>
-                {app.apkUrl && (
+                {app.apkUrl && !app.isDesktop && (
                     <a
                         href={app.apkUrl}
-                        className="flex items-center justify-center p-2 rounded-xl text-green-600 bg-green-500/10 hover:bg-green-500 hover:text-white transition-colors cursor-pointer"
-                        title="Tlcharger APK"
+                        className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-bold text-green-600 bg-green-500/10 hover:bg-green-500 hover:text-white transition-colors cursor-pointer"
+                        title="Télécharger APK"
                     >
-                        <Download size={16} />
+                        <Download size={14} /> APK
+                    </a>
+                )}
+                {app.isDesktop && app.windowsUrl && (
+                    <a
+                        href={app.windowsUrl}
+                        className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-bold text-blue-600 bg-blue-500/10 hover:bg-blue-500 hover:text-white transition-colors cursor-pointer"
+                        title="Télécharger Windows .exe"
+                    >
+                        <Download size={14} /> Windows
+                    </a>
+                )}
+                {app.isDesktop && app.macosUrl && (
+                    <a
+                        href={app.macosUrl}
+                        className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-bold text-gray-700 bg-gray-500/10 hover:bg-gray-600 hover:text-white transition-colors cursor-pointer"
+                        title="Télécharger macOS .dmg"
+                    >
+                        <Download size={14} /> macOS
                     </a>
                 )}
                 <button

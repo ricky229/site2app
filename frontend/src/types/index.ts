@@ -25,7 +25,7 @@ export interface AuthState {
 
 // ===== APP TYPES =====
 export type BuildStatus = 'pending' | 'analyzing' | 'building' | 'signing' | 'uploading' | 'completed' | 'failed';
-export type Platform = 'android' | 'ios' | 'both';
+export type Platform = 'android' | 'ios' | 'desktop';
 export type Theme = 'light' | 'dark' | 'auto';
 export type Orientation = 'portrait' | 'landscape' | 'both';
 
@@ -255,6 +255,7 @@ export interface DashboardStats {
     pendingBuilds: number;
     storageUsed: number;
     storageLimit: number;
+    desktopBuilds?: number;
 }
 
 // ===== ADMIN TYPES =====
@@ -346,5 +347,37 @@ export interface WizardState {
     currentStep: number;
     siteAnalysis?: SiteAnalysis;
     config: Partial<AppConfig>;
-    platform: Platform;
+    platform: Platform | 'desktop';
+}
+
+// ===== DESKTOP BUILD TYPES =====
+export type DesktopPlatform = 'windows' | 'macos' | 'both';
+export type DesktopBuildStatus = 'pending' | 'building' | 'completed' | 'failed';
+
+export interface DesktopBuildResult {
+    fileName: string;
+    size: number;
+    downloadUrl?: string;
+}
+
+export interface DesktopBuild {
+    id: string;
+    appName: string;
+    url: string;
+    icon?: string;
+    status: DesktopBuildStatus;
+    platforms: DesktopPlatform[];
+    windows?: DesktopBuildResult;
+    macos?: DesktopBuildResult;
+    userId?: string;
+    error?: string;
+    startedAt: string;
+    completedAt?: string;
+}
+
+export interface DesktopAppConfig {
+    url: string;
+    name: string;
+    icon?: string;
+    platforms: DesktopPlatform;
 }

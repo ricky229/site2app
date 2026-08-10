@@ -1,0 +1,20 @@
+{
+  "name": "com.site2app.desktop.placeholder",
+  "version": "1.0.0",
+  "description": "APP_DESCRIPTION_PLACEHOLDER",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
+  },
+  "author": "Site2App",
+  "license": "ISC",
+  "dependencies": {
+    "electron-updater": "^6.1.8"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  }
+}

@@ -8,7 +8,7 @@ interface WizardStore {
     prevStep: () => void
     setSiteAnalysis: (analysis: SiteAnalysis) => void
     updateConfig: (updates: Partial<AppConfig>) => void
-    setPlatform: (platform: 'android' | 'ios' | 'both') => void
+    setPlatform: (platform: 'android' | 'ios' | 'desktop') => void
     setState: (newState: Partial<WizardState>) => void
     reset: () => void
 }

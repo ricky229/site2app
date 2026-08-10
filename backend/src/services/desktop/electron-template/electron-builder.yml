@@ -1,0 +1,31 @@
+appId: com.site2app.desktop.APP_NAME_PLACEHOLDER
+productName: APP_DISPLAY_NAME_PLACEHOLDER
+directories:
+  output: dist
+  buildResources: build
+compression: normal
+win:
+  target: nsis
+  icon: build/icon.png
+  artifactName: "${productName}-Setup-${version}.${ext}"
+mac:
+  target: dmg
+  icon: build/icon.icns
+  artifactName: "${productName}-${version}.${ext}"
+  category: public.app-category.productivity
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+dmg:
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

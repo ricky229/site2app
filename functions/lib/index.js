@@ -55,6 +55,7 @@ app.use((0, cors_1.default)({ origin: true }));
 app.use((0, helmet_1.default)());
 app.use((0, morgan_1.default)('dev'));
 app.use(express_1.default.json());
+app.use(express_1.default.urlencoded({ extended: true }));
 const JWT_SECRET = process.env.JWT_SECRET || 'site2app_super_secret';
 const BUILDER_SECRET = process.env.BUILDER_SECRET || 'dev_secret_123';
 const GITHUB_PAT = process.env.GITHUB_PAT || '';
@@ -84,6 +85,14 @@ const authMiddleware = async (req, res, next) => {
         return res.status(401).json({ error: 'Unauthorized', details: error.message });
     }
 };
+const requireAdmin = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
+        next();
+    }
+    else {
+        return res.status(403).json({ error: 'Accès refusé. Privilèges administrateur requis.' });
+    }
+};
 const builderAuthMiddleware = (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || authHeader !== `Bearer ${BUILDER_SECRET}`) {
@@ -107,12 +116,14 @@ api.post('/auth/register', async (req, res) => {
             return res.status(400).json({ error: 'Cet email est déjà utilisé' });
         const hashedPassword = await bcryptjs_1.default.hash(password, 10);
         const userId = (0, uuid_1.v4)();
+        const apiKey = (0, uuid_1.v4)();
         const userData = {
             email,
             name: name || 'Utilisateur',
             password: hashedPassword,
             plan: 'free',
             role: 'user',
+            apiKey,
             firebaseKey: '',
             googleServicesJson: '',
             appsCount: 0,
@@ -121,7 +132,7 @@ api.post('/auth/register', async (req, res) => {
         };
         await usersRef.doc(userId).set(userData);
         const token = jsonwebtoken_1.default.sign({ userId }, JWT_SECRET, { expiresIn: '30d' });
-        const userSafe = { id: userId, email, name: userData.name, plan: 'free', role: 'user', firebaseKey: '', googleServicesJson: '' };
+        const userSafe = { id: userId, email, name: userData.name, plan: 'free', role: 'user', apiKey, firebaseKey: '', googleServicesJson: '' };
         res.json({ user: userSafe, token });
     }
     catch (err) {
@@ -149,6 +160,7 @@ api.post('/auth/login', async (req, res) => {
             name: user.name || 'Utilisateur',
             plan: user.plan || 'free',
             role: user.role || 'user',
+            apiKey: user.apiKey || '',
             firebaseKey: user.firebaseKey || '',
             googleServicesJson: user.googleServicesJson || '',
         };
@@ -159,6 +171,7 @@ api.post('/auth/login', async (req, res) => {
     }
 });
 api.get('/auth/me', authMiddleware, (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     const { password, ...userProfile } = req.user;
     res.json(userProfile);
 });
@@ -186,6 +199,290 @@ api.delete('/user', authMiddleware, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+api.post('/user/regenerate-api-key', authMiddleware, async (req, res) => {
+    try {
+        const newApiKey = (0, uuid_1.v4)();
+        await db.collection('users').doc(req.user.id).update({
+            apiKey: newApiKey,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        res.json({ success: true, apiKey: newApiKey });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+// ----------------------------------------------------------------------
+// PAYDUNYA ROUTES
+// ----------------------------------------------------------------------
+api.post('/payment/create-invoice', authMiddleware, async (req, res) => {
+    try {
+        const { plan } = req.body;
+        if (!plan || (plan !== 'yearly' && plan !== 'lifetime')) {
+            return res.status(400).json({ error: 'Plan invalide.' });
+        }
+        const PAYDUNYA_MASTER_KEY = process.env.PAYDUNYA_MASTER_KEY;
+        const PAYDUNYA_PRIVATE_KEY = process.env.PAYDUNYA_PRIVATE_KEY;
+        const PAYDUNYA_TOKEN = process.env.PAYDUNYA_TOKEN;
+        const PAYDUNYA_MODE = process.env.PAYDUNYA_MODE || 'test';
+        if (!PAYDUNYA_MASTER_KEY || !PAYDUNYA_PRIVATE_KEY || !PAYDUNYA_TOKEN) {
+            console.error('[PayDunya] Clés API manquantes. Vérifiez vos GitHub Secrets.');
+            return res.status(500).json({ error: 'Configuration serveur manquante. Veuillez vérifier que les secrets GitHub (PAYDUNYA_MASTER_KEY, PAYDUNYA_PRIVATE_KEY, PAYDUNYA_TOKEN) sont bien configurés et non vides.', details: { master: !!PAYDUNYA_MASTER_KEY, private: !!PAYDUNYA_PRIVATE_KEY, token: !!PAYDUNYA_TOKEN } });
+        }
+        const settingsDoc = await db.collection('settings').doc('global').get();
+        const settings = settingsDoc.exists ? settingsDoc.data() : { pricing: { starter: 25000, pro: 75000 } };
+        const pricing = settings.pricing || { starter: 25000, pro: 75000 };
+        const amount = plan === 'yearly' ? (pricing.starter || 25000) : (pricing.pro || 75000);
+        const description = plan === 'yearly' ? 'Abonnement Annuel Site2App' : 'Accès À Vie Site2App';
+        const payload = {
+            invoice: {
+                total_amount: amount,
+                description: description,
+            },
+            store: {
+                name: 'Site2App',
+            },
+            custom_data: {
+                userId: req.user.id,
+                plan: plan,
+            },
+            actions: {
+                cancel_url: 'https://site2app.online/dashboard/pricing?payment=cancelled',
+                return_url: 'https://site2app.online/dashboard/pricing?payment=success',
+                callback_url: 'https://us-central1-site2app-ba735.cloudfunctions.net/api/api/payment/webhook'
+            }
+        };
+        let response;
+        try {
+            const baseUrl = PAYDUNYA_MODE === 'test' ? 'https://app.paydunya.com/sandbox-api/v1' : 'https://app.paydunya.com/api/v1';
+            response = await (0, node_fetch_1.default)(`${baseUrl}/checkout-invoice/create`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'PAYDUNYA-MASTER-KEY': PAYDUNYA_MASTER_KEY,
+                    'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_PRIVATE_KEY,
+                    'PAYDUNYA-TOKEN': PAYDUNYA_TOKEN,
+                    'PAYDUNYA-MODE': PAYDUNYA_MODE
+                },
+                body: JSON.stringify(payload),
+            });
+        }
+        catch (fetchErr) {
+            console.error('[PayDunya] Fetch Failed:', fetchErr);
+            return res.status(500).json({ error: 'Erreur réseau vers PayDunya', details: fetchErr.message });
+        }
+        let data;
+        try {
+            data = await response.json();
+        }
+        catch (parseErr) {
+            console.error('[PayDunya] JSON Parse Failed:', parseErr);
+            const text = await response.text().catch(() => 'no text');
+            return res.status(500).json({ error: 'Erreur de parsing de la réponse PayDunya', status: response.status, bodyText: text });
+        }
+        if (data.response_code === '00') {
+            return res.json({ invoiceUrl: data.response_text });
+        }
+        else {
+            console.error('[PayDunya] Erreur:', data);
+            return res.status(500).json({ error: 'Erreur lors de la création de la facture', details: data });
+        }
+    }
+    catch (err) {
+        console.error('[PayDunya] Exception:', err);
+        res.status(500).json({ error: 'Exception interne', details: err.message });
+    }
+});
+api.post('/payment/softpay', authMiddleware, async (req, res) => {
+    try {
+        const { plan, paymentMethod, phoneNumber, fullName, email } = req.body;
+        if (!plan || (plan !== 'yearly' && plan !== 'lifetime')) {
+            return res.status(400).json({ error: 'Plan invalide.' });
+        }
+        if (!paymentMethod || !phoneNumber) {
+            return res.status(400).json({ error: 'Moyen de paiement et numéro de téléphone requis.' });
+        }
+        const PAYDUNYA_MASTER_KEY = process.env.PAYDUNYA_MASTER_KEY;
+        const PAYDUNYA_PRIVATE_KEY = process.env.PAYDUNYA_PRIVATE_KEY;
+        const PAYDUNYA_TOKEN = process.env.PAYDUNYA_TOKEN;
+        const PAYDUNYA_MODE = process.env.PAYDUNYA_MODE || 'test';
+        if (!PAYDUNYA_MASTER_KEY || !PAYDUNYA_PRIVATE_KEY || !PAYDUNYA_TOKEN) {
+            return res.status(500).json({ error: 'Configuration serveur manquante.' });
+        }
+        const settingsDoc = await db.collection('settings').doc('global').get();
+        const settings = settingsDoc.exists ? settingsDoc.data() : { pricing: { starter: 25000, pro: 75000 } };
+        const pricing = settings.pricing || { starter: 25000, pro: 75000 };
+        const amount = plan === 'yearly' ? (pricing.starter || 25000) : (pricing.pro || 75000);
+        const description = plan === 'yearly' ? 'Abonnement Annuel Site2App' : 'Accès À Vie Site2App';
+        const payload = {
+            invoice: { total_amount: amount, description: description },
+            store: { name: 'Site2App' },
+            custom_data: { userId: req.user.id, plan: plan },
+            actions: {
+                cancel_url: 'https://site2app.online/dashboard/pricing?payment=cancelled',
+                return_url: 'https://site2app.online/dashboard/pricing?payment=success',
+                callback_url: 'https://us-central1-site2app-ba735.cloudfunctions.net/api/api/payment/webhook'
+            }
+        };
+        // 1. Generate Checkout Invoice Token
+        const baseUrl = PAYDUNYA_MODE === 'test' ? 'https://app.paydunya.com/sandbox-api/v1' : 'https://app.paydunya.com/api/v1';
+        const invoiceRes = await (0, node_fetch_1.default)(`${baseUrl}/checkout-invoice/create`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'PAYDUNYA-MASTER-KEY': PAYDUNYA_MASTER_KEY,
+                'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_PRIVATE_KEY,
+                'PAYDUNYA-TOKEN': PAYDUNYA_TOKEN,
+                'PAYDUNYA-MODE': PAYDUNYA_MODE
+            },
+            body: JSON.stringify(payload),
+        });
+        const invoiceData = await invoiceRes.json();
+        if (invoiceData.response_code !== '00') {
+            return res.status(500).json({ error: 'Erreur génération facture', details: invoiceData });
+        }
+        const invoiceToken = invoiceData.token;
+        // Reset payment status to pending for the new transaction
+        await db.collection('users').doc(req.user.id).update({
+            lastPaymentStatus: 'pending'
+        });
+        // 2. Call SoftPay
+        if (PAYDUNYA_MODE === 'test') {
+            // Mock responses in test mode because Sandbox Softpay endpoints don't exist
+            if (paymentMethod === 'wave_senegal') {
+                return res.json({ success: true, url: invoiceData.response_text }); // Redirect to sandbox checkout for simulation
+            }
+            else if (paymentMethod === 'orange_money_senegal') {
+                return res.json({ success: true, url: invoiceData.response_text, other_url: { om_url: invoiceData.response_text } });
+            }
+            else if (paymentMethod === 'free_money_senegal') {
+                return res.json({ success: true, message: 'Opération réussie, Veuillez tapez #150# pour finaliser votre paiement.' });
+            }
+            else {
+                return res.json({ success: true, url: invoiceData.response_text });
+            }
+        }
+        // LIVE MODE
+        const endpointPath = paymentMethod.replace(/_/g, '-');
+        const softpayUrl = `https://app.paydunya.com/api/v1/softpay/${endpointPath}`;
+        const softpayPayload = {
+            // Generic parameters
+            customer_name: fullName || req.user.id,
+            customer_email: email || 'test@site2app.online',
+            phone_number: phoneNumber,
+            phone_phone: phoneNumber,
+            invoice_token: invoiceToken,
+            payment_token: invoiceToken,
+            // Wave parameters
+            wave_senegal_fullName: fullName || req.user.id,
+            wave_senegal_email: email || 'test@site2app.online',
+            wave_senegal_phone: phoneNumber,
+            wave_senegal_payment_token: invoiceToken,
+            // Wave CI parameters (guessing based on pattern if needed)
+            wave_ci_fullName: fullName || req.user.id,
+            wave_ci_email: email || 'test@site2app.online',
+            wave_ci_phone: phoneNumber,
+            wave_ci_payment_token: invoiceToken,
+            // Expresso parameters
+            expresso_sn_fullName: fullName || req.user.id,
+            expresso_sn_email: email || 'test@site2app.online',
+            expresso_sn_phone: phoneNumber,
+            // Celtiis parameters
+            celtiis_cash_customer_fullname: fullName || req.user.id,
+            celtiis_cash_customer_email: email || 'test@site2app.online',
+            celtiis_cash_phone_number: phoneNumber,
+            // Djamo parameters
+            djamo_fullName: fullName || req.user.id,
+            djamo_email: email || 'test@site2app.online',
+            djamo_phone: phoneNumber,
+            djamo_payment_token: invoiceToken,
+            // MTN Benin parameters
+            mtn_benin_customer_fullname: fullName || req.user.id,
+            mtn_benin_email: email || 'test@site2app.online',
+            mtn_benin_phone_number: phoneNumber,
+            mtn_benin_wallet_provider: "MTNBENIN",
+            // Moov Benin parameters
+            moov_benin_customer_fullname: fullName || req.user.id,
+            moov_benin_email: email || 'test@site2app.online',
+            moov_benin_phone_number: phoneNumber,
+            moov_benin_wallet_provider: "MOOVBENIN"
+        };
+        const softRes = await (0, node_fetch_1.default)(softpayUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+                'PAYDUNYA-MASTER-KEY': PAYDUNYA_MASTER_KEY,
+                'PAYDUNYA-PRIVATE-KEY': PAYDUNYA_PRIVATE_KEY,
+                'PAYDUNYA-TOKEN': PAYDUNYA_TOKEN,
+            },
+            body: JSON.stringify(softpayPayload)
+        });
+        const softText = await softRes.text();
+        let softData;
+        try {
+            softData = JSON.parse(softText);
+        }
+        catch (e) {
+            console.error('[PayDunya SoftPay] Réponse invalide (non-JSON):', softText.substring(0, 200));
+            return res.status(502).json({ error: 'Exception interne SoftPay (Réponse non-JSON du serveur bancaire)', details: softText.substring(0, 100) });
+        }
+        return res.json(softData);
+    }
+    catch (err) {
+        console.error('[SoftPay] Exception:', err);
+        res.status(500).json({ error: 'Exception interne SoftPay', details: err.message });
+    }
+});
+api.post('/payment/webhook', express_1.default.json(), async (req, res) => {
+    try {
+        const rawBody = req.body;
+        const data = rawBody.data || rawBody;
+        // DEBUG: Save the exact payload to Firestore so we can inspect it!
+        await db.collection('webhook_logs').add({
+            payload: rawBody,
+            receivedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        // Try to find custom_data whether it's at root or inside invoice
+        const customData = data.custom_data || (data.invoice && data.invoice.custom_data);
+        if (!data || !customData) {
+            return res.status(400).send('Invalid payload');
+        }
+        const { userId, plan } = customData;
+        const status = data.status || (data.invoice && data.invoice.status); // e.g. "completed" ou "successful"
+        if (status === 'completed' || status === 'successful') {
+            await db.collection('users').doc(userId).update({
+                plan: plan,
+                lastPaymentStatus: status,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`[PayDunya] Succès: Plan ${plan} activé pour l'utilisateur ${userId}`);
+        }
+        else {
+            await db.collection('users').doc(userId).update({
+                lastPaymentStatus: status,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            console.log(`[PayDunya] Statut de paiement ${status} pour l'utilisateur ${userId}`);
+        }
+        res.status(200).send('OK');
+    }
+    catch (err) {
+        console.error('[PayDunya Webhook] Erreur:', err);
+        res.status(500).send('Internal Error');
+    }
+});
+api.get('/admin/webhook-logs', async (req, res) => {
+    try {
+        const snap = await db.collection('webhook_logs').orderBy('receivedAt', 'desc').limit(5).get();
+        const logs = snap.docs.map(doc => doc.data());
+        res.json(logs);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 // ----------------------------------------------------------------------
 // BUILD ROUTES
 // ----------------------------------------------------------------------
@@ -195,6 +492,16 @@ api.post('/build', authMiddleware, async (req, res) => {
         const buildId = req.body.buildId || Date.now().toString();
         const isNewBuild = !req.body.buildId;
         const finalPackage = packageName || `com.site2app.${(appName || 'myapp').toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '.').replace(/\.+/g, '.').replace(/^\.+|\.+$/g, '')}`;
+        if (isNewBuild) {
+            // App limit check
+            const userPlan = req.user.plan || 'free';
+            const limit = userPlan === 'free' ? 1 : (userPlan === 'yearly' ? 10 : 99999);
+            const userBuildsSnap = await db.collection('builds').where('userId', '==', req.user.id).get();
+            const activeApps = new Set(userBuildsSnap.docs.map(d => d.data().packageName)).size;
+            if (activeApps >= limit) {
+                return res.status(403).json({ error: `Limite atteinte. Votre plan (${userPlan}) vous autorise ${limit} application(s).` });
+            }
+        }
         // Get max version code for this package without requiring a composite index
         const existingBuilds = await db.collection('builds')
             .where('packageName', '==', finalPackage)
@@ -280,6 +587,7 @@ api.post('/build', authMiddleware, async (req, res) => {
             packageName: buildData.packageName,
             options: {
                 buildId,
+                userPlan: req.user?.plan || 'free',
                 statusBarColor: statusBarColor || primaryColor || '#3461f5',
                 themeColor: themeColor || primaryColor || '#3461f5',
                 splashBgColor: splashBgColor || primaryColor || '#3461f5',
@@ -702,6 +1010,38 @@ api.post('/notifications/send', authMiddleware, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+api.post('/external/send-push', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ error: 'Missing or invalid authorization header (Bearer API_KEY)' });
+        }
+        const apiKey = authHeader.split(' ')[1];
+        const usersRef = db.collection('users');
+        const snapshot = await usersRef.where('apiKey', '==', apiKey).limit(1).get();
+        if (snapshot.empty) {
+            return res.status(401).json({ error: 'Invalid API Key' });
+        }
+        const userDoc = snapshot.docs[0];
+        const user = { id: userDoc.id, ...userDoc.data() };
+        const { token, tokens, title, body, message, actionUrl } = req.body;
+        const targetTokens = tokens || (token ? [token] : []);
+        if (!targetTokens || targetTokens.length === 0) {
+            return res.status(400).json({ error: 'Missing token or tokens array in request body' });
+        }
+        const payload = {
+            title: title || 'Notification',
+            body: body || message || '',
+            actionUrl,
+            target: targetTokens
+        };
+        const result = await sendNotificationCore(user, payload);
+        res.json(result);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 api.get('/notifications', authMiddleware, async (req, res) => {
     try {
         const snap = await db.collection('notifications')
@@ -810,11 +1150,37 @@ api.post('/devices/register', async (req, res) => {
         const deviceRef = db.collection('devices').doc(id);
         const existingDevice = await deviceRef.get();
         const isNewDevice = !existingDevice.exists;
+        let country = existingDevice.exists ? (existingDevice.data()?.country || 'Inconnu') : 'Inconnu';
+        let city = existingDevice.exists ? (existingDevice.data()?.city || 'Inconnu') : 'Inconnu';
+        // Update location only for new devices or if it was previously unknown
+        if (isNewDevice || country === 'Inconnu') {
+            const ip = req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.socket?.remoteAddress;
+            if (ip) {
+                try {
+                    let ipString = Array.isArray(ip) ? ip[0] : String(ip).split(',')[0].trim();
+                    let apiUrl = `https://ipwho.is/${ipString}`;
+                    if (!ipString || ipString.includes('127.0.0.1') || ipString === '::1' || ipString.startsWith('192.168.') || ipString.startsWith('10.')) {
+                        apiUrl = `https://ipwho.is/`;
+                    }
+                    const response = await (0, node_fetch_1.default)(apiUrl);
+                    const data = await response.json();
+                    if (data.success) {
+                        country = data.country || 'Inconnu';
+                        city = data.city || 'Inconnu';
+                    }
+                }
+                catch (err) {
+                    console.error('Erreur IP geolocation:', err);
+                }
+            }
+        }
         await deviceRef.set({
             pushToken,
             buildId,
             userId,
             platform,
+            country,
+            city,
             createdAt: isNewDevice ? admin.firestore.FieldValue.serverTimestamp() : existingDevice.data()?.createdAt,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
@@ -849,7 +1215,12 @@ api.post('/devices/register', async (req, res) => {
 });
 api.get('/devices', authMiddleware, async (req, res) => {
     try {
-        const snap = await db.collection('devices').where('userId', '==', req.user.id).get();
+        const appId = req.query.appId;
+        let query = db.collection('devices').where('userId', '==', req.user.id);
+        if (appId) {
+            query = query.where('buildId', '==', appId);
+        }
+        const snap = await query.get();
         const devices = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         devices.sort((a, b) => {
             const dateA = a.updatedAt?.toDate?.()?.getTime() || 0;
@@ -1042,6 +1413,302 @@ api.get('/analyze', async (req, res) => {
             colors: sortedColors.slice(0, 10), // Limit to top 10 unique colors
             ssl: targetUrl.startsWith('https://')
         });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+// ----------------------------------------------------------------------
+// ADMIN ROUTES
+// ----------------------------------------------------------------------
+api.get('/admin/stats', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const usersSnapshot = await db.collection('users').get();
+        const buildsSnapshot = await db.collection('builds').get();
+        // Fetch current pricing to calculate accurate stats
+        let prices = { starter: 200, pro: 200 };
+        try {
+            const settingsDoc = await db.collection('settings').doc('pricing').get();
+            if (settingsDoc.exists) {
+                const data = settingsDoc.data();
+                if (data?.pricing) {
+                    prices = { ...prices, ...data.pricing };
+                }
+            }
+        }
+        catch (e) {
+            console.error("Could not fetch pricing for stats", e);
+        }
+        let mrr = 0;
+        let totalRevenue = 0;
+        usersSnapshot.forEach(doc => {
+            const plan = doc.data().plan;
+            if (plan === 'yearly') {
+                mrr += (prices.starter || 0) / 12;
+                totalRevenue += (prices.starter || 0);
+            }
+            else if (plan === 'lifetime') {
+                totalRevenue += (prices.pro || 0);
+            }
+        });
+        res.json({
+            totalUsers: usersSnapshot.size,
+            totalBuilds: buildsSnapshot.size,
+            mrr: Math.round(mrr),
+            totalRevenue: totalRevenue
+        });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+api.get('/admin/users', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const snapshot = await db.collection('users').orderBy('createdAt', 'desc').limit(100).get();
+        const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json(users);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+api.put('/admin/users/:id', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = req.body;
+        // Prevent updating protected fields carelessly
+        const safeUpdates = {
+            role: updates.role,
+            plan: updates.plan,
+            status: updates.status,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        };
+        // Clean up undefined values
+        Object.keys(safeUpdates).forEach(key => safeUpdates[key] === undefined && delete safeUpdates[key]);
+        await db.collection('users').doc(id).update(safeUpdates);
+        res.json({ success: true });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+api.delete('/admin/users/:id', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db.collection('users').doc(id).delete();
+        // In a real scenario, you might also want to delete their builds, apps, etc.
+        res.json({ success: true });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+api.get('/admin/builds', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const snapshot = await db.collection('builds').orderBy('createdAt', 'desc').limit(100).get();
+        const builds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json(builds);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+api.get('/settings', async (req, res) => {
+    try {
+        const doc = await db.collection('settings').doc('global').get();
+        if (!doc.exists) {
+            // Return default settings
+            return res.json({
+                pricing: {
+                    starter: 25000,
+                    pro: 75000,
+                    enterprise: 150000
+                }
+            });
+        }
+        res.json(doc.data());
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+api.put('/admin/settings', authMiddleware, requireAdmin, async (req, res) => {
+    try {
+        const updates = req.body;
+        await db.collection('settings').doc('global').set(updates, { merge: true });
+        res.json({ success: true });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+// ─── Desktop Build Routes ────────────────────────────────────────────────────────────────
+api.post('/desktop/build', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id || req.user.uid;
+        const { appName, url, icon, platforms } = req.body;
+        if (!appName || !url || !platforms || platforms.length === 0) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const user = userDoc.data() || {};
+        const plan = user.plan || 'free';
+        const allowedPlans = ['premium_yearly', 'premium_lifetime', 'yearly', 'lifetime'];
+        if (!allowedPlans.includes(plan)) {
+            return res.status(403).json({ error: 'Desktop builds are only available for premium yearly or lifetime plans' });
+        }
+        const buildRef = db.collection('desktop_builds').doc();
+        const buildId = buildRef.id;
+        const buildInfo = {
+            id: buildId,
+            appName,
+            url,
+            icon,
+            platforms,
+            status: 'pending',
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+            userId
+        };
+        await buildRef.set(buildInfo);
+        if (GITHUB_PAT && GITHUB_REPO) {
+            await buildRef.update({ status: 'building' });
+            const dispatchRes = await (0, node_fetch_1.default)(`https://api.github.com/repos/${GITHUB_REPO}/dispatches`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Authorization': `token ${GITHUB_PAT}`,
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Site2App-Functions'
+                },
+                body: JSON.stringify({
+                    event_type: 'build_desktop',
+                    client_payload: {
+                        buildId,
+                        appName,
+                        url,
+                        icon,
+                        platforms: platforms.join(','),
+                        serverUrl: `https://us-central1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/api`
+                    }
+                })
+            });
+            if (!dispatchRes.ok) {
+                const errText = await dispatchRes.text();
+                await buildRef.update({
+                    status: 'failed',
+                    error: `GitHub Action trigger failed: ${errText}`
+                });
+                return res.json({ buildId, status: 'failed', error: 'GitHub Action trigger failed' });
+            }
+        }
+        else {
+            await buildRef.update({
+                status: 'failed',
+                error: 'Configuration missing: GITHUB_PAT or GITHUB_REPO not set'
+            });
+            return res.json({ buildId, status: 'failed', error: 'Server configuration missing' });
+        }
+        res.json({ buildId, status: 'building' });
+    }
+    catch (e) {
+        console.error('[Desktop Build Error]', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+api.get('/desktop/build/:buildId/status', authMiddleware, async (req, res) => {
+    try {
+        const doc = await db.collection('desktop_builds').doc(req.params.buildId).get();
+        if (!doc.exists)
+            return res.status(404).json({ error: 'Build not found' });
+        const build = doc.data();
+        if (build.userId !== (req.user.id || req.user.uid))
+            return res.status(403).json({ error: 'Forbidden' });
+        res.json(build);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+api.get('/desktop/builds', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id || req.user.uid;
+        const snapshot = await db.collection('desktop_builds')
+            .where('userId', '==', userId)
+            .orderBy('createdAt', 'desc')
+            .get();
+        const builds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.json(builds);
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+api.delete('/desktop/build/:buildId', authMiddleware, async (req, res) => {
+    try {
+        const { buildId } = req.params;
+        const doc = await db.collection('desktop_builds').doc(buildId).get();
+        if (!doc.exists)
+            return res.status(404).json({ error: 'Build not found' });
+        const build = doc.data();
+        if (build.userId !== (req.user.id || req.user.uid))
+            return res.status(403).json({ error: 'Forbidden' });
+        await db.collection('desktop_builds').doc(buildId).delete();
+        res.json({ success: true });
+    }
+    catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+api.post('/internal/desktop/:buildId/upload', builderAuthMiddleware, express_1.default.raw({ type: '*/*', limit: '500mb' }), async (req, res) => {
+    try {
+        const buildId = req.params.buildId;
+        const fileName = req.header('X-File-Name');
+        const platform = req.header('X-Platform');
+        if (!fileName || !platform) {
+            return res.status(400).json({ error: 'Missing headers' });
+        }
+        const buildRef = db.collection('desktop_builds').doc(buildId);
+        const doc = await buildRef.get();
+        if (!doc.exists)
+            return res.status(404).json({ error: 'Build not found' });
+        const bucket = admin.storage().bucket();
+        const filePath = `desktop-builds/${buildId}/${fileName}`;
+        const file = bucket.file(filePath);
+        await file.save(req.body);
+        await file.makePublic();
+        const url = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+        const build = doc.data() || {};
+        const downloads = build.downloads || {};
+        if (platform === 'windows')
+            downloads.windows = url;
+        if (platform === 'macos')
+            downloads.macos = url;
+        await buildRef.update({
+            status: 'success',
+            updatedAt: Date.now(),
+            downloads
+        });
+        res.json({ success: true, url });
+    }
+    catch (err) {
+        console.error('Desktop Upload Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+api.post('/internal/desktop/:buildId/fail', builderAuthMiddleware, async (req, res) => {
+    try {
+        const buildId = req.params.buildId;
+        const error = req.body.error || 'Unknown error';
+        await db.collection('desktop_builds').doc(buildId).update({
+            status: 'failed',
+            error,
+            updatedAt: Date.now()
+        });
+        res.json({ success: true });
     }
     catch (err) {
         res.status(500).json({ error: err.message });

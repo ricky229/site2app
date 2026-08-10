@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
     Plus, Smartphone, Download, Users, Zap, Bell,
     Clock, Loader2, BarChart2, ArrowRight,
-    Settings, ChevronRight, Package, Layout
+    Settings, ChevronRight, Package, Layout, Monitor
 } from 'lucide-react'
 import { StatusBadge } from '../components/ui/Badge'
 import Button from '../components/ui/Button'
@@ -11,7 +11,7 @@ import { useAuthStore } from '../store/authStore'
 import { formatRelativeTime, formatNumber, platformLabel } from '../lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import type { DashboardStats } from '../types'
-import { getBuilds as getAppsByUser } from '../lib/api'
+import { getBuilds as getAppsByUser, getDesktopBuilds } from '../lib/api'
 
 async function fetchStats(userId: string): Promise<DashboardStats> {
     const defaultStats = {
@@ -22,27 +22,40 @@ async function fetchStats(userId: string): Promise<DashboardStats> {
         pendingBuilds: 0,
         storageUsed: 0,
         storageLimit: 1024 * 1024 * 1024,
+        desktopBuilds: 0
     }
     if (!userId) return defaultStats;
     try {
-        const apps = await getAppsByUser(userId)
+        const [apps, desktopApps] = await Promise.all([
+            getAppsByUser(userId).catch(() => []),
+            getDesktopBuilds().catch(() => [])
+        ])
+        
         let totalDownloads = 0
         let activeUsers = 0
         let pendingBuilds = 0
+        
         const appList = Array.isArray(apps) ? apps : []
         appList.forEach((app: any) => {
             totalDownloads += app.downloadCount || 0
             activeUsers += app.activeUsers || 0
             if (app.status === 'building') pendingBuilds++
         })
+        
+        const desktopList = Array.isArray(desktopApps) ? desktopApps : []
+        desktopList.forEach((app: any) => {
+            if (app.status === 'building') pendingBuilds++
+        })
+
         return {
-            totalApps: appList.length,
+            totalApps: appList.length + desktopList.length,
             totalDownloads,
             activeUsers,
             totalBuilds: appList.length,
             pendingBuilds,
             storageUsed: 0,
             storageLimit: 1024 * 1024 * 1024,
+            desktopBuilds: desktopList.length
         }
     } catch {
         return defaultStats
@@ -52,8 +65,12 @@ async function fetchStats(userId: string): Promise<DashboardStats> {
 async function fetchBuilds(userId: string): Promise<any[]> {
     if (!userId) return [];
     try {
-        const data = await getAppsByUser(userId);
-        return (Array.isArray(data) ? data : []).map((b: any) => ({
+        const [apps, desktopApps] = await Promise.all([
+            getAppsByUser(userId).catch(() => []),
+            getDesktopBuilds().catch(() => [])
+        ])
+        
+        const mobileBuilds = (Array.isArray(apps) ? apps : []).map((b: any) => ({
             id: b.id || b._id || '0',
             name: b.appName || b.name || 'Sans nom',
             url: b.url || '',
@@ -66,6 +83,21 @@ async function fetchBuilds(userId: string): Promise<any[]> {
             apkUrl: b.apkFile || (b.status === 'completed' ? `/node/download/${b.id || b._id}` : undefined),
             icon: b.icon || b.config?.icon || b.logo || null,
         }))
+        
+        const deskBuilds = (Array.isArray(desktopApps) ? desktopApps : []).map((b: any) => ({
+            id: b.id || b._id || '0',
+            name: b.appName || b.name || 'Sans nom',
+            url: b.url || '',
+            status: b.status || 'pending',
+            platform: 'desktop',
+            version: '1.0',
+            downloadCount: 0,
+            activeUsers: 0,
+            lastBuiltAt: b.startedAt || b.createdAt,
+            icon: b.icon || null,
+        }))
+        
+        return [...mobileBuilds, ...deskBuilds].sort((a, b) => new Date(b.lastBuiltAt).getTime() - new Date(a.lastBuiltAt).getTime())
     } catch {
         return []
     }
@@ -244,7 +276,7 @@ export default function DashboardPage() {
             </motion.div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6 mb-10 min-w-[50px] min-w-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 md:gap-6 mb-10 min-w-[50px] min-w-0">
                 <PremiumStatCard
                     title="Applications actives"
                     value={stats?.totalApps ?? 0}
@@ -272,6 +304,13 @@ export default function DashboardPage() {
                     icon={Zap}
                     color="#f59e0b"
                     delay={0.4}
+                />
+                <PremiumStatCard
+                    title="Desktop Builds"
+                    value={stats?.desktopBuilds ?? 0}
+                    icon={Monitor}
+                    color="#ec4899"
+                    delay={0.5}
                 />
             </div>
 

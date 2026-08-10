@@ -18,15 +18,16 @@ interface FeatureItem {
     color: string
     plan?: 'premium'
     badge?: string
+    mobileOnly?: boolean
 }
 
 const featureGroups: { title: string; features: FeatureItem[] }[] = [
     {
         title: 'Fonctionnalités essentielles',
         features: [
-            { key: 'pushNotifications', icon: Bell, label: 'Notifications Push', description: 'Envoyez des notifications ciblées via Firebase FCM.', color: '#f59e0b', plan: 'premium' },
+            { key: 'pushNotifications', icon: Bell, label: 'Notifications Push', description: 'Envoyez des notifications ciblées (système de bureau inclus).', color: '#f59e0b', plan: 'premium' },
             { key: 'offlineMode', icon: Wifi, label: 'Mode hors-ligne', description: 'L\'app fonctionne sans connexion grâce au cache intelligent.', color: '#10b981', plan: 'premium' },
-            { key: 'pullToRefresh', icon: RefreshCw, label: 'Pull-to-refresh', description: 'L\'utilisateur tire vers le bas pour actualiser le contenu.', color: '#3b82f6' },
+            { key: 'pullToRefresh', icon: RefreshCw, label: 'Pull-to-refresh', description: 'L\'utilisateur tire vers le bas pour actualiser le contenu.', color: '#3b82f6', mobileOnly: true },
             { key: 'progressBar', icon: BarChart, label: 'Barre de progression', description: 'Barre de chargement visible lors de la navigation.', color: '#6366f1' },
         ]
     },
@@ -35,8 +36,8 @@ const featureGroups: { title: string; features: FeatureItem[] }[] = [
         features: [
             { key: 'geolocation', icon: MapPin, label: 'Géolocalisation', description: 'Accès au GPS de l\'appareil pour services basés sur la position.', color: '#3461f5' },
             { key: 'camera', icon: Camera, label: 'Caméra & Galerie', description: 'Accès à l\'appareil photo et à la bibliothèque de photos.', color: '#7c3aed' },
-            { key: 'nativeShare', icon: Share2, label: 'Partage natif', description: 'Share sheet natif Android/iOS pour partager du contenu.', color: '#06b6d4' },
-            { key: 'biometrics', icon: Fingerprint, label: 'Biométrie', description: 'Verrouillage de l\'app avec Face ID ou empreinte digitale.', color: '#ef4444', plan: 'premium' },
+            { key: 'nativeShare', icon: Share2, label: 'Partage natif', description: 'Share sheet natif Android/iOS pour partager du contenu.', color: '#06b6d4', mobileOnly: true },
+            { key: 'biometrics', icon: Fingerprint, label: 'Biométrie', description: 'Verrouillage de l\'app avec Face ID ou empreinte digitale.', color: '#ef4444', plan: 'premium', mobileOnly: true },
         ]
     },
     {
@@ -53,8 +54,8 @@ const featureGroups: { title: string; features: FeatureItem[] }[] = [
         features: [
             { key: 'customCssJs', icon: Code2, label: 'CSS/JS personnalisé', description: 'Injectez du code CSS/JS pour personnaliser l\'apparence.', color: '#6366f1', plan: 'premium' },
             { key: 'analytics', icon: BarChart2, label: 'Analytics intégré', description: 'Tableau de bord avec pages vues, sessions, rétention.', color: '#3461f5', plan: 'premium' },
-            { key: 'otaUpdates', icon: RefreshCw, label: 'OTA Updates', description: 'Mettez à jour votre app sans passer par le store.', color: '#10b981', plan: 'premium' },
-            { key: 'admob', icon: DollarSign, label: 'AdMob (monétisation)', description: 'Intégrez des bannières et interstitiels Google AdMob.', color: '#f59e0b', plan: 'premium' },
+            { key: 'otaUpdates', icon: RefreshCw, label: 'OTA Updates', description: 'Mises à jour automatiques sans passer par les stores.', color: '#10b981', plan: 'premium' },
+            { key: 'admob', icon: DollarSign, label: 'AdMob (monétisation)', description: 'Intégrez des bannières et interstitiels Google AdMob.', color: '#f59e0b', plan: 'premium', mobileOnly: true },
         ]
     },
 ]
@@ -98,7 +99,7 @@ export default function Step3Features() {
                             {group.title}
                         </h3>
                         <div className="grid sm:grid-cols-2 gap-4">
-                            {group.features.map(feature => {
+                            {group.features.filter(f => state.platform !== 'desktop' || !f.mobileOnly).map(feature => {
                                 const isPremium = feature.plan === 'premium'
                                 const isLocked = isPremium && (!user || user.plan === 'free')
                                 const isChecked = !!features[feature.key] && !isLocked
@@ -171,7 +172,7 @@ export default function Step3Features() {
             </div>
 
             {/* AdMob Configuration Panel */}
-            {state.config.features?.admob && (
+            {state.platform !== 'desktop' && state.config.features?.admob && (
                 <motion.div 
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}

@@ -1,0 +1,54 @@
+name: Build Desktop App
+
+on:
+  repository_dispatch:
+    types: [build_desktop]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    if: contains(github.event.client_payload.buildData.platforms, 'windows')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Build and Upload Windows App
+        run: node backend/scripts/github-build-desktop.js
+        env:
+          BUILD_DATA: ${{ toJson(github.event.client_payload.buildData) }}
+          FUNCTIONS_URL: ${{ secrets.FUNCTIONS_URL }}
+          BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}
+
+  build-macos:
+    runs-on: macos-latest
+    if: contains(github.event.client_payload.buildData.platforms, 'macos')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm install
+
+      - name: Build and Upload macOS App
+        run: node backend/scripts/github-build-desktop.js
+        env:
+          BUILD_DATA: ${{ toJson(github.event.client_payload.buildData) }}
+          FUNCTIONS_URL: ${{ secrets.FUNCTIONS_URL }}
+          BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}

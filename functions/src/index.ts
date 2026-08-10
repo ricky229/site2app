@@ -1615,4 +1615,195 @@ api.put('/admin/settings', authMiddleware, requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Desktop Build Routes ────────────────────────────────────────────────────────────────
+
+api.post('/desktop/build', authMiddleware, async (req: any, res) => {
+  try {
+    const userId = req.user.id || req.user.uid;
+    const { appName, url, icon, platforms } = req.body;
+    
+    if (!appName || !url || !platforms || platforms.length === 0) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userDoc.data() || {};
+    const plan = user.plan || 'free';
+    const allowedPlans = ['premium_yearly', 'premium_lifetime', 'yearly', 'lifetime'];
+    if (!allowedPlans.includes(plan)) {
+      return res.status(403).json({ error: 'Desktop builds are only available for premium yearly or lifetime plans' });
+    }
+
+    const buildRef = db.collection('desktop_builds').doc();
+    const buildId = buildRef.id;
+    
+    const buildInfo = {
+      id: buildId,
+      appName,
+      url,
+      icon,
+      platforms,
+      status: 'pending',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      userId
+    };
+
+    await buildRef.set(buildInfo);
+
+    if (GITHUB_PAT && GITHUB_REPO) {
+      await buildRef.update({ status: 'building' });
+
+      const dispatchRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/dispatches`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `token ${GITHUB_PAT}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'Site2App-Functions'
+        },
+        body: JSON.stringify({
+          event_type: 'build_desktop',
+          client_payload: {
+            buildId,
+            appName,
+            url,
+            icon,
+            platforms: platforms.join(','),
+            serverUrl: `https://us-central1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/api`
+          }
+        })
+      });
+
+      if (!dispatchRes.ok) {
+        const errText = await dispatchRes.text();
+        await buildRef.update({
+          status: 'failed',
+          error: `GitHub Action trigger failed: ${errText}`
+        });
+        return res.json({ buildId, status: 'failed', error: 'GitHub Action trigger failed' });
+      }
+    } else {
+      await buildRef.update({
+        status: 'failed',
+        error: 'Configuration missing: GITHUB_PAT or GITHUB_REPO not set'
+      });
+      return res.json({ buildId, status: 'failed', error: 'Server configuration missing' });
+    }
+
+    res.json({ buildId, status: 'building' });
+  } catch (e: any) {
+    console.error('[Desktop Build Error]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+api.get('/desktop/build/:buildId/status', authMiddleware, async (req: any, res) => {
+  try {
+    const doc = await db.collection('desktop_builds').doc(req.params.buildId).get();
+    if (!doc.exists) return res.status(404).json({ error: 'Build not found' });
+    
+    const build = doc.data();
+    if (build.userId !== (req.user.id || req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
+    
+    res.json(build);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.get('/desktop/builds', authMiddleware, async (req: any, res) => {
+  try {
+    const userId = req.user.id || req.user.uid;
+    const snapshot = await db.collection('desktop_builds')
+      .where('userId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .get();
+      
+    const builds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json(builds);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.delete('/desktop/build/:buildId', authMiddleware, async (req: any, res) => {
+  try {
+    const { buildId } = req.params;
+    const doc = await db.collection('desktop_builds').doc(buildId).get();
+    if (!doc.exists) return res.status(404).json({ error: 'Build not found' });
+    
+    const build = doc.data();
+    if (build.userId !== (req.user.id || req.user.uid)) return res.status(403).json({ error: 'Forbidden' });
+    
+    await db.collection('desktop_builds').doc(buildId).delete();
+    
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.post('/internal/desktop/:buildId/upload', builderAuthMiddleware, express.raw({ type: '*/*', limit: '500mb' }), async (req: any, res) => {
+  try {
+    const buildId = req.params.buildId;
+    const fileName = req.header('X-File-Name');
+    const platform = req.header('X-Platform');
+    
+    if (!fileName || !platform) {
+      return res.status(400).json({ error: 'Missing headers' });
+    }
+    
+    const buildRef = db.collection('desktop_builds').doc(buildId);
+    const doc = await buildRef.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Build not found' });
+    
+    const bucket = admin.storage().bucket();
+    const filePath = `desktop-builds/${buildId}/${fileName}`;
+    const file = bucket.file(filePath);
+    
+    await file.save(req.body);
+    await file.makePublic();
+    const url = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+    
+    const build = doc.data() || {};
+    const downloads = build.downloads || {};
+    
+    if (platform === 'windows') downloads.windows = url;
+    if (platform === 'macos') downloads.macos = url;
+    
+    await buildRef.update({
+      status: 'success',
+      updatedAt: Date.now(),
+      downloads
+    });
+    
+    res.json({ success: true, url });
+  } catch (err: any) {
+    console.error('Desktop Upload Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.post('/internal/desktop/:buildId/fail', builderAuthMiddleware, async (req: any, res) => {
+  try {
+    const buildId = req.params.buildId;
+    const error = req.body.error || 'Unknown error';
+    
+    await db.collection('desktop_builds').doc(buildId).update({
+      status: 'failed',
+      error,
+      updatedAt: Date.now()
+    });
+    
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 exports.api = onRequest({ cors: true, timeoutSeconds: 540, memory: '1GiB', region: 'us-central1' }, app);

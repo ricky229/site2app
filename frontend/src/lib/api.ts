@@ -2,9 +2,9 @@ import axios from 'axios'
 
 const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID
 
-const getBaseUrl = () => {
+export const getBaseUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return `http://127.0.0.1:5001/${projectId}/us-central1/api/api`
+        return `http://localhost:4000/node`
     }
     return `https://us-central1-${projectId}.cloudfunctions.net/api/api`
 }
@@ -134,6 +134,27 @@ export async function saveFirebaseConfig(appId: string, config: any) {
 // App Setup
 export async function analyzeUrl(url: string) {
     const res = await api.post('/analyze', { url })
+    return res.data
+}
+
+// Desktop Builds
+export async function startDesktopBuild(appData: any) {
+    const res = await api.post('/desktop/build', appData)
+    return res.data
+}
+
+export async function getDesktopBuilds() {
+    const res = await api.get('/desktop/builds')
+    return res.data
+}
+
+export async function getDesktopBuildStatus(buildId: string) {
+    const res = await api.get(`/desktop/build/${buildId}/status`)
+    return res.data
+}
+
+export async function deleteDesktopBuild(buildId: string) {
+    const res = await api.delete(`/desktop/build/${buildId}`)
     return res.data
 }
 

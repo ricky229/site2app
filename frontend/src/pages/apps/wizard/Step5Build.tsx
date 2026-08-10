@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import {
     Smartphone, Apple, CheckCircle, Download, Share2,
     AlertCircle, Loader2, Clock, QrCode, ExternalLink,
-    BookOpen, Star
+    BookOpen, Star, Monitor
 } from 'lucide-react'
 import { useWizardStore } from '../../../store/wizardStore'
 import { useAuthStore } from '../../../store/authStore'
@@ -12,7 +12,8 @@ import Button from '../../../components/ui/Button'
 import { platformLabel } from '../../../lib/utils'
 import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
-import api, { startBuild, getBuildStatus, apiGetMe, getBuilds } from '../../../lib/api'
+import api, { startBuild, getBuildStatus, apiGetMe, getBuilds, startDesktopBuild, getDesktopBuildStatus } from '../../../lib/api'
+import type { DesktopPlatform } from '../../../types'
 
 type BuildStepStatus = 'pending' | 'running' | 'done' | 'failed'
 
@@ -118,7 +119,8 @@ export default function Step5Build() {
     const { user } = useAuthStore()
     const { config, platform: wizardPlatform, siteAnalysis } = state
 
-    const [platform, setPlatform] = useState<'android' | 'ios' | 'both'>(wizardPlatform || 'android')
+    const [platform, setPlatform] = useState<'android' | 'ios' | 'both' | 'desktop'>(wizardPlatform as any || 'android')
+    const [desktopSubPlatform, setDesktopSubPlatform] = useState<DesktopPlatform>('windows')
     const [phase, setPhase] = useState<BuildPhase>('select')
     const [stepStatuses, setStepStatuses] = useState<Record<string, BuildStepStatus>>({})
     const [currentStepIdx, setCurrentStepIdx] = useState(-1)
@@ -127,6 +129,7 @@ export default function Step5Build() {
     const [buildId, setBuildId] = useState<string | null>(null)
     const [buildError, setBuildError] = useState<string | null>(null)
     const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+    const [desktopUrls, setDesktopUrls] = useState<{ windows?: string, macos?: string }>({})
 
     const { data: userProfile } = useQuery({
         queryKey: ['userProfile', user?.id],
@@ -301,6 +304,93 @@ export default function Step5Build() {
         toast.success('🎉 Votre application est prête !')
     }
 
+    const runDesktopBuild = async () => {
+        setPhase('building')
+        setCurrentStepIdx(0)
+        setStepStatuses({})
+        setElapsedTime(0)
+        setTotalProgress(0)
+        setBuildError(null)
+
+        try {
+            const compressedIconBase64 = await compressImageForPayload(config.icon, 192, 'image/png');
+            const iconIsUrl = config.icon && (config.icon.startsWith('http') || config.icon.startsWith('//'));
+            
+            const appData = {
+                name: config.name || siteAnalysis?.title || 'MonApp',
+                url: config.url || siteAnalysis?.url || 'https://example.com',
+                platforms: desktopSubPlatform,
+                icon: compressedIconBase64 || (iconIsUrl ? config.icon : null)
+            }
+
+            const createRes = await startDesktopBuild(appData)
+            const currentBuildId = createRes.id || createRes.buildId
+            setBuildId(currentBuildId)
+
+            let isDone = false
+            const startTime = Date.now()
+
+            while (!isDone) {
+                try {
+                    const statusRes = await getDesktopBuildStatus(currentBuildId)
+                    
+                    if (statusRes.status === 'completed') {
+                        isDone = true
+                        setTotalProgress(100)
+                        setStepStatuses(s => {
+                            const next = { ...s }
+                            BUILD_STEPS.forEach(step => next[step.id] = 'done')
+                            return next
+                        })
+                        
+                        setDesktopUrls({
+                            windows: statusRes.windows?.downloadUrl,
+                            macos: statusRes.macos?.downloadUrl
+                        })
+                    } else if (statusRes.status === 'failed') {
+                        setPhase('error')
+                        setBuildError(statusRes.error || 'Erreur inconnue')
+                        toast.error('Échec de la compilation')
+                        return
+                    } else {
+                        const now = Date.now()
+                        const totalEstimated = 300000 // 5 minutes
+                        const currentProgress = Math.min(95, Math.round(((now - startTime) / totalEstimated) * 100))
+                        setTotalProgress(currentProgress)
+
+                        const stepIdx = Math.floor((currentProgress / 100) * BUILD_STEPS.length)
+                        setCurrentStepIdx(stepIdx)
+                        BUILD_STEPS.forEach((step, idx) => {
+                            if (idx < stepIdx) setStepStatuses(s => ({ ...s, [step.id]: 'done' }))
+                            else if (idx === stepIdx) setStepStatuses(s => ({ ...s, [step.id]: 'running' }))
+                        })
+                    }
+                } catch (e) {
+                    console.warn('Status poll failed', e)
+                }
+
+                if (!isDone) await new Promise(r => setTimeout(r, 5000))
+            }
+
+            setPhase('done')
+            toast.success('🎉 Votre application bureau est prête !')
+            
+        } catch (error: any) {
+            console.error('Build start error:', error)
+            setPhase('error')
+            setBuildError(error?.message || "Impossible de démarrer la compilation.")
+            return
+        }
+    }
+
+    const handleStartBuild = () => {
+        if (platform === 'desktop') {
+            runDesktopBuild()
+        } else {
+            runBuild()
+        }
+    }
+
     const handleDownload = () => {
         if (!downloadUrl) {
             toast.error('Le fichier APK n\'est pas encore disponible.')
@@ -339,47 +429,45 @@ export default function Step5Build() {
                 {phase === 'select' && (
                     <motion.div key="select" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <div className="card p-6 mb-5">
-                            <h3 className="font-bold mb-5">Choisissez votre plateforme</h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                {[
-                                    { id: 'android' as const, icon: Smartphone, label: 'Android', sublabel: 'APK/AAB', color: '#3ddc84', desc: 'Compatible tous Android 5.0+' },
-                                    { id: 'ios' as const, icon: Apple, label: 'iOS', sublabel: 'IPA', color: '#555', desc: 'iPhone et iPad', disabled: true },
-                                    { id: 'both' as const, icon: null, label: 'Les deux', sublabel: 'APK + IPA', color: '#3461f5', desc: 'Meilleure couverture', disabled: true },
-                                ].map(option => (
-                                    <button
-                                        key={option.id}
-                                        onClick={() => !option.disabled && setPlatform(option.id)}
-                                        disabled={option.disabled}
-                                        className={`relative p-5 rounded-2xl border-2 text-center transition-all ${option.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-blue-300'}`}
-                                        style={{
-                                            borderColor: platform === option.id ? option.color : 'var(--border)',
-                                            background: platform === option.id ? `${option.color}10` : 'var(--surface-1)',
-                                        }}
-                                    >
-                                        {option.disabled && (
-                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200 whitespace-nowrap">
-                                                Bientôt disponible
-                                            </div>
-                                        )}
-                                        {option.id === 'both' ? (
-                                            <div className="flex justify-center gap-1 mb-2">
-                                                <Smartphone size={22} style={{ color: option.disabled ? '#999' : '#3ddc84' }} />
-                                                <Apple size={22} style={{ color: option.disabled ? '#999' : '#555' }} />
-                                            </div>
-                                        ) : option.icon ? (
-                                            <option.icon size={28} className="mx-auto mb-2" style={{ color: option.disabled ? '#999' : option.color }} />
-                                        ) : null}
-                                        <p className="font-bold">{option.label}</p>
-                                        <p className="text-xs mt-0.5 font-mono" style={{ color: 'var(--text-muted)' }}>{option.sublabel}</p>
-                                        <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>{option.desc}</p>
-                                        {platform === option.id && !option.disabled && (
-                                            <div className="mt-2 text-brand-500">
-                                                <CheckCircle size={16} className="mx-auto" />
-                                            </div>
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
+                            <h3 className="font-bold mb-5">Plateforme sélectionnée</h3>
+                            {platform !== 'desktop' ? (
+                                <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--surface-1)]">
+                                    <div className="flex items-center gap-3">
+                                        <Smartphone size={24} className="text-brand-500" />
+                                        <div>
+                                            <p className="font-bold text-[var(--text-primary)]">Application Mobile</p>
+                                            <p className="text-sm text-[var(--text-muted)]">Android (APK)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--surface-1)]">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <Monitor size={24} className="text-purple-500" />
+                                        <div>
+                                            <p className="font-bold text-[var(--text-primary)]">Application Bureau</p>
+                                            <p className="text-sm text-[var(--text-muted)]">Windows / macOS</p>
+                                        </div>
+                                    </div>
+                                    <h4 className="font-semibold mb-3 text-sm">Système d'exploitation cible :</h4>
+                                    <div className="flex gap-3">
+                                        {[
+                                            { id: 'windows', label: 'Windows', ext: '.exe' },
+                                            { id: 'macos', label: 'macOS', ext: '.dmg' },
+                                            { id: 'both', label: 'Les deux', ext: '.exe + .dmg' }
+                                        ].map(opt => (
+                                            <button
+                                                key={opt.id}
+                                                onClick={() => setDesktopSubPlatform(opt.id as DesktopPlatform)}
+                                                className={`flex-1 py-2 px-3 rounded-lg border text-sm transition-all ${desktopSubPlatform === opt.id ? 'border-purple-500 bg-purple-50 text-purple-700 font-semibold' : 'border-[var(--border)] hover:border-purple-300 bg-[var(--surface-0)]'}`}
+                                            >
+                                                <div className="block">{opt.label}</div>
+                                                <div className="text-[10px] font-normal text-[var(--text-muted)]">{opt.ext}</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="card p-5 mb-6">
@@ -388,12 +476,12 @@ export default function Step5Build() {
                                 <div className="flex gap-2"><span className="w-24 text-muted">Application :</span><span className="font-semibold">{config.name || siteAnalysis?.title}</span></div>
                                 <div className="flex gap-2"><span className="w-24 text-muted">URL :</span><span className="font-semibold truncate">{config.url || siteAnalysis?.url}</span></div>
                                 <div className="flex gap-2"><span className="w-24 text-muted">Package :</span><span className="font-semibold">{config.packageName}</span></div>
-                                <div className="flex gap-2"><span className="w-24 text-muted">Plateforme :</span><span className="font-semibold">{platformLabel(platform)}</span></div>
+                                <div className="flex gap-2"><span className="w-24 text-muted">Plateforme :</span><span className="font-semibold">{platform === 'desktop' ? `Desktop (${desktopSubPlatform})` : platformLabel(platform)}</span></div>
                             </div>
                         </div>
 
                         <div className="text-center">
-                            <Button onClick={runBuild} size="xl" icon={<Smartphone size={20} />} className="mx-auto">
+                            <Button onClick={handleStartBuild} size="xl" icon={platform === 'desktop' ? <Monitor size={20} /> : <Smartphone size={20} />} className="mx-auto">
                                 🚀 Générer mon application
                             </Button>
                         </div>
@@ -408,7 +496,7 @@ export default function Step5Build() {
                                     <Loader2 size={22} className="animate-spin text-brand-500" />
                                     <div>
                                         <p className="font-bold">Build en cours...</p>
-                                        <p className="text-sm text-secondary">{platformLabel(platform)} — {config.name}</p>
+                                        <p className="text-sm text-secondary">{platform === 'desktop' ? 'Desktop' : platformLabel(platform)} — {config.name}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -447,14 +535,50 @@ export default function Step5Build() {
                             <CheckCircle size={40} className="text-green-600" />
                         </div>
                         <h2 className="text-2xl md:text-3xl font-bold mb-2">🎉 Application prête !</h2>
-                        <p className="mb-8 text-secondary">Votre APK a été générée avec succès.</p>
+                        <p className="mb-8 text-secondary">Votre application a été générée avec succès.</p>
 
                         <div className="max-w-md mx-auto card p-6 mb-8">
-                            <Smartphone size={32} className="mx-auto mb-4 text-brand-500" />
-                            <h3 className="font-bold mb-6">{config.name}.apk</h3>
-                            <Button variant="primary" size="xl" className="w-full" icon={<Download size={20} />} onClick={handleDownload}>
-                                Télécharger l'APK
-                            </Button>
+                            {platform === 'desktop' ? (
+                                <Monitor size={32} className="mx-auto mb-4 text-purple-500" />
+                            ) : (
+                                <Smartphone size={32} className="mx-auto mb-4 text-brand-500" />
+                            )}
+                            <h3 className="font-bold mb-6">{config.name}{platform === 'desktop' ? '' : '.apk'}</h3>
+                            
+                            {platform !== 'desktop' && (
+                                <Button variant="primary" size="xl" className="w-full" icon={<Download size={20} />} onClick={handleDownload}>
+                                    Télécharger l'APK
+                                </Button>
+                            )}
+
+                            {platform === 'desktop' && (
+                                <div className="space-y-3">
+                                    {desktopUrls.windows && (
+                                        <Button variant="primary" size="lg" className="w-full bg-blue-600 hover:bg-blue-700" icon={<Download size={18} />} onClick={() => {
+                                            const a = document.createElement('a')
+                                            a.href = desktopUrls.windows!
+                                            a.download = `${config.name}.exe`
+                                            document.body.appendChild(a)
+                                            a.click()
+                                            document.body.removeChild(a)
+                                        }}>
+                                            Télécharger .exe (Windows)
+                                        </Button>
+                                    )}
+                                    {desktopUrls.macos && (
+                                        <Button variant="primary" size="lg" className="w-full bg-gray-800 hover:bg-gray-900" icon={<Download size={18} />} onClick={() => {
+                                            const a = document.createElement('a')
+                                            a.href = desktopUrls.macos!
+                                            a.download = `${config.name}.dmg`
+                                            document.body.appendChild(a)
+                                            a.click()
+                                            document.body.removeChild(a)
+                                        }}>
+                                            Télécharger .dmg (macOS)
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex gap-3 justify-center">

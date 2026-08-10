@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { useWizardStore } from '../../store/wizardStore'
-import { getBuildStatus as getAppById } from '../../lib/api'
+import { getBuildStatus as getAppById, getDesktopBuildStatus } from '../../lib/api'
 
 // Steps
 import Step1Url from './wizard/Step1Url'
@@ -35,13 +35,19 @@ export default function CreateAppPage() {
             return
         }
 
-        // Fetch app from Bubble Data API
-        getAppById(id).then((data: any) => {
+        const isDesktop = new URLSearchParams(window.location.search).get('platform') === 'desktop';
+        
+        // Fetch app from API
+        const fetcher = isDesktop 
+            ? getDesktopBuildStatus(id)
+            : getAppById(id);
+            
+        fetcher.then((data: any) => {
             if (data) {
                 const safeFeatures = data.features || state.config.features || {}
                 setState({
                     currentStep: 2, // Start at customization
-                    platform: data.platform || 'android',
+                    platform: isDesktop ? 'desktop' : (data.platform || 'android'),
                     siteAnalysis: {
                         url: data.url || '',
                         title: data.appName || data.name || '',
@@ -62,7 +68,7 @@ export default function CreateAppPage() {
                         secondaryColor: data.splashBgColor || data.config?.secondaryColor || '#7c3aed',
                         orientation: data.orientation || data.config?.orientation || 'portrait',
                         features: safeFeatures,
-                        icon: data.config?.icon || '',
+                        icon: data.config?.icon || data.icon || '',
                         splashScreen: data.config?.splashImage || '',
                         statusBar: {
                             color: data.themeColor || data.config?.statusBarColor || '#ffffff',
@@ -72,7 +78,7 @@ export default function CreateAppPage() {
                 })
             }
         }).catch(err => {
-            console.error('Failed to load app from Bubble', err)
+            console.error('Failed to load app', err)
             navigate('/apps')
         }).finally(() => {
             setIsFetching(false)

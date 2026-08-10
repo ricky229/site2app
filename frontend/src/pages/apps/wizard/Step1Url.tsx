@@ -100,7 +100,7 @@ async function analyzeSite(url: string): Promise<SiteAnalysis> {
 type AnalysisState = 'idle' | 'loading' | 'done' | 'error'
 
 export default function Step1Url() {
-    const { state, setSiteAnalysis, updateConfig } = useWizardStore()
+    const { state, setSiteAnalysis, updateConfig, setPlatform } = useWizardStore()
     const [url, setUrl] = useState(state.config.url || 'https://')
     const [analysisState, setAnalysisState] = useState<AnalysisState>(state.siteAnalysis ? 'done' : 'idle')
     const [error, setError] = useState('')
@@ -175,10 +175,42 @@ export default function Step1Url() {
         <div className="max-w-2xl mx-auto">
             <div className="mb-8">
                 <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-2xl flex items-center justify-center font-black text-xl mb-6 shadow-sm border border-blue-500/20">1</div>
-                <h2 className="text-2xl md:text-3xl font-black mb-3 tracking-tight text-[var(--text-primary)]">URL de l'application</h2>
+                <h2 className="text-2xl md:text-3xl font-black mb-3 tracking-tight text-[var(--text-primary)]">Plateforme & URL</h2>
                 <p className="text-base md:text-lg text-[var(--text-muted)] font-medium">
-                    Entrez l'URL de votre site. Notre IA s'occupe d'analyser le design et la structure.
+                    Choisissez le type d'application et entrez l'URL de votre site.
                 </p>
+            </div>
+
+            {/* Platform Selection */}
+            <div className="grid grid-cols-2 gap-4 mb-8">
+                <button
+                    onClick={() => setPlatform('android')}
+                    className={`p-6 rounded-[2rem] border-2 text-left transition-all ${
+                        state.platform !== 'desktop' 
+                        ? 'border-blue-500 bg-blue-500/5 shadow-md shadow-blue-500/10' 
+                        : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-blue-500/30'
+                    }`}
+                >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${state.platform !== 'desktop' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-[var(--surface-2)] text-[var(--text-muted)]'}`}>
+                        <Smartphone size={24} />
+                    </div>
+                    <h3 className="font-bold text-lg mb-1 text-[var(--text-primary)]">Application Mobile</h3>
+                    <p className="text-sm font-medium text-[var(--text-muted)]">Android (APK/AAB) & iOS</p>
+                </button>
+                <button
+                    onClick={() => setPlatform('desktop')}
+                    className={`p-6 rounded-[2rem] border-2 text-left transition-all ${
+                        state.platform === 'desktop' 
+                        ? 'border-emerald-500 bg-emerald-500/5 shadow-md shadow-emerald-500/10' 
+                        : 'border-[var(--border)] bg-[var(--surface-1)] hover:border-emerald-500/30'
+                    }`}
+                >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${state.platform === 'desktop' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30' : 'bg-[var(--surface-2)] text-[var(--text-muted)]'}`}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    </div>
+                    <h3 className="font-bold text-lg mb-1 text-[var(--text-primary)]">Application Bureau</h3>
+                    <p className="text-sm font-medium text-[var(--text-muted)]">Windows (.exe) & macOS</p>
+                </button>
             </div>
 
             {/* URL Input */}

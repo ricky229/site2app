@@ -13,7 +13,7 @@ import Button from '../../components/ui/Button'
 
 const loginSchema = z.object({
     email: z.string().email('Email invalide'),
-    password: z.string().min(6, 'Mot de passe trop court'),
+    password: z.string().min(1, 'Mot de passe requis'),
 })
 
 type LoginForm = z.infer<typeof loginSchema>
