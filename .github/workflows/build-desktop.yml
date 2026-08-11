@@ -30,6 +30,7 @@ jobs:
           FUNCTIONS_URL: https://us-central1-${{ secrets.FIREBASE_PROJECT_ID }}.cloudfunctions.net/api
           BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
 
   build-macos:
     runs-on: macos-latest
@@ -56,3 +57,4 @@ jobs:
           FUNCTIONS_URL: https://us-central1-${{ secrets.FIREBASE_PROJECT_ID }}.cloudfunctions.net/api
           BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}

@@ -70,9 +70,11 @@ async function main() {
         const saStr = process.env.FIREBASE_SERVICE_ACCOUNT;
         if (!saStr) throw new Error('Missing FIREBASE_SERVICE_ACCOUNT environment variable');
         const serviceAccount = JSON.parse(saStr);
+        const bucketName = process.env.FIREBASE_STORAGE_BUCKET || `${serviceAccount.project_id}.appspot.com`;
+        
         admin.initializeApp({
           credential: admin.credential.cert(serviceAccount),
-          storageBucket: `${serviceAccount.project_id}.appspot.com`
+          storageBucket: bucketName
         });
       }
       
