@@ -15,10 +15,10 @@ async function main() {
   const buildData = JSON.parse(buildDataStr);
   const { buildId, appName, appUrl, platforms, iconUrl } = buildData;
   const FUNCTIONS_URL = process.env.FUNCTIONS_URL;
-  const BUILDER_SECRET = process.env.BUILDER_SECRET;
+  const BUILDER_SECRET = process.env.BUILDER_SECRET || 'dev_secret_123';
 
-  if (!FUNCTIONS_URL || !BUILDER_SECRET) {
-    console.error('Missing FUNCTIONS_URL or BUILDER_SECRET');
+  if (!FUNCTIONS_URL) {
+    console.error('Missing FUNCTIONS_URL');
     process.exit(1);
   }
 
