@@ -1587,12 +1587,14 @@ api.post('/desktop/build', authMiddleware, async (req, res) => {
                 body: JSON.stringify({
                     event_type: 'build_desktop',
                     client_payload: {
-                        buildId,
-                        appName,
-                        url,
-                        icon,
-                        platforms: platforms.join(','),
-                        serverUrl: `https://us-central1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/api`
+                        platforms: Array.isArray(platforms) ? platforms : [platforms],
+                        buildData: {
+                            buildId,
+                            appName,
+                            appUrl: url,
+                            iconUrl: icon || '',
+                            platforms: Array.isArray(platforms) ? platforms : [platforms]
+                        }
                     }
                 })
             });
@@ -1663,13 +1665,12 @@ api.delete('/desktop/build/:buildId', authMiddleware, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-api.post('/internal/desktop/:buildId/upload', builderAuthMiddleware, express_1.default.raw({ type: '*/*', limit: '500mb' }), async (req, res) => {
+api.post('/internal/desktop/:buildId/upload-url', builderAuthMiddleware, async (req, res) => {
     try {
         const buildId = req.params.buildId;
-        const fileName = req.header('X-File-Name');
-        const platform = req.header('X-Platform');
-        if (!fileName || !platform) {
-            return res.status(400).json({ error: 'Missing headers' });
+        const fileName = req.body.fileName;
+        if (!fileName) {
+            return res.status(400).json({ error: 'Missing fileName' });
         }
         const buildRef = db.collection('desktop_builds').doc(buildId);
         const doc = await buildRef.get();
@@ -1678,7 +1679,34 @@ api.post('/internal/desktop/:buildId/upload', builderAuthMiddleware, express_1.d
         const bucket = admin.storage().bucket();
         const filePath = `desktop-builds/${buildId}/${fileName}`;
         const file = bucket.file(filePath);
-        await file.save(req.body);
+        const [uploadUrl] = await file.getSignedUrl({
+            version: 'v4',
+            action: 'write',
+            expires: Date.now() + 60 * 60 * 1000, // 1 hour
+            contentType: 'application/octet-stream',
+        });
+        res.json({ success: true, uploadUrl });
+    }
+    catch (err) {
+        console.error('Upload URL Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+api.post('/internal/desktop/:buildId/upload-complete', builderAuthMiddleware, async (req, res) => {
+    try {
+        const buildId = req.params.buildId;
+        const fileName = req.body.fileName;
+        const platform = req.body.platform;
+        if (!fileName || !platform) {
+            return res.status(400).json({ error: 'Missing parameters' });
+        }
+        const buildRef = db.collection('desktop_builds').doc(buildId);
+        const doc = await buildRef.get();
+        if (!doc.exists)
+            return res.status(404).json({ error: 'Build not found' });
+        const bucket = admin.storage().bucket();
+        const filePath = `desktop-builds/${buildId}/${fileName}`;
+        const file = bucket.file(filePath);
         await file.makePublic();
         const url = `https://storage.googleapis.com/${bucket.name}/${filePath}`;
         const build = doc.data() || {};
@@ -1695,7 +1723,7 @@ api.post('/internal/desktop/:buildId/upload', builderAuthMiddleware, express_1.d
         res.json({ success: true, url });
     }
     catch (err) {
-        console.error('Desktop Upload Error:', err);
+        console.error('Desktop Upload Complete Error:', err);
         res.status(500).json({ error: err.message });
     }
 });

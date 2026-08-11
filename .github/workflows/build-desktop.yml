@@ -29,6 +29,7 @@ jobs:
           BUILD_DATA: ${{ toJson(github.event.client_payload.buildData) }}
           FUNCTIONS_URL: https://us-central1-${{ secrets.FIREBASE_PROJECT_ID }}.cloudfunctions.net/api
           BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
   build-macos:
     runs-on: macos-latest
@@ -54,3 +55,4 @@ jobs:
           BUILD_DATA: ${{ toJson(github.event.client_payload.buildData) }}
           FUNCTIONS_URL: https://us-central1-${{ secrets.FIREBASE_PROJECT_ID }}.cloudfunctions.net/api
           BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { DesktopBuilder } from '../src/services/desktop/DesktopBuilder.js';
 import { fileURLToPath } from 'url';
+import admin from 'firebase-admin';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -64,39 +65,27 @@ async function main() {
       console.log(`Uploading ${platformName} artifact...`);
       const fileBuffer = fs.readFileSync(artifact.filePath);
       
-      // 1. Get Signed URL
-      console.log(`Requesting signed URL for ${artifact.fileName}...`);
-      const urlRes = await fetch(`${FUNCTIONS_URL}/api/internal/desktop/${buildId}/upload-url`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${BUILDER_SECRET}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ fileName: artifact.fileName })
-      });
-      
-      if (!urlRes.ok) {
-        const errText = await urlRes.text();
-        throw new Error(`Failed to get signed URL (${urlRes.status}): ${errText}`);
+      // 1. Initialize Firebase Admin if needed
+      if (!admin.apps.length) {
+        const saStr = process.env.FIREBASE_SERVICE_ACCOUNT;
+        if (!saStr) throw new Error('Missing FIREBASE_SERVICE_ACCOUNT environment variable');
+        const serviceAccount = JSON.parse(saStr);
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          storageBucket: `${serviceAccount.project_id}.appspot.com`
+        });
       }
       
-      const { uploadUrl } = await urlRes.json();
+      // 2. Upload directly to Cloud Storage
+      console.log(`Uploading directly to Google Cloud Storage via Firebase Admin...`);
+      const bucket = admin.storage().bucket();
+      const destPath = `desktop-builds/${buildId}/${artifact.fileName}`;
+      const file = bucket.file(destPath);
       
-      // 2. Upload to Signed URL
-      console.log(`Uploading directly to Google Cloud Storage...`);
-      const gcsRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/octet-stream',
-          'Content-Length': fileBuffer.length.toString()
-        },
-        body: fileBuffer
+      await file.save(fileBuffer, {
+        contentType: 'application/octet-stream'
       });
-      
-      if (!gcsRes.ok) {
-        const errText = await gcsRes.text();
-        throw new Error(`GCS upload failed (${gcsRes.status}): ${errText}`);
-      }
+      console.log(`Upload to Storage complete!`);
       
       // 3. Notify backend that upload is complete
       console.log(`Notifying backend of completion...`);
