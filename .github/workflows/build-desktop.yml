@@ -27,7 +27,7 @@ jobs:
         run: npx tsx scripts/github-build-desktop.js
         env:
           BUILD_DATA: ${{ toJson(github.event.client_payload.buildData) }}
-          FUNCTIONS_URL: ${{ secrets.FUNCTIONS_URL }}
+          FUNCTIONS_URL: https://us-central1-${{ secrets.FIREBASE_PROJECT_ID }}.cloudfunctions.net/api
           BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}
 
   build-macos:
@@ -52,5 +52,5 @@ jobs:
         run: npx tsx scripts/github-build-desktop.js
         env:
           BUILD_DATA: ${{ toJson(github.event.client_payload.buildData) }}
-          FUNCTIONS_URL: ${{ secrets.FUNCTIONS_URL }}
+          FUNCTIONS_URL: https://us-central1-${{ secrets.FIREBASE_PROJECT_ID }}.cloudfunctions.net/api
           BUILDER_SECRET: ${{ secrets.BUILDER_SECRET }}
