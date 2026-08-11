@@ -1723,7 +1723,6 @@ api.get('/desktop/builds', authMiddleware, async (req: any, res) => {
     const userId = req.user.id || req.user.uid;
     const snapshot = await db.collection('desktop_builds')
       .where('userId', '==', userId)
-      .orderBy('createdAt', 'desc')
       .get();
       
     const builds = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
