@@ -652,6 +652,7 @@ export default function NotificationsPage() {
                             <Link size={24} style={{ color: 'var(--brand-500)' }} />
                             Documentation API : Notifications Automatiques
                         </h2>
+                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                             Envoyez des notifications Push ciblées à vos utilisateurs directement depuis votre site web (WordPress, Node.js, PHP, etc.) de façon 100% universelle.
                         </p>
                     </div>
