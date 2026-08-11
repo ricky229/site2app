@@ -110,9 +110,7 @@ class Builder {
 
         this.versionCode = options.versionCode || 1
         this.versionName = options.versionName || "1.0"
-        this.bubbleApiUrl = options.bubbleApiUrl || 'https://site2app.online/api/1.1/obj'
-        this.bubbleApiToken = options.bubbleApiToken || '59ef5eb57d786ff8eced03244342f32e'
-
+                
         // Validate and set googleServicesJson - ALWAYS ensure a valid one exists
         this.googleServicesJson = this._resolveGoogleServicesJson(options.googleServicesJson)
 
@@ -182,7 +180,7 @@ class Builder {
                 console.log(`[BUILD ${this.buildId}] ⚠️ Failed to download icon URL, using fallback`)
             }
         } else if (this.iconBase64 && this.iconBase64.length > 100) {
-            // Raw base64 string (from downloadBase64() in github-build-bubble.js which returns raw base64 without data: prefix)
+            // Raw base64 string
             try {
                 iconPngBuffer = Buffer.from(this.iconBase64, 'base64')
                 if (iconPngBuffer.length > 100) {

@@ -12,7 +12,6 @@ export interface User {
     downloadsCount: number;
     firebaseKey?: string;
     googleServicesJson?: string;
-    bubbleApiUrl?: string;
     apiKey?: string;
 }
 

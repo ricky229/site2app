@@ -109,16 +109,14 @@ export default function NotificationsPage() {
 
     const [firebaseConfig, setFirebaseConfig] = useState({
         adminSdkJson: '',
-        googleServicesJson: '',
-        bubbleApiUrl: ''
+        googleServicesJson: ''
     })
 
     useEffect(() => {
         if (userProfile) {
             setFirebaseConfig({
                 adminSdkJson: userProfile.firebaseKey || '',
-                googleServicesJson: userProfile.googleServicesJson || '',
-                bubbleApiUrl: userProfile.bubbleApiUrl || ''
+                googleServicesJson: userProfile.googleServicesJson || ''
             })
         }
     }, [userProfile])
@@ -170,8 +168,8 @@ export default function NotificationsPage() {
         },
         onError: (err: any) => {
             const errorMsg = err?.response?.data?.message || err?.message || 'Erreur inconnue';
-            console.error('Bubble Save Error:', err?.response?.data || err);
-            toast.error(`Erreur Bubble: ${errorMsg}`);
+            console.error('Save Error:', err?.response?.data || err);
+            toast.error(`Erreur: ${errorMsg}`);
         }
     })
 
@@ -654,8 +652,7 @@ export default function NotificationsPage() {
                             <Link size={24} style={{ color: 'var(--brand-500)' }} />
                             Documentation API : Notifications Automatiques
                         </h2>
-                        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                            Envoyez des notifications Push ciblées à vos utilisateurs directement depuis votre site web (WordPress, Bubble.io, Node.js, PHP, etc.) de façon 100% universelle.
+                            Envoyez des notifications Push ciblées à vos utilisateurs directement depuis votre site web (WordPress, Node.js, PHP, etc.) de façon 100% universelle.
                         </p>
                     </div>
 
@@ -677,61 +674,11 @@ export default function NotificationsPage() {
                             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                                 Quand l'utilisateur s'inscrit ou se connecte sur votre site web, vérifiez si l'URL contient le paramètre <code>push_token</code>. Si oui, sauvegardez cette valeur dans votre base de données dans la fiche de votre utilisateur (créez une colonne "push_token").
                                 <br /><br />
-                                <em>Exemple sur Bubble.io : Dans un Workflow "Page is loaded" &rarr; Action: Make changes to User &rarr; push_token = Get data from page URL (parameter: push_token).</em>
+                                <em>Exemple : Dans votre logique de connexion &rarr; Récupérez le paramètre push_token depuis l'URL.</em>
                             </p>
                         </div>
 
-                        <div className="border p-5 rounded-xl" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--body-bg)' }}>
-                            <h3 className="font-bold mb-3 flex items-center gap-2">
-                                <span className="w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: 'var(--brand-500)' }}>2</span>
-                                Déclencher une notification 100% depuis Bubble (Recommandé)
-                            </h3>
-                            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                L'envoi direct depuis Bubble vers Firebase nécessite une clé cryptée (un token OAuth2 valide 1 heure). Voici comment configurer ça proprement dans Bubble pour un envoi instantané en 24h/24, sans aucun serveur intermédiaire.
-                            </p>
 
-                            <h4 className="font-bold text-sm mb-2">Étape A : Générer le Jeton (Token) Google</h4>
-                            <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                <li>Installez le plugin gratuit <strong>Google Service Account</strong> sur Bubble (ou JWT Generator).</li>
-                                <li>Dans un <strong>Backend Workflow</strong> (ou sur une page), utilisez l'action de ce plugin pour générer un Token en utilisant votre fichier JSON Firebase (le même que celui fourni dans "Configuration Firebase").</li>
-                                <li>Scopes à utiliser : <code>https://www.googleapis.com/auth/cloud-platform</code></li>
-                            </ul>
-
-                            <h4 className="font-bold text-sm mb-2">Étape B : Créer l'Appel API vers Google (FCM)</h4>
-                            <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                <li>Allez dans <strong>Plugins &gt; API Connector</strong>, et créez un appel API nommé "Firebase FCM API", puis un call (Action / POST) nommé "Send Push".</li>
-                            </ul>
-                            
-                            <code className="bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded text-xs font-mono font-semibold border mb-4 inline-block w-full" style={{ borderColor: 'var(--border)' }}>
-                                POST https://fcm.googleapis.com/v1/projects/VOTRE_FIREBASE_PROJECT_ID/messages:send
-                            </code>
-
-                            <h4 className="font-bold text-sm mb-2">Le Header et le Body :</h4>
-                            <ul className="text-sm list-disc pl-5 space-y-2 mb-4" style={{ color: 'var(--text-secondary)' }}>
-                                <li><strong>Header 1</strong> : <code>Content-Type: application/json</code></li>
-                                <li><strong>Header 2 (Décoché Private)</strong> : <code>Authorization: Bearer &lt;token&gt;</code></li>
-                                <li><strong>Body JSON</strong> :</li>
-                            </ul>
-                            
-                            <pre className="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs font-mono border mb-4 overflow-x-auto" style={{ borderColor: 'var(--border)' }}>
-{`{
-  "message": {
-    "token": "<device_token>",
-    "notification": {
-      "title": "<title>",
-      "body": "<body>"
-    },
-    "data": {
-      "actionUrl": "<url>"
-    }
-  }
-}`}
-                            </pre>
-                            
-                            <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>
-                                <strong>Important</strong> : Décochez "Private" sur tous les paramètres dynamiques en bas du call `&lt;param&gt;`. Vous pourrez ainsi appeler cette action dans n'importe quel Workflow Bubble, en passant dynamiquement le Token OAuth2 généré à l'étape A, et le Push partira en 1 seconde à votre utilisateur !
-                            </p>
-                        </div>
                     </div>
                 </div>
             )}

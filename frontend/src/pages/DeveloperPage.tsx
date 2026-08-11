@@ -45,7 +45,7 @@ export default function DeveloperPage() {
                     API & Intégration
                 </h1>
                 <p className="mt-2 text-[var(--text-muted)] text-sm md:text-lg font-medium">
-                    Gérez votre clé API et découvrez comment intégrer Site2App à vos outils (Bubble, Make, Zapier, etc.).
+                    Gérez votre clé API et découvrez comment intégrer Site2App à vos outils (WordPress, Make, Zapier, etc.).
                 </p>
             </div>
 
@@ -125,7 +125,7 @@ export default function DeveloperPage() {
                         https://votre-site.com/accueil<span className="text-blue-500">?push_token=APA91bEX...</span>
                     </div>
                     <p className="text-[var(--text-secondary)] text-xs md:text-sm mt-4">
-                        <strong>Dans Bubble :</strong> Utilisez "Get data from page URL" avec le paramètre <code className="text-[var(--text-primary)] bg-[var(--surface-2)] border border-[var(--border)] px-1 rounded">push_token</code> et enregistrez-le dans le champ "Push Token" de votre utilisateur.
+                        <strong>Dans votre backend :</strong> Récupérez ce paramètre depuis l'URL et enregistrez-le dans le profil de votre utilisateur.
                     </p>
                 </div>
 

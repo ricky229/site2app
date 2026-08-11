@@ -35,8 +35,6 @@ const BUILD_STEPS: BuildStepItem[] = [
 
 type BuildPhase = 'select' | 'building' | 'done' | 'error'
 
-const BUBBLE_WF = 'https://site2app.online/api/1.1/wf'
-const BUBBLE_TOKEN = '59ef5eb57d786ff8eced03244342f32e'
 
 /**
  * Compress an image (data URL or URL) to a small size via Canvas.
@@ -174,7 +172,7 @@ export default function Step5Build() {
             // Preserve aspect ratio for splash screen. 800px max dimension ensures high quality while keeping size reasonable.
             const compressedSplashBase64 = await compressImageForPayload(config.splashScreen, 800, 'image/jpeg', 0.5);
             
-            // If icon is already a URL (from a previous build), keep it for Bubble
+            // If icon is already a URL (from a previous build), keep it
             const iconIsUrl = config.icon && (config.icon.startsWith('http') || config.icon.startsWith('//'));
             const splashIsUrl = config.splashScreen && (config.splashScreen.startsWith('http') || config.splashScreen.startsWith('//'));
 
@@ -256,7 +254,7 @@ export default function Step5Build() {
             return
         }
 
-        // Step 3: Poll Bubble for build status
+        // Step 3: Poll for build status
         let isDone = false
         const startTime = Date.now()
 
@@ -316,10 +314,12 @@ export default function Step5Build() {
             const compressedIconBase64 = await compressImageForPayload(config.icon, 192, 'image/png');
             const iconIsUrl = config.icon && (config.icon.startsWith('http') || config.icon.startsWith('//'));
             
+            const appName = config.name || siteAnalysis?.title || 'MonApp'
             const appData = {
-                name: config.name || siteAnalysis?.title || 'MonApp',
+                name: appName,
+                appName: appName,
                 url: config.url || siteAnalysis?.url || 'https://example.com',
-                platforms: desktopSubPlatform,
+                platforms: [desktopSubPlatform],
                 icon: compressedIconBase64 || (iconIsUrl ? config.icon : null)
             }
 

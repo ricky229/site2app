@@ -15,7 +15,6 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 // @ts-ignore
 import Builder from './services/Builder.js'
-import { bubble } from './services/BubbleService.js'
 import fetch from 'node-fetch'
 
 dotenv.config()
@@ -80,8 +79,6 @@ const devices = new Map<string, any>()
 const sseClients = new Map<string, any[]>() // buildId -> array of res objects
 
 const DEVICES_JSON = path.join(STORAGE_PATH, 'devices.json')
-const PROCESSED_BUBBLE_JSON = path.join(STORAGE_PATH, 'processed_bubble.json')
-const processedBubbleNotifs = new Set<string>()
 
 export interface DesktopBuildInfo {
     id: string
@@ -151,12 +148,7 @@ function loadBuilds() {
             Object.entries(data).forEach(([id, d]) => devices.set(id, d))
             console.log(`[Storage] Loaded ${devices.size} devices.`)
         }
-        if (fsSync.existsSync(PROCESSED_BUBBLE_JSON)) {
-            const data = JSON.parse(fsSync.readFileSync(PROCESSED_BUBBLE_JSON, 'utf8'))
-            if (Array.isArray(data)) data.forEach((id: string) => processedBubbleNotifs.add(id))
-            console.log(`[Storage] Loaded ${processedBubbleNotifs.size} processed Bubble notifications.`)
-        }
-    } catch (e) {
+            } catch (e) {
         console.error('[Storage] Error loading data:', e)
     }
 }
@@ -194,14 +186,6 @@ function saveDevices() {
         fsSync.writeFileSync(DEVICES_JSON, JSON.stringify(data, null, 2))
     } catch (e) {
         console.error('[Storage] Error saving devices:', e)
-    }
-}
-
-function saveProcessedBubble() {
-    try {
-        fsSync.writeFileSync(PROCESSED_BUBBLE_JSON, JSON.stringify(Array.from(processedBubbleNotifs)))
-    } catch (e) {
-        console.error('[Storage] Error saving processed Bubble records:', e)
     }
 }
 
@@ -540,13 +524,7 @@ const authMiddleware = async (req: any, res: any, next: any) => {
     try {
         const secret = process.env.JWT_SECRET || 'site2app_super_secret';
         const decoded = jwt.verify(token, secret) as any;
-        let bubbleUser = null;
-        try {
-            bubbleUser = await bubble.getUserById(decoded.userId);
-        } catch (e) {
-            console.warn('[Auth] Bubble user fetch failed, falling back to local only:', e.message);
-        }
-        
+                
         const bubbleId = decoded.userId;
         const localUser = users.get(bubbleId);
         
@@ -554,8 +532,7 @@ const authMiddleware = async (req: any, res: any, next: any) => {
             throw new Error('User not found in both Bubble and Local DB');
         }
 
-        bubbleUser = bubbleUser || {};
-        
+                
         // Load existing local user data (contains sensitive keys)
         const localUserSafe = localUser || {};
         
@@ -563,15 +540,14 @@ const authMiddleware = async (req: any, res: any, next: any) => {
         // LOCAL keys ALWAYS win to prevent loss of Firebase credentials and admin modifications
         const userSafe = { 
             id: bubbleId,
-            email: localUserSafe.email || bubbleUser.email || bubbleUser.emailAddress,
-            name: localUserSafe.name || bubbleUser.name,
-            plan: localUserSafe.plan || bubbleUser.plan || 'free',
-            role: localUserSafe.role || bubbleUser.role || 'user',
+            email: localUserSafe.email,
+            name: localUserSafe.name,
+            plan: localUserSafe.plan || 'free',
+            role: localUserSafe.role || 'user',
             // Sensitive keys: ALWAYS from local storage (never from Bubble)
             firebaseKey: localUserSafe.firebaseKey || '',
             googleServicesJson: localUserSafe.googleServicesJson || '',
-            bubbleApiUrl: localUserSafe.bubbleApiUrl || '',
-        };
+                    };
         
         users.set(bubbleId, userSafe);
         saveUsers();
@@ -826,35 +802,7 @@ app.post('/node/internal/build/:buildId/fail', internalAuth, (req, res) => {
 
 app.post('/node/apps/:buildId/publish', authMiddleware, async (req: any, res) => {
     const buildId = req.params.buildId;
-    let bubbleApp = null;
-    try {
-        bubbleApp = await bubble.getAppById(buildId);
-    } catch (e) {
-        console.error('[API] Failed to fetch app from Bubble for publish', e);
-    }
     
-    if (!bubbleApp) return res.status(404).json({ error: 'App not found in Bubble' });
-    if (bubbleApp.owner !== req.user.id) return res.status(403).json({ error: 'Unauthorized' });
-    if (bubbleApp.status !== 'completed' || !bubbleApp.apkFile) return res.status(400).json({ error: 'App not completed or missing APK' });
-
-    // Store/Update local build metadata for the published app
-    const build: BuildInfo = builds.get(buildId) || {
-        id: buildId,
-        appName: bubbleApp.appName,
-        packageName: bubbleApp.packageName,
-        status: bubbleApp.status,
-        url: bubbleApp.url,
-        platform: bubbleApp.platform,
-        userId: bubbleApp.owner,
-        startedAt: bubbleApp['Created Date'] || new Date().toISOString(),
-    };
-
-    build.versionCode = bubbleApp.versionCode;
-    build.versionName = bubbleApp.versionName || `1.${bubbleApp.versionCode}`;
-    if (bubbleApp.versionCode !== undefined) build.publishedVersionCode = bubbleApp.versionCode;
-    if (build.versionName !== undefined) build.publishedVersionName = build.versionName;
-    if (bubbleApp.apkFile) build.downloadUrl = bubbleApp.apkFile; // store the Bubble URL for downloading
-
     builds.set(buildId, build);
     saveBuilds();
     
@@ -1005,15 +953,7 @@ app.post('/node/devices/register', async (req: any, res) => {
     const buildOwner = buildOwnerId ? Array.from(users.values()).find((u: any) => u.id === buildOwnerId) : null;
     
     // Smart URL extraction: extract up to /api/1.1/obj
-    let customBubbleUrl = '';
-    if (buildOwner?.bubbleApiUrl) {
-        const parts = buildOwner.bubbleApiUrl.split('/api/1.1/obj');
-        if (parts.length > 0) {
-            customBubbleUrl = parts[0] + '/api/1.1/obj';
-        }
-    }
-    const customBubbleToken = process.env.BUBBLE_API_TOKEN;
-
+    
     // 1. Sync to local memory
     const existingLocal = devices.get(deviceId);
     if (!existingLocal || existingLocal.buildId !== buildId) {
@@ -1026,20 +966,6 @@ app.post('/node/devices/register', async (req: any, res) => {
             saveBuilds();
         }
     }
-
-    // 2. Sync to Bubble Data API (Smart Upsert)
-    try {
-        await bubble.upsertDevice({
-            pushToken: deviceId,
-            buildId: buildId,
-            os: os || 'android',
-            country,
-            city
-        }, customBubbleUrl, customBubbleToken);
-    } catch (e: any) {
-        console.error(`[API] Bubble device sync failed (${customBubbleUrl}):`, e.message);
-    }
-
     res.json({ success: true });
 })
 
@@ -1053,39 +979,6 @@ app.get('/node/devices', authMiddleware, async (req: any, res) => {
     Array.from(devices.values())
         .filter(d => userBuilds.includes(d.buildId))
         .forEach(d => deviceMap.set(d.id, d));
-
-    // FETCH from Bubble to ensure we see everything (and handle tenancy if needed)
-    try {
-        let customUrl = '';
-        if ((req.user as any).bubbleApiUrl) {
-            const parts = (req.user as any).bubbleApiUrl.split('/api/1.1/obj');
-            if (parts.length > 0) {
-                customUrl = parts[0] + '/api/1.1/obj';
-            }
-        }
-        
-        console.log(`[API] Fetching devices from Bubble: ${customUrl || 'default'}`);
-        const bubbleDevices = await bubble.getDevicesByApp('all', customUrl);
-        
-        bubbleDevices.forEach((d: any) => {
-            const token = d.pushToken || d.push_token || d.id || d._id;
-            const bId = d.buildId || d.build_id || 'all';
-            
-            // Only add if it belongs to user's builds OR if it's broad
-            if (userBuilds.includes(bId) || bId === 'all') {
-                deviceMap.set(token, {
-                    id: token,
-                    buildId: bId,
-                    os: d.os || 'android',
-                    createdAt: d.Created_Date || d['Created Date'] || d.createdAt || new Date().toISOString()
-                });
-            }
-        });
-        console.log(`[API] Found ${bubbleDevices.length} devices total on Bubble.`);
-    } catch (e: any) {
-        console.error(`[API] Failed to fetch devices from Bubble:`, e.message);
-    }
-
     const result = Array.from(deviceMap.values())
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -1181,39 +1074,6 @@ const sendNotificationCore = async (user: any, payload: any) => {
                     }
                     
                     tokensToSend = filteredLocal.map((d: any) => d.id).filter((id: string) => id && id.includes(':'));
-                    
-                    // ALWAYS also try to fetch from Bubble for group targets to ensure we don't miss anyone
-                    if (user.bubbleApiUrl) {
-                        try {
-                            const deviceUrl = user.bubbleApiUrl.replace('/notification_queue', '/device').replace('/notification', '/device');
-                            const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
-                            let fetchUrl = deviceUrl;
-                            if (buildId && buildId !== 'all') {
-                                const constraints = JSON.stringify([{ key: 'buildId', constraint_type: 'equals', value: buildId }]);
-                                fetchUrl += `?constraints=${encodeURIComponent(constraints)}`;
-                            }
-                            
-                            const bubbleResp = await fetch(fetchUrl, {
-                                headers: { 'Authorization': `Bearer ${bubbleToken}`, 'Accept': 'application/json' }
-                            });
-                            
-                            if (bubbleResp.ok) {
-                                const bubbleData = await bubbleResp.json() as any;
-                                const bubbleResults = bubbleData?.response?.results || bubbleData?.results || [];
-                                const bubbleTokens = bubbleResults
-                                    .filter((d: any) => {
-                                        if (target && target !== 'all') return d.os === target;
-                                        return true;
-                                    })
-                                    .map((d: any) => d.pushToken || d.push_token || d.id || d._id)
-                                    .filter((t: any) => typeof t === 'string' && t.includes(':'));
-                                
-                                // Merge and deduplicate
-                                tokensToSend = Array.from(new Set([...tokensToSend, ...bubbleTokens]));
-                                console.log(`[CORE] Group discovery: ${tokensToSend.length} tokens found (Local + Bubble ${fetchUrl})`);
-                            }
-                        } catch (err: any) { console.error(`[CORE] Bubble token fetch failed:`, err.message); }
-                    }
                 }
 
                 if (tokensToSend.length > 0) {
@@ -1296,52 +1156,6 @@ const sendNotificationCore = async (user: any, payload: any) => {
     // Always save the notification to history locally
     notifications.set(notif.id, notif);
     saveNotifications();
-
-    // Sync to Bubble (History) - rigorously matching the queue schema
-    try {
-        let customBubbleUrl = '';
-        if (user.bubbleApiUrl) {
-            const parts = user.bubbleApiUrl.split('/api/1.1/obj');
-            if (parts.length > 0) {
-                customBubbleUrl = parts[0] + '/api/1.1/obj';
-            }
-        }
-
-        const isSpecific = Array.isArray(notif.targetOs);
-        const targetOsVal = isSpecific ? 'specific' : String(notif.targetOs || 'all');
-        const targetTokenVal = isSpecific ? notif.targetOs.join(',') : '';
-
-        // Determine if we should send a token
-        const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
-        const headers: any = { 'Content-Type': 'application/json' };
-        if (!user.bubbleApiUrl) {
-            headers['Authorization'] = `Bearer ${bubbleToken}`;
-        }
-
-        const historyUrl = `${customBubbleUrl || (process.env.BUBBLE_API_URL || 'https://site2app.online/api/1.1/obj')}/notification`;
-        
-        await fetch(historyUrl, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-                title: notif.title || '',
-                body: notif.body || '',
-                image: notif.image || '',
-                targetUrl: notif.targetUrl || '',
-                targetApp: notif.targetApp || 'all',
-                targetOs: targetOsVal,
-                targetToken: targetTokenVal,
-                owner: user.id || '',
-                status: 'Sent',
-                sentCount: notif.stats?.sent || 0,
-                deliveredCount: notif.stats?.delivered || 0,
-                sentAt: new Date().toISOString()
-            })
-        });
-        console.log(`[CORE] ✅ Rigorous history sync to Bubble: ${historyUrl}`);
-    } catch (e: any) {
-        console.error(`[CORE] Bubble History Sync Failed:`, e.message);
-    }
 
     // If there was an FCM error, attach it to the response but don't throw
     if (fcmError) {
@@ -1812,8 +1626,7 @@ app.post('/node/auth/login', async (req, res) => {
             // Preserve locally-stored sensitive config 
             firebaseKey: existingLocal.firebaseKey || '',
             googleServicesJson: existingLocal.googleServicesJson || '',
-            bubbleApiUrl: existingLocal.bubbleApiUrl || '',
-        };
+                    };
 
         // Sync to local storage (preserving Firebase keys)
         users.set(userSafe.id, userSafe);
@@ -1833,29 +1646,7 @@ app.post('/node/auth/register', async (req, res) => {
     try {
         const { name, email, password } = req.body
 
-        const existing = await bubble.getUserByEmail(email)
-        if (existing) {
-            return res.status(400).json({ error: 'Cet email est déjà utilisé' })
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(password, salt);
-
-        const newUser = await bubble.createUser({
-            email: email,
-            emailAddress: email,
-            passwordHash: hash,
-            name: name,
-            plan: 'free',
-            role: 'user',
-            appsCount: 0,
-            downloadsCount: 0,
-        })
-
-        const secret = process.env.JWT_SECRET || 'site2app_super_secret';
-        const id = newUser._id || newUser.id;
-        const token = jwt.sign({ userId: id }, secret, { expiresIn: '30d' });
-
+        
         const userSafe = {
             id,
             email,
@@ -1888,15 +1679,14 @@ app.get('/node/auth/me', authMiddleware, (req: any, res) => {
 })
 
 app.post('/node/auth/firebase-config', authMiddleware, async (req: any, res) => {
-    const { adminSdkJson, googleServicesJson, bubbleApiUrl } = req.body
+    const { adminSdkJson, googleServicesJson } = req.body
     
     // 1. Update LOCAL map (for immediate polling effect)
     const user = users.get(req.user.id)
     if (user) {
         if (adminSdkJson !== undefined) user.firebaseKey = adminSdkJson
         if (googleServicesJson !== undefined) user.googleServicesJson = googleServicesJson
-        if (bubbleApiUrl !== undefined) user.bubbleApiUrl = bubbleApiUrl
-        saveUsers()
+                saveUsers()
     }
 
     // 2. Return success (User config is now solely in Node Backend's users.json)
@@ -1930,158 +1720,7 @@ app.delete('/node/user', authMiddleware, (req: any, res) => {
 // Webhook moved to top for better priority
 
 
-// Trigger polling manually from UI (GET to avoid 405)
-app.get('/node/notifications/poll', authMiddleware, async (req: any, res) => {
-    console.log(`[API] Manual poll requested by user ${req.user?.id}`);
-    try {
-        await pollExternalNotifications();
-        console.log(`[API] Manual poll completed successfully`);
-        res.json({ success: true, message: 'Polling cycle executed' });
-    } catch (err: any) {
-        console.error(`[API] Manual poll failed:`, err.message);
-        res.status(500).json({ error: err.message });
-    }
-})
 
-// ─── Polling Service (Bubble.io / External Webhooks via Pull) ──────
-const POLLING_INTERVAL_MS = 15000; // 15 seconds
-
-async function pollExternalNotifications() {
-    const allUsers = Array.from(users.values());
-    if (allUsers.length === 0) {
-        // Log locally if no users are in memory yet
-        return;
-    }
-
-    console.log(`[Polling] 🕒 Starting cycle for ${allUsers.length} users...`);
-    const defaultBubbleBase = 'https://site2app.online/api/1.1/obj';
-    const bubbleToken = process.env.BUBBLE_API_TOKEN || '59ef5eb57d786ff8eced03244342f32e';
-
-    for (const user of allUsers) {
-        try {
-            // 1. Determine the right URLs
-            let queueUrl = user.bubbleApiUrl;
-            let historyUrl = '';
-            
-            if (!queueUrl) {
-                queueUrl = `${defaultBubbleBase}/notification_queue`;
-                historyUrl = `${defaultBubbleBase}/notification`;
-            } else {
-                // Check if user provided the full notification_queue URL or just the base
-                if (queueUrl.includes('/notification_queue')) {
-                    historyUrl = queueUrl.replace('/notification_queue', '/notification');
-                } else if (queueUrl.includes('/obj/')) {
-                    // It's a base URL ending in /obj/ or similar
-                    historyUrl = queueUrl.replace(/\/$/, '') + '/notification';
-                    queueUrl = queueUrl.replace(/\/$/, '') + '/notification_queue';
-                } else {
-                    // It's likely just the site URL or something incomplete
-                    const base = queueUrl.replace(/\/$/, '');
-                    queueUrl = `${base}/api/1.1/obj/notification_queue`;
-                    historyUrl = `${base}/api/1.1/obj/notification`;
-                }
-            }
-
-            // 2. Fetch notifications from Bubble
-            // For custom client URLs, don't filter by 'owner' (different user system)
-            // For default Site2App URL, filter by owner to isolate each user's queue
-            let constraints;
-            if (user.bubbleApiUrl) {
-                constraints = JSON.stringify([
-                    { key: 'status', constraint_type: 'not equal', value: 'Sent' }
-                ]);
-            } else {
-                constraints = JSON.stringify([
-                    { key: 'owner', constraint_type: 'equals', value: user.id },
-                    { key: 'status', constraint_type: 'not equal', value: 'Sent' }
-                ]);
-            }
-            
-            const fetchUrl = `${queueUrl}?constraints=${encodeURIComponent(constraints)}`;
-            console.log(`[Polling] Checking ${user.email} -> ${queueUrl}`);
-
-            const headers: any = { 'Accept': 'application/json' };
-            if (!user.bubbleApiUrl) {
-                headers['Authorization'] = `Bearer ${bubbleToken}`;
-            }
-
-            const response = await fetch(fetchUrl, {
-                headers
-            });
-
-            if (!response.ok) {
-                if (response.status !== 404) {
-                    console.warn(`[Polling] Bubble fetch failed (${response.status}) for ${user.email}`);
-                }
-                continue;
-            }
-
-            const data = await response.json() as any;
-            const pendingNotifs = data?.response?.results || data?.results || (Array.isArray(data) ? data : []);
-
-            if (!Array.isArray(pendingNotifs) || pendingNotifs.length === 0) {
-                continue;
-            }
-
-            console.log(`[Polling] Found ${pendingNotifs.length} notifications for ${user.email}`);
-
-            for (const notif of pendingNotifs) {
-                // Safety check: skip if invalid or already processed in this runtime
-                if (!notif._id || notif.status === 'Sent' || processedBubbleNotifs.has(notif._id)) {
-                    continue;
-                }
-
-                const reqBody = {
-                    title: notif.title || 'Sans titre',
-                    body: notif.body || '',
-                    buildId: notif.targetApp || notif.buildId || 'all',
-                    target: notif.targetToken ? notif.targetToken.split(',').map((t: any) => String(t).trim()).filter(Boolean) : (notif.targetOs || 'all'),
-                    image: notif.image || null,
-                    actionUrl: notif.targetUrl || null,
-                };
-
-                try {
-                    console.log(`[Polling] 🚀 Sending: "${reqBody.title}" to ${Array.isArray(reqBody.target) ? reqBody.target.length + ' tokens' : reqBody.target}`);
-                    
-                    const fcmResult = await sendNotificationCore(user, reqBody);
-
-                    if (fcmResult) {
-                        // Mark as processed locally
-                        processedBubbleNotifs.add(notif._id);
-                        saveProcessedBubble();
-
-                        // Update Status in Queue
-                        try {
-                            const updateHeaders: any = { 'Content-Type': 'application/json' };
-                            if (!user.bubbleApiUrl) {
-                                updateHeaders['Authorization'] = `Bearer ${bubbleToken}`;
-                            }
-
-                            const updateRes = await fetch(`${queueUrl}/${notif._id}`, {
-                                method: 'PATCH',
-                                headers: updateHeaders,
-                                body: JSON.stringify({ status: 'Sent' })
-                            });
-                            if (!updateRes.ok) console.warn(`[Polling] Failed to update status for ${notif._id}`);
-                            else console.log(`[Polling] ✅ Queue status updated for ${notif._id}`);
-                        } catch (e) {
-                            console.error(`[Polling] Error updating status:`, e);
-                        }
-                    } else {
-                        console.warn(`[Polling] ⚠️ Notification dispatch returned null`);
-                    }
-                } catch (e: any) {
-                    console.error(`[Polling] 🚨 Dispatch error for ${notif._id}:`, e.message);
-                }
-            }
-        } catch (err: any) {
-            console.error(`[Polling] 🚨 Cycle error for user ${user.id}:`, err.message);
-        }
-    }
-}
-
-// Start polling daemon in background
-setInterval(() => pollExternalNotifications().catch(console.error), POLLING_INTERVAL_MS);
 
 // ─── PayDunya Integration ────────────────────────────
 const PAYDUNYA_MASTER_KEY = process.env.PAYDUNYA_MASTER_KEY || 'test_master_key';
@@ -2165,7 +1804,7 @@ app.post('/node/payment/webhook', async (req: any, res) => {
                 saveUsers();
                 console.log(`[PayDunya] ✅ User ${userId} upgraded to ${plan}`);
                 
-                // If using Bubble as truth, notify bubble...
+                // Local DB updated
             }
         }
         res.send('OK');
