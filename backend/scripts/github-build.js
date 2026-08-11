@@ -17,8 +17,8 @@ async function run() {
     }
 
     try {
-        console.log(`Fetching config from ${apiUrl}/api/internal/build/${buildId}/config`);
-        const res = await fetch(`${apiUrl}/api/internal/build/${buildId}/config`, {
+        console.log(`Fetching config from ${apiUrl}/node/internal/build/${buildId}/config`);
+        const res = await fetch(`${apiUrl}/node/internal/build/${buildId}/config`, {
             headers: { 'Authorization': `Bearer ${secret}` }
         });
 
@@ -38,7 +38,7 @@ async function run() {
         console.log('Build finished. Uploading APK to backend...', result.apkPath);
         
         const apkBuffer = fs.readFileSync(result.apkPath);
-        const uploadRes = await fetch(`${apiUrl}/api/internal/build/${buildId}/upload`, {
+        const uploadRes = await fetch(`${apiUrl}/node/internal/build/${buildId}/upload`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${secret}`,
@@ -57,7 +57,7 @@ async function run() {
         
         // Notify backend of failure
         try {
-            await fetch(`${apiUrl}/api/internal/build/${buildId}/fail`, {
+            await fetch(`${apiUrl}/node/internal/build/${buildId}/fail`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${secret}`,

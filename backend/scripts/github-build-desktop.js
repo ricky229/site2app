@@ -62,7 +62,7 @@ async function main() {
       if (!artifact) return;
       console.log(`Uploading ${platformName} artifact...`);
       const fileBuffer = fs.readFileSync(artifact.filePath);
-      const uploadRes = await fetch(`${FUNCTIONS_URL}/api/internal/desktop/${buildId}/upload`, {
+      const uploadRes = await fetch(`${FUNCTIONS_URL}/node/internal/desktop/${buildId}/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${BUILDER_SECRET}`,
@@ -87,7 +87,7 @@ async function main() {
   } catch (error) {
     console.error('Build failed:', error);
     try {
-      await fetch(`${FUNCTIONS_URL}/api/internal/desktop/${buildId}/fail`, {
+      await fetch(`${FUNCTIONS_URL}/node/internal/desktop/${buildId}/fail`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${BUILDER_SECRET}`,
