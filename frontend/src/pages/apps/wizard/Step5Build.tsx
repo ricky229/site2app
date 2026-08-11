@@ -319,7 +319,7 @@ export default function Step5Build() {
                 name: appName,
                 appName: appName,
                 url: config.url || siteAnalysis?.url || 'https://example.com',
-                platforms: [desktopSubPlatform],
+                platforms: desktopSubPlatform === 'both' ? ['windows', 'macos'] : [desktopSubPlatform],
                 icon: compressedIconBase64 || (iconIsUrl ? config.icon : null)
             }
 
