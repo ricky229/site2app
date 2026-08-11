@@ -52,6 +52,7 @@ async function main() {
     appName,
     iconBase64,
     targetPlatforms.length ? targetPlatforms : platforms,
+    { features: buildData.features || {}, customCss: buildData.customCss || '', customJs: buildData.customJs || '' },
     path.resolve(__dirname, '../src/services/desktop/electron-template')
   );
 

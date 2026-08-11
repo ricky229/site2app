@@ -10,10 +10,10 @@ jobs:
     if: contains(toJson(github.event.client_payload.platforms), 'windows')
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
@@ -23,7 +23,7 @@ jobs:
           npm install
 
       - name: Build and Upload Windows App
-        run: node backend/scripts/github-build-desktop.js
+        run: npx tsx backend/scripts/github-build-desktop.js
         env:
           BUILD_DATA: ${{ toJson(github.event.client_payload.buildData) }}
           FUNCTIONS_URL: ${{ secrets.FUNCTIONS_URL }}
@@ -34,10 +34,10 @@ jobs:
     if: contains(toJson(github.event.client_payload.platforms), 'macos')
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
@@ -47,7 +47,7 @@ jobs:
           npm install
 
       - name: Build and Upload macOS App
-        run: node backend/scripts/github-build-desktop.js
+        run: npx tsx backend/scripts/github-build-desktop.js
         env:
           BUILD_DATA: ${{ toJson(github.event.client_payload.buildData) }}
           FUNCTIONS_URL: ${{ secrets.FUNCTIONS_URL }}
