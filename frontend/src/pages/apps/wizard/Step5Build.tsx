@@ -310,6 +310,10 @@ export default function Step5Build() {
         setTotalProgress(0)
         setBuildError(null)
 
+        const isEdit = window.location.hash.includes('/apps/') && !window.location.hash.endsWith('/create')
+        const existingAppId = isEdit ? window.location.hash.split('/').pop()?.split('?')[0] : null
+        let appId: string | null = existingAppId || null
+
         try {
             const compressedIconBase64 = await compressImageForPayload(config.icon, 192, 'image/png');
             const iconIsUrl = config.icon && (config.icon.startsWith('http') || config.icon.startsWith('//'));
