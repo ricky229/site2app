@@ -154,8 +154,8 @@ export default function Step5Build() {
         setBuildError(null)
 
         // Ensure we know if we are editing an existing app
-        const isEdit = window.location.hash.includes('/apps/') && !window.location.hash.endsWith('/create')
-        const existingAppId = isEdit ? window.location.hash.split('/').pop()?.split('?')[0] : null
+        const isEdit = window.location.pathname.includes('/apps/') && !window.location.pathname.endsWith('/create')
+        const existingAppId = isEdit ? window.location.pathname.split('/').pop()?.split('?')[0] : null
         let appId: string | null = existingAppId || null
 
         try {
@@ -310,8 +310,8 @@ export default function Step5Build() {
         setTotalProgress(0)
         setBuildError(null)
 
-        const isEdit = window.location.hash.includes('/apps/') && !window.location.hash.endsWith('/create')
-        const existingAppId = isEdit ? window.location.hash.split('/').pop()?.split('?')[0] : null
+        const isEdit = window.location.pathname.includes('/apps/') && !window.location.pathname.endsWith('/create')
+        const existingAppId = isEdit ? window.location.pathname.split('/').pop()?.split('?')[0] : null
         let appId: string | null = existingAppId || null
 
         try {
