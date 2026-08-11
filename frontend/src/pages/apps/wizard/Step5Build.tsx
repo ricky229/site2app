@@ -334,7 +334,7 @@ export default function Step5Build() {
                 try {
                     const statusRes = await getDesktopBuildStatus(currentBuildId)
                     
-                    if (statusRes.status === 'completed') {
+                    if (statusRes.status === 'completed' || statusRes.status === 'success') {
                         isDone = true
                         setTotalProgress(100)
                         setStepStatuses(s => {
@@ -344,8 +344,8 @@ export default function Step5Build() {
                         })
                         
                         setDesktopUrls({
-                            windows: statusRes.windows?.downloadUrl,
-                            macos: statusRes.macos?.downloadUrl
+                            windows: statusRes.downloads?.windows || statusRes.windows?.downloadUrl,
+                            macos: statusRes.downloads?.macos || statusRes.macos?.downloadUrl
                         })
                     } else if (statusRes.status === 'failed') {
                         setPhase('error')
