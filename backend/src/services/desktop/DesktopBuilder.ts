@@ -100,7 +100,8 @@ export class DesktopBuilder {
         backendUrl: backendUrl,
         features: this.options?.features || {},
         customCss: this.options?.customCss || '',
-        customJs: this.options?.customJs || ''
+        customJs: this.options?.customJs || '',
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'site2app-ba735.appspot.com'
       };
       fs.writeFileSync(configPath, JSON.stringify(appConfig, null, 2));
 

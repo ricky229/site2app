@@ -323,7 +323,14 @@ export default function Step5Build() {
                 icon: compressedIconBase64 || (iconIsUrl ? config.icon : null)
             }
 
-            const createRes = await startDesktopBuild(appData)
+            let createRes;
+            if (appId) {
+                createRes = await startDesktopBuild({ ...appData, buildId: appId })
+                console.log('[Desktop Build] App rebuild triggered:', appId)
+            } else {
+                createRes = await startDesktopBuild(appData)
+                console.log('[Desktop Build] App created:', createRes.id || createRes.buildId)
+            }
             const currentBuildId = createRes.id || createRes.buildId
             setBuildId(currentBuildId)
 

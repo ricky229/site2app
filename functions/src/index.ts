@@ -1620,7 +1620,7 @@ api.put('/admin/settings', authMiddleware, requireAdmin, async (req, res) => {
 api.post('/desktop/build', authMiddleware, async (req: any, res) => {
   try {
     const userId = req.user.id || req.user.uid;
-    const { appName, url, icon, platforms } = req.body;
+    const { appName, url, icon, platforms, buildId: reqBuildId } = req.body;
     
     if (!appName || !url || !platforms || platforms.length === 0) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -1638,22 +1638,39 @@ api.post('/desktop/build', authMiddleware, async (req: any, res) => {
       return res.status(403).json({ error: 'Desktop builds are only available for premium yearly or lifetime plans' });
     }
 
-    const buildRef = db.collection('desktop_builds').doc();
-    const buildId = buildRef.id;
+    let buildRef;
+    let buildId;
+    let isNewBuild = false;
+
+    if (reqBuildId) {
+      buildId = reqBuildId;
+      buildRef = db.collection('desktop_builds').doc(buildId);
+      const existingDoc = await buildRef.get();
+      if (!existingDoc.exists || existingDoc.data()?.userId !== userId) {
+        return res.status(404).json({ error: 'Build not found or unauthorized' });
+      }
+    } else {
+      buildRef = db.collection('desktop_builds').doc();
+      buildId = buildRef.id;
+      isNewBuild = true;
+    }
     
-    const buildInfo = {
+    const buildInfo: any = {
       id: buildId,
       appName,
       url,
       icon,
       platforms,
       status: 'pending',
-      createdAt: Date.now(),
       updatedAt: Date.now(),
       userId
     };
+    
+    if (isNewBuild) {
+      buildInfo.createdAt = Date.now();
+    }
 
-    await buildRef.set(buildInfo);
+    await buildRef.set(buildInfo, { merge: true });
 
     if (GITHUB_PAT && GITHUB_REPO) {
       await buildRef.update({ status: 'building' });

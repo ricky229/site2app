@@ -114,6 +114,13 @@ async function main() {
     if (result.windows) await uploadArtifact(result.windows, 'windows');
     if (result.macos) await uploadArtifact(result.macos, 'macos');
 
+    if (result.updateFiles && result.updateFiles.length > 0) {
+      console.log(`Uploading ${result.updateFiles.length} update files for auto-updater...`);
+      for (const updateFile of result.updateFiles) {
+        await uploadArtifact(updateFile, 'update_file');
+      }
+    }
+
     console.log('Build and upload complete.');
     process.exit(0);
   } catch (error) {

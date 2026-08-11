@@ -26,7 +26,8 @@ try {
 // but electron-updater requires it. C:\Program Files is read-only,
 // so we write to AppData (userData) instead and redirect autoUpdater.
 const backendBase = config.backendUrl || 'https://site2app.online';
-const feedUrl = `${backendBase.replace(/\/node$/, '')}/node/desktop/updates/${config.buildId}/windows`;
+const storageBucket = config.storageBucket || 'site2app-ba735.appspot.com';
+const feedUrl = `https://storage.googleapis.com/${storageBucket}/desktop-builds/${config.buildId}`;
 
 try {
   const userDataDir = app.getPath('userData');
