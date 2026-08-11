@@ -1669,12 +1669,14 @@ api.post('/desktop/build', authMiddleware, async (req: any, res) => {
         body: JSON.stringify({
           event_type: 'build_desktop',
           client_payload: {
-            buildId,
-            appName,
-            url,
-            icon,
-            platforms: platforms.join(','),
-            serverUrl: `https://us-central1-${process.env.GCLOUD_PROJECT}.cloudfunctions.net/api`
+            platforms: Array.isArray(platforms) ? platforms : [platforms],
+            buildData: {
+              buildId,
+              appName,
+              appUrl: url,
+              iconUrl: icon || '',
+              platforms: Array.isArray(platforms) ? platforms : [platforms]
+            }
           }
         })
       });
