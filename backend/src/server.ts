@@ -1881,12 +1881,13 @@ app.post('/node/desktop/build', authMiddleware, async (req: any, res) => {
                 body: JSON.stringify({
                     event_type: 'build_desktop',
                     client_payload: {
+                        platforms: Array.isArray(platforms) ? platforms : [platforms],
                         buildData: {
                             buildId,
                             appName,
                             appUrl: url,
                             iconUrl: icon || '',
-                            platforms,
+                            platforms: Array.isArray(platforms) ? platforms : [platforms],
                             features: req.body.features || {},
                             customCss: req.body.customCss || '',
                             customJs: req.body.customJs || ''

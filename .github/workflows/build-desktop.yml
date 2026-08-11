@@ -7,7 +7,7 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    if: contains(github.event.client_payload.buildData.platforms, 'windows')
+    if: contains(toJson(github.event.client_payload.platforms), 'windows')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -31,7 +31,7 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
-    if: contains(github.event.client_payload.buildData.platforms, 'macos')
+    if: contains(toJson(github.event.client_payload.platforms), 'macos')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
