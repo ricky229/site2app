@@ -12,7 +12,7 @@ const BUILDER_SECRET = process.env.BUILDER_SECRET || 'dev_secret_123';
 
 async function updateBuildStatus(buildId, data, retries = 3) {
     const endpoint = data.status === 'failed' 
-        ? `${FUNCTIONS_URL}/node/internal/build/${buildId}/fail`
+        ? `${FUNCTIONS_URL}/internal/build/${buildId}/fail`
         : null;
     
     if (!endpoint) return; // Upload handled separately
@@ -44,7 +44,7 @@ async function updateBuildStatus(buildId, data, retries = 3) {
 }
 
 async function uploadApkToBackend(buildId, filePath, fileName) {
-    const uploadUrl = `${FUNCTIONS_URL}/node/internal/build/${buildId}/upload`;
+    const uploadUrl = `${FUNCTIONS_URL}/internal/build/${buildId}/upload`;
     const fileBuffer = fs.readFileSync(filePath);
     
     console.log(`[CI] Uploading APK to Firebase backend: ${uploadUrl}`);
