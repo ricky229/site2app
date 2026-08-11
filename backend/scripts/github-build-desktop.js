@@ -63,20 +63,60 @@ async function main() {
       if (!artifact) return;
       console.log(`Uploading ${platformName} artifact...`);
       const fileBuffer = fs.readFileSync(artifact.filePath);
-      const uploadRes = await fetch(`${FUNCTIONS_URL}/api/internal/desktop/${buildId}/upload`, {
+      
+      // 1. Get Signed URL
+      console.log(`Requesting signed URL for ${artifact.fileName}...`);
+      const urlRes = await fetch(`${FUNCTIONS_URL}/api/internal/desktop/${buildId}/upload-url`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${BUILDER_SECRET}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ fileName: artifact.fileName })
+      });
+      
+      if (!urlRes.ok) {
+        const errText = await urlRes.text();
+        throw new Error(`Failed to get signed URL (${urlRes.status}): ${errText}`);
+      }
+      
+      const { uploadUrl } = await urlRes.json();
+      
+      // 2. Upload to Signed URL
+      console.log(`Uploading directly to Google Cloud Storage...`);
+      const gcsRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
           'Content-Type': 'application/octet-stream',
-          'X-File-Name': artifact.fileName,
-          'X-Platform': platformName
+          'Content-Length': fileBuffer.length.toString()
         },
         body: fileBuffer
       });
-
-      if (!uploadRes.ok) {
-        throw new Error(`Upload failed with status ${uploadRes.status}`);
+      
+      if (!gcsRes.ok) {
+        const errText = await gcsRes.text();
+        throw new Error(`GCS upload failed (${gcsRes.status}): ${errText}`);
       }
+      
+      // 3. Notify backend that upload is complete
+      console.log(`Notifying backend of completion...`);
+      const completeRes = await fetch(`${FUNCTIONS_URL}/api/internal/desktop/${buildId}/upload-complete`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${BUILDER_SECRET}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fileName: artifact.fileName,
+          platform: platformName
+        })
+      });
+      
+      if (!completeRes.ok) {
+        const errText = await completeRes.text();
+        throw new Error(`Completion notification failed (${completeRes.status}): ${errText}`);
+      }
+      
       console.log(`Upload successful for ${platformName}`);
     };
 
